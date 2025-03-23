@@ -20,6 +20,7 @@
 #include "game/endgame.h"
 #include "game/game.h"
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/gmovie.h"
 #include "game/gsound.h"
@@ -34,6 +35,7 @@
 #include "game/scripts.h"
 #include "game/select.h"
 #include "game/selfrun.h"
+#include "game/stat.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "plib/color/color.h"
@@ -101,6 +103,7 @@ int gnw_main(int argc, char** argv)
 
     if (main_menu_create() == 0) {
         int language_filter = 1;
+	int exp_start = 0;
         bool done = false;
 
         config_get_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, &language_filter);
@@ -126,6 +129,10 @@ int gnw_main(int argc, char** argv)
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
                     roll_set_seed(-1);
                     main_load_new(mainMap);
+		    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
+
+                    stat_pc_add_experience(exp_start);
+
                     main_game_loop();
                     palette_fade_to(white_palette);
 
