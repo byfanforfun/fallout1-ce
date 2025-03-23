@@ -17,6 +17,7 @@
 #include "game/fontmgr.h"
 #include "game/gconfig.h"
 #include "game/gdialog.h"
+#include "game/gkioskconf.h"
 #include "game/gmemory.h"
 #include "game/gmouse.h"
 #include "game/gmovie.h"
@@ -133,11 +134,13 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     }
 
     gconfig_init(isMapper, argc, argv);
+    gkioskconf_init();
 
     game_in_mapper = isMapper;
 
     if (game_init_databases() == -1) {
         gconfig_exit(false);
+	gkioskconf_exit(false);
         return -1;
     }
 
@@ -421,6 +424,7 @@ void game_exit()
     FMExit();
     windowClose();
     db_exit();
+    gkioskconf_exit(true);
     gconfig_exit(true);
 }
 
