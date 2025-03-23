@@ -112,7 +112,12 @@ Here is a couple of current goals. Open up an issue if you have suggestion or fe
 
 ## Kiosk
 
-Custom config `kiosk.cfg`  
+Custom config `kiosk.cfg`
+
+```
+[game]
+exp_start=1000
+```
 
 ## License
 
