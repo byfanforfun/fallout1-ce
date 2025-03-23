@@ -112,6 +112,8 @@ Here is a couple of current goals. Open up an issue if you have suggestion or fe
 
 ## Kiosk
 
+Custom config `kiosk.cfg`  
+
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
