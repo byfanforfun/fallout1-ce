@@ -110,6 +110,8 @@ Here is a couple of current goals. Open up an issue if you have suggestion or fe
 
 - **Backport some Fallout 2 features**. Fallout 2 (with some Sfall additions) added many great improvements and quality of life enhancements to the original Fallout engine. Many deserve to be backported to Fallout 1. Keep in mind this is a different game, with slightly different gameplay balance (which is a fragile thing on its own).
 
+## Kiosk
+
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
