@@ -15,6 +15,7 @@
 
 #include "game/amutex.h"
 #include "game/art.h"
+#include "game/chardump.h"
 #include "game/credits.h"
 #include "game/cycle.h"
 #include "game/endgame.h"
@@ -97,6 +98,8 @@ int gnw_main(int argc, char** argv)
     if (!main_init_system(argc, argv)) {
         return 1;
     }
+
+    char_dir_create();
 
     gmovie_play(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
     gmovie_play(MOVIE_INTRO, 0);
@@ -341,6 +344,7 @@ static void main_game_loop()
         }
 
         if ((obj_dude->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
+            char_dump();
             main_show_death_scene = 1;
             game_user_wants_to_quit = 2;
         }

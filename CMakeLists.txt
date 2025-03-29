@@ -55,6 +55,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/bmpdlog.h"
     "src/game/cache.cc"
     "src/game/cache.h"
+    "src/game/chardump.cc"
+    "src/game/chardump.h"
     "src/game/combat_defs.h"
     "src/game/combat.cc"
     "src/game/combat.h"
