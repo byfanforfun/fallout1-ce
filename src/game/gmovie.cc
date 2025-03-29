@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/chardump.h"
 #include "game/cycle.h"
 #include "game/game.h"
 #include "game/gconfig.h"
@@ -25,6 +26,9 @@ namespace fallout {
 
 #define GAME_MOVIE_WINDOW_WIDTH 640
 #define GAME_MOVIE_WINDOW_HEIGHT 480
+
+//1 - water is over, 2 - goes wasteland, 3 - join master
+int dude_end_story_status = 0;
 
 static char* gmovie_subtitle_func(char* movieFilePath);
 
@@ -142,6 +146,21 @@ int gmovie_play(int game_movie, int game_movie_flags)
         subtitlesEnabled = true;
     } else {
         configGetBool(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, &subtitlesEnabled);
+    }
+
+    if(game_movie == MOVIE_BOIL3){
+        dude_end_story_status = 1;
+        char_dump();
+    }
+
+    if(game_movie == MOVIE_WALKM || game_movie == MOVIE_WALKW){
+        dude_end_story_status = 2;
+        char_dump();
+    }
+
+    if(game_movie == MOVIE_OVRRUN){
+        dude_end_story_status = 3;
+        char_dump();
     }
 
     int movie_flags = 4;

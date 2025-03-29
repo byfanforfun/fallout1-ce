@@ -51,6 +51,7 @@ typedef enum PcFlags {
 
 extern int rad_stat[RADIATION_EFFECT_COUNT];
 extern int rad_bonus[RADIATION_LEVEL_COUNT][RADIATION_EFFECT_COUNT];
+extern char* death_cause;
 
 int critter_init();
 void critter_reset();

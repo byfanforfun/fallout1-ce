@@ -390,7 +390,7 @@ static const int StatYpos[7] = {
 };
 
 // 0x42C33C
-static const int karma_var_table[9] = {
+const int karma_var_table[9] = {
     GVAR_BERSERKER_REPUTATION,
     GVAR_CHAMPION_REPUTATION,
     GVAR_CHILDKILLER_REPUATION,
