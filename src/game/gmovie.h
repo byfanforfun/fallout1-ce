@@ -30,6 +30,8 @@ typedef enum GameMovie {
     MOVIE_COUNT,
 } GameMovie;
 
+extern int dude_end_story_status;
+
 int gmovie_init();
 void gmovie_reset();
 void gmovie_exit();
