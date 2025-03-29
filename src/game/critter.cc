@@ -102,6 +102,8 @@ static int pc_kill_counts[KILL_TYPE_COUNT];
 // 0x56BF20
 static int old_rad_level;
 
+char* death_cause;
+
 // 0x427860
 int critter_init()
 {
@@ -288,6 +290,7 @@ int critter_adjust_poison(Object* critter, int amount)
         messageListItem.num = 3000;
         if (message_search(&misc_message_file, &messageListItem)) {
             display_print(messageListItem.text);
+            death_cause = messageListItem.text;
         }
     } else {
         critter->data.critter.poison = 0;
@@ -314,6 +317,7 @@ int critter_check_poison(Object* obj, void* data)
     messageListItem.num = 3001;
     if (message_search(&misc_message_file, &messageListItem)) {
         display_print(messageListItem.text);
+        death_cause = messageListItem.text;
     }
 
     // NOTE: Uninline.
@@ -541,6 +545,7 @@ static void process_rads(Object* obj, int radiationLevel, bool isHealing)
             messageListItem.num = 1006;
             if (message_search(&misc_message_file, &messageListItem)) {
                 display_print(messageListItem.text);
+                death_cause = messageListItem.text;
             }
         }
     }
@@ -1154,6 +1159,8 @@ int critter_set_who_hit_me(Object* critter, Object* who_hit_me)
     if (who_hit_me == obj_dude) {
         reaction_set(critter, 1);
     }
+
+    death_cause = critter_name(who_hit_me);
 
     return 0;
 }

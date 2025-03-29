@@ -6,6 +6,7 @@
 namespace fallout {
 
 extern int character_points;
+extern const int karma_var_table[9];
 
 int editor_design(bool isCreationMode);
 void CharEditInit();
