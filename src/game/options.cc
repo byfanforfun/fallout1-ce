@@ -434,7 +434,11 @@ int do_options()
                 // FALLTHROUGH
             case 502:
                 // PREFERENCES
-                if(gconfig_options_allowed > 0){showPreferences = true;}
+                if(gconfig_options_allowed > 0){
+                    showPreferences = true;
+                }else{
+                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                }
                 break;
             case KEY_PLUS:
             case KEY_EQUAL:
