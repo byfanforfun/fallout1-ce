@@ -828,20 +828,24 @@ int game_handle_input(int eventCode, bool isInCombatMode)
         break;
     case KEY_CTRL_S:
     case KEY_F4:
-        gsound_play_sfx_file("ib1p1xx1");
-        if (SaveGame(1) == -1) {
-            debug_printf("\n ** Error calling SaveGame()! **\n");
+        if(gconfig_saveload_allowed > 0) {
+            gsound_play_sfx_file("ib1p1xx1");
+            if (SaveGame(1) == -1) {
+                debug_printf("\n ** Error calling SaveGame()! **\n");
+            }
         }
         break;
     case KEY_CTRL_L:
     case KEY_F5:
-        gsound_play_sfx_file("ib1p1xx1");
-        if (LoadGame(LOAD_SAVE_MODE_NORMAL) == -1) {
-            debug_printf("\n ** Error calling LoadGame()! **\n");
+        if(gconfig_saveload_allowed > 0) {
+            gsound_play_sfx_file("ib1p1xx1");
+            if (LoadGame(LOAD_SAVE_MODE_NORMAL) == -1) {
+                debug_printf("\n ** Error calling LoadGame()! **\n");
+            }
         }
         break;
     case KEY_F6:
-        if (1) {
+        if (gconfig_saveload_allowed > 0) {
             gsound_play_sfx_file("ib1p1xx1");
 
             int rc = SaveGame(LOAD_SAVE_MODE_QUICK);
@@ -856,7 +860,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
         }
         break;
     case KEY_F7:
-        if (1) {
+        if (gconfig_saveload_allowed > 0) {
             gsound_play_sfx_file("ib1p1xx1");
 
             int rc = LoadGame(LOAD_SAVE_MODE_QUICK);
@@ -869,6 +873,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 display_print(msg);
             }
         }
+        //TODO: add sarcastic message about
         break;
     case KEY_CTRL_V:
         if (1) {
