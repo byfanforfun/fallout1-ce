@@ -17,6 +17,7 @@
 #include "game/editor.h"
 #include "game/game.h"
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/gmovie.h"
 #include "game/gsound.h"
@@ -338,6 +339,8 @@ void ResetLoadSave()
 // 0x46D9C4
 int SaveGame(int mode)
 {
+    if(1 > gconfig_saveload_allowed) {return 0;}
+
     MessageListItem messageListItem;
 
     ls_error_code = 0;
@@ -846,6 +849,8 @@ static int QuickSnapShot()
 // 0x46E754
 int LoadGame(int mode)
 {
+    if(1 > gconfig_saveload_allowed) {return 0;}
+
     MessageListItem messageListItem;
 
     const char* body[] = {
