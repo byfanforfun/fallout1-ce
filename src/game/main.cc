@@ -155,7 +155,7 @@ int gnw_main(int argc, char** argv)
 
                 break;
             case MAIN_MENU_LOAD_GAME:
-                if (1) {
+                if (gconfig_saveload_allowed > 0) {
                     int win = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                     main_menu_hide(true);
                     main_menu_destroy();

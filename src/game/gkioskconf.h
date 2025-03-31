@@ -9,8 +9,10 @@ namespace fallout {
 
 #define KIOSK_CONFIG_GAME_KEY	"game"
 #define KIOSK_CONFIG_EXP_START_KEY "exp_start"
+#define KIOSK_CONFIG_ENABLE_SAVELOAD   "saveload"
 
 extern Config kiosk_config;
+extern int gconfig_saveload_allowed;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

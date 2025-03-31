@@ -12,6 +12,7 @@
 #include "game/cycle.h"
 #include "game/game.h"
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/graphlib.h"
 #include "game/gsound.h"
@@ -407,16 +408,22 @@ int do_options()
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
             case 500:
-                if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
-                    rc = 1;
+                if(gconfig_saveload_allowed > 0) {
+                    if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
+                        rc = 1;
+                    }
                 }
+                //TODO: add message about
                 break;
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
             case 501:
-                if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
-                    rc = 1;
+                if(gconfig_saveload_allowed > 0) {
+                    if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
+                        rc = 1;
+                    }
                 }
+                //TODO: add message about
                 break;
             case KEY_UPPERCASE_P:
             case KEY_LOWERCASE_P:
