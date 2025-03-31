@@ -431,7 +431,7 @@ int do_options()
                 // FALLTHROUGH
             case 502:
                 // PREFERENCES
-                showPreferences = true;
+                if(gconfig_options_allowed > 0){showPreferences = true;}
                 break;
             case KEY_PLUS:
             case KEY_EQUAL:
