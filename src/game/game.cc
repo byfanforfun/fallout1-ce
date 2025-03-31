@@ -834,6 +834,8 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             if (SaveGame(1) == -1) {
                 debug_printf("\n ** Error calling SaveGame()! **\n");
             }
+        }else{
+            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_CTRL_L:
@@ -843,6 +845,8 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             if (LoadGame(LOAD_SAVE_MODE_NORMAL) == -1) {
                 debug_printf("\n ** Error calling LoadGame()! **\n");
             }
+        }else{
+            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_F6:
@@ -858,6 +862,8 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 char* msg = getmsg(&misc_message_file, &messageListItem, 5);
                 display_print(msg);
             }
+        }else{
+            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_F7:
@@ -873,8 +879,9 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 char* msg = getmsg(&misc_message_file, &messageListItem, 4);
                 display_print(msg);
             }
+        }else{
+            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
-        //TODO: add sarcastic message about
         break;
     case KEY_CTRL_V:
         if (1) {
