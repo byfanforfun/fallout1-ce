@@ -18,6 +18,7 @@
 #include "game/chardump.h"
 #include "game/credits.h"
 #include "game/cycle.h"
+#include "game/bmpdlog.h"
 #include "game/endgame.h"
 #include "game/game.h"
 #include "game/gconfig.h"
@@ -190,6 +191,9 @@ int gnw_main(int argc, char** argv)
                         main_show_death_scene = 0;
                     }
                     main_menu_create();
+                }else{
+                    mouse_show();
+                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case MAIN_MENU_TIMEOUT:
