@@ -22,7 +22,9 @@ bool gkioskconf_init()
     if (!config_init(&kiosk_config)) {
         return false;
     }
-    
+
+    config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, 0);
+
     strcpy(gkioskconf_file_name, KIOSK_CONFIG_FILE_NAME);
     config_load(&kiosk_config, gkioskconf_file_name, false);
 
