@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "game/art.h"
+#include "game/bmpdlog.h"
 #include "game/combat.h"
 #include "game/combatai.h"
 #include "game/cycle.h"
@@ -412,8 +413,9 @@ int do_options()
                     if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
+                }else{
+                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
-                //TODO: add message about
                 break;
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
@@ -422,8 +424,9 @@ int do_options()
                     if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
+                }else{
+                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
-                //TODO: add message about
                 break;
             case KEY_UPPERCASE_P:
             case KEY_LOWERCASE_P:
