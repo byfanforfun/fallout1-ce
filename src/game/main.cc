@@ -84,7 +84,7 @@ static int main_selfrun_count = 0;
 static int main_selfrun_index = 0;
 
 // 0x505A7C
-static bool main_show_death_scene = false;
+//static bool main_show_death_scene = false; //moved to game.cc
 
 // 0x614838
 static bool main_death_voiceover_done;
