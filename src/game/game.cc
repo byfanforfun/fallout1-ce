@@ -58,6 +58,7 @@
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
+#include "plib/gnw/timer.h"
 
 namespace fallout {
 
@@ -137,6 +138,7 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
 
     gconfig_init(isMapper, argc, argv);
     gkioskconf_init();
+    timer_init();
 
     game_in_mapper = isMapper;
 
@@ -394,6 +396,8 @@ void game_reset()
     game_user_wants_to_quit = 0;
     automap_reset();
     init_options_menu();
+    timer_stop();
+    timer_reset();
 }
 
 // 0x43B654

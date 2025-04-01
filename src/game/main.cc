@@ -48,6 +48,7 @@
 #include "plib/gnw/intrface.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
+#include "plib/gnw/timer.h"
 
 namespace fallout {
 
@@ -328,6 +329,9 @@ static void main_game_loop()
     if (cursorWasHidden) {
         mouse_show();
     }
+
+    timer_start();
+    timer_reset();
 
     main_game_paused = 0;
 
