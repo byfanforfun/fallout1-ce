@@ -3,6 +3,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/mouse.h"
+#include "plib/gnw/timer.h"
 #include "plib/gnw/winmain.h"
 
 namespace fallout {
@@ -234,6 +235,8 @@ void renderPresent()
     SDL_RenderClear(gSdlRenderer);
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, NULL, NULL);
     SDL_RenderPresent(gSdlRenderer);
+
+    timer_tick();
 }
 
 } // namespace fallout
