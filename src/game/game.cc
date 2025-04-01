@@ -113,6 +113,7 @@ const char* msg_path = "game\\";
 
 // 0x504FD4
 int game_user_wants_to_quit = 0;
+bool main_show_death_scene = false;
 
 // misc.msg
 //
