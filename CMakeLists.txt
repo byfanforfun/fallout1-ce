@@ -255,6 +255,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/svga.h"
     "src/plib/gnw/text.cc"
     "src/plib/gnw/text.h"
+    "src/plib/gnw/timer.cc"
+    "src/plib/gnw/timer.h"
     "src/plib/gnw/vcr.cc"
     "src/plib/gnw/vcr.h"
     "src/plib/gnw/winmain.cc"

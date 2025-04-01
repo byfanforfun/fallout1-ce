@@ -27,6 +27,7 @@
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
+#include "plib/gnw/timer.h"
 
 namespace fallout {
 
@@ -848,6 +849,8 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
     if (!gmouse_enabled) {
         return;
     }
+
+    timer_reset();
 
     if (gmouse_clicked_on_edge) {
         if (gmouse_get_click_to_scroll()) {
