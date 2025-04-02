@@ -850,8 +850,6 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         return;
     }
 
-    timer_reset();
-
     if (gmouse_clicked_on_edge) {
         if (gmouse_get_click_to_scroll()) {
             return;
