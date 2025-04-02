@@ -33,6 +33,7 @@ long compat_lseek(int fileHandle, long offset, int origin);
 long compat_tell(int fileHandle);
 long compat_filelength(int fd);
 int compat_mkdir(const char* path);
+int compat_stat(const char* path);
 unsigned int compat_timeGetTime();
 FILE* compat_fopen(const char* path, const char* mode);
 int compat_remove(const char* path);

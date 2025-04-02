@@ -215,6 +215,21 @@ long compat_filelength(int fd)
     return filesize;
 }
 
+int compat_stat(const char* path)
+{
+    char nativePath[COMPAT_MAX_PATH];
+    strcpy(nativePath, path);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+
+#ifdef _WIN32
+    return stat(nativePath);
+#else
+    struct stat st = {0};
+    return stat(nativePath, &st);
+#endif
+}
+
 int compat_mkdir(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
