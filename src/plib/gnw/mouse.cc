@@ -6,6 +6,7 @@
 #include "plib/gnw/input.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
+#include "plib/gnw/timer.h"
 #include "plib/gnw/touch.h"
 #include "plib/gnw/vcr.h"
 
@@ -632,6 +633,8 @@ void mouse_simulate_input(int delta_x, int delta_y, int buttons)
 
         raw_x = mouse_x;
         raw_y = mouse_y;
+
+        timer_reset();
     }
 }
 
