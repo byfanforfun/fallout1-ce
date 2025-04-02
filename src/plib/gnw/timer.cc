@@ -12,10 +12,25 @@ int ingame_timer = 0;
 int current_time = 0;
 int timer_started = 0;
 
+void timer_refresh_trigger(int timer);
+void timer_drop();
+
 void timer_init()
 {
     for(int i = 0; TIMERS_MAX > i; ++i)
         timers[i] = {};
+}
+
+void timer_refresh_trigger(int timer)
+{
+    if(timers[timer].timeout != 0)
+        timers[timer].is_fire = 0;
+}
+
+void timer_drop()
+{
+    for(int i = 0; TIMERS_MAX > i; ++i)
+        timer_refresh_trigger(i);
 }
 
 void timer_start()
@@ -48,6 +63,7 @@ void timer_tick()
 void timer_reset()
 {
     ingame_timer = current_time;
+    timer_drop();
 }
 
 int timer_create(int timer, timer_call func_ptr, int timeout, int a1)
