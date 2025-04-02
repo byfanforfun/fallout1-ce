@@ -4,10 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include "platform_compat.h"
 #include "game/config.h"
 #include "game/combat.h"
@@ -30,11 +26,8 @@ namespace fallout {
 
 int char_dir_create()
 {
-    struct stat st = {0};
-
-    if (stat(CHAR_CONFIG_DIR, &st) == -1) {
-        mkdir(CHAR_CONFIG_DIR, 0755);
-        return 0;
+    if (compat_stat(CHAR_CONFIG_DIR) == -1) {
+        return compat_mkdir(CHAR_CONFIG_DIR);
     }
 
     return -1;
