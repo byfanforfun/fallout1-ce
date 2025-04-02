@@ -116,7 +116,21 @@ Custom config `kiosk.cfg`
 
 ```
 [game]
+;how much experience add at game start
 exp_start=1000
+;in how much seconds player inactivity dweller will die
+inact=120
+;first attention dialog box
+inact1=100
+;second
+inact2=30
+;last
+inact3=20
+;allow player interact with options menu
+options=0
+;allow player to save/load game
+saveload=0
+
 ```
 
 ## License
