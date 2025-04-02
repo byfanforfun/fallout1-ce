@@ -44,6 +44,7 @@
 #include "game/skilldex.h"
 #include "game/stat.h"
 #include "game/tile.h"
+#include "game/timer_inactive.h"
 #include "game/trait.h"
 #include "game/version.h"
 #include "game/worldmap.h"
@@ -139,6 +140,7 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     gconfig_init(isMapper, argc, argv);
     gkioskconf_init();
     timer_init();
+    timer_inactive_init();
 
     game_in_mapper = isMapper;
 
