@@ -173,6 +173,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/textobj.h"
     "src/game/tile.cc"
     "src/game/tile.h"
+    "src/game/timer_inactive.cc"
+    "src/game/timer_inactive.h"
     "src/game/trait.cc"
     "src/game/trait.h"
     "src/game/version.cc"
