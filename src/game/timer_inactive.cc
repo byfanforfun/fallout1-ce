@@ -15,8 +15,6 @@
 
 namespace fallout {
 
-static int print_msg(Object* dude, int type);
-
 int timer_death = 0;
 int timer_att_1 = 0;
 int timer_att_2 = 0;
@@ -44,7 +42,7 @@ int inactive_attention(int a1)
     return 0;
 }
 
-void timer_inactive_init()
+int timer_inactive_init()
 {
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_F, &timer_death);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_1, &timer_att_1);
@@ -52,12 +50,14 @@ void timer_inactive_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_3, &timer_att_3);
 
     if(1 > timer_death)
-        return;
+        return 0;
 
     timer_create(TIMER_INACTIVE_DEATH, &inactive_death, timer_death, 0);
     timer_create(TIMER_INACTIVE_ATT_1, &inactive_attention, timer_death-timer_att_1, timer_att_1);
     timer_create(TIMER_INACTIVE_ATT_2, &inactive_attention, timer_death-timer_att_2, timer_att_2);
     timer_create(TIMER_INACTIVE_ATT_3, &inactive_attention, timer_death-timer_att_3, timer_att_3);
+
+    return 0;
 }
 
 }
