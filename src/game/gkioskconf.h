@@ -15,6 +15,11 @@ namespace fallout {
 #define KIOSK_CONFIG_TIMER_INACTIVE_2   "inact2"
 #define KIOSK_CONFIG_TIMER_INACTIVE_3   "inact3"
 #define KIOSK_CONFIG_TIMER_INACTIVE_F   "inact"
+#define KIOSK_CONFIG_START_MESSAGE  "start_message"
+#define KIOSK_CONFIG_OVERRIDE_KEY   "overrides"
+#define KIOSK_CONFIG_OVERRIDE_GAME   "game_difficulty"
+#define KIOSK_CONFIG_OVERRIDE_COMBAT   "combat_difficulty"
+#define KIOSK_CONFIG_OVERRIDE_LFILTER   "language_filter"
 
 extern Config kiosk_config;
 extern int gconfig_saveload_allowed;
