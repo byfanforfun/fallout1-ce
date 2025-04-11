@@ -131,6 +131,13 @@ options=0
 ;allow player to save/load game
 saveload=0
 
+;override original config options
+[overrides]
+combat_difficulty=0
+game_difficulty=0
+language_filter=0
+
+
 ```
 
 ## License
