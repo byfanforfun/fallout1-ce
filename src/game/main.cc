@@ -38,6 +38,7 @@
 #include "game/select.h"
 #include "game/selfrun.h"
 #include "game/stat.h"
+#include "game/start_message.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "plib/color/color.h"
@@ -109,6 +110,7 @@ int gnw_main(int argc, char** argv)
     if (main_menu_create() == 0) {
         int language_filter = 1;
 	int exp_start = 0;
+        int msg_start = 0;
         bool done = false;
 
         config_get_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, &language_filter);
@@ -130,11 +132,21 @@ int gnw_main(int argc, char** argv)
             case MAIN_MENU_NEW_GAME:
                 main_menu_hide(true);
                 main_menu_destroy();
-                if (select_character() == 2) {
+
+                config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, &msg_start);
+                config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
+
+                if(msg_start) {
+                    if (start_message() != 2) {
+                        main_menu_create();
+                        break;
+                    }
+                }
+
+                if(select_character() == 2) {
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
                     roll_set_seed(-1);
                     main_load_new(mainMap);
-		    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
 
                     stat_pc_add_experience(exp_start);
 
@@ -151,6 +163,7 @@ int gnw_main(int argc, char** argv)
                         main_death_scene();
                         main_show_death_scene = 0;
                     }
+
                 }
 
                 main_menu_create();
