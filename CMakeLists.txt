@@ -169,6 +169,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/stat_defs.h"
     "src/game/stat.cc"
     "src/game/stat.h"
+    "src/game/start_message.cc"
+    "src/game/start_message.h"
     "src/game/textobj.cc"
     "src/game/textobj.h"
     "src/game/tile.cc"
