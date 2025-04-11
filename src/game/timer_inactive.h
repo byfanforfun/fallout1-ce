@@ -8,7 +8,7 @@ namespace fallout {
 #define TIMER_INACTIVE_ATT_2    2
 #define TIMER_INACTIVE_ATT_3    3
 
-void timer_inactive_init();
+int timer_inactive_init();
 
 }
 
