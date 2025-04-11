@@ -54,7 +54,7 @@ void timer_tick()
         if(timers[i].timeout != 0){
             if(1 > timers[i].is_fire && current_time >= ingame_timer+(timers[i].timeout*1000)) {
                 timers[i].is_fire = 1;
-                (*timers[i].func_ptr)(timers[i].a1);
+                (*timers[i].func_ptr)(timers[i].a1, timers[i].a2, timers[i].a3);
             }
         }
     }
@@ -66,7 +66,7 @@ void timer_reset()
     timer_drop();
 }
 
-int timer_create(int timer, timer_call func_ptr, int timeout, int a1)
+int timer_create(int timer, timer_call func_ptr, int timeout, int a1, int a2, int a3)
 {
     if(timers[timer].timeout != 0){return 1;}
 
@@ -74,6 +74,8 @@ int timer_create(int timer, timer_call func_ptr, int timeout, int a1)
     t.func_ptr = func_ptr;
     t.timeout = timeout;
     t.a1 = a1;
+    t.a2 = a2;
+    t.a3 = a3;
     t.is_fire = 0;
 
     timers[timer] = t;
