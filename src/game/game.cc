@@ -140,7 +140,8 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     gconfig_init(isMapper, argc, argv);
     gkioskconf_init();
     timer_init();
-    timer_inactive_init();
+    if(0 > timer_inactive_init())
+        return -1;
 
     game_in_mapper = isMapper;
 
