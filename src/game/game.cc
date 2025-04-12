@@ -141,8 +141,6 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     gconfig_init(isMapper, argc, argv);
     gkioskconf_init();
     timer_init();
-    if(0 > timer_inactive_init())
-        return -1;
 
     game_in_mapper = isMapper;
 
@@ -225,7 +223,6 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     critter_init();
     combat_ai_init();
     inven_reset_dude();
-    kiosk_load_msg();
 
     if (gsound_init() != 0) {
         debug_printf("Sound initialization failed.\n");
@@ -361,6 +358,9 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     }
 
     debug_printf(">init_options_menu\n");
+
+    kiosk_load_msg();
+    timer_inactive_init();
 
     return 0;
 }
