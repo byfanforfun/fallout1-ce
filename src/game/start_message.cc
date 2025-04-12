@@ -5,6 +5,7 @@
 #include "game/gconfig.h"
 #include "game/gkioskconf.h"
 #include "game/gsound.h"
+#include "game/kiosk_msgfile.h"
 #include "game/message.h"
 #include "game/palette.h"
 
@@ -70,7 +71,6 @@ static unsigned char* language_knob;
 static CacheEntry* language_knob_key = NULL;
 
 static MessageList options_msg_file;
-static MessageList kiosk_msg_file;
 static MessageListItem mesg;
 
 int exp_start = 0;
@@ -405,17 +405,10 @@ int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
 
 int start_message_msg_load()
 {
+    if(!kiosk_msgfile_initialized())
+        return -1;
+
     char path[COMPAT_MAX_PATH];
-
-    if (!message_init(&kiosk_msg_file)) {
-        return -1;
-    }
-
-    snprintf(path, sizeof(path), "%s%s", msg_path, "kiosk.msg");
-
-    if (!message_load(&kiosk_msg_file, path)) {
-        return -1;
-    }
 
     if (!message_init(&options_msg_file)) {
         return -1;
@@ -432,7 +425,7 @@ int start_message_msg_load()
 
 static void start_message_exit()
 {
-    message_exit(&kiosk_msg_file);
+    message_exit(&kiosk_msgfile);
 
     if(start_message_window_id != -1) {
 
@@ -490,7 +483,7 @@ int print_display_data()
 
     int level = round(sqrt(exp_start / 1000 * 2 + 1));
 
-    str = getmsg(&kiosk_msg_file, &mesg, 100);
+    str = getmsg(&kiosk_msgfile, &mesg, 100);
     strcpy(tstr, str);
 
     text_font(101);
@@ -499,7 +492,7 @@ int print_display_data()
     length = text_width(tstr);
     text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*64 + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[992]);
 
-    str = getmsg(&kiosk_msg_file, &mesg, 101);
+    str = getmsg(&kiosk_msgfile, &mesg, 101);
     strcpy(tstr, str);
 
     length = text_width(tstr);
@@ -507,7 +500,7 @@ int print_display_data()
     text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*255 + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[992]);
 
     for(int i = 0; 11 > i; ++i){
-        str = getmsg(&kiosk_msg_file, &mesg, 200+i);
+        str = getmsg(&kiosk_msgfile, &mesg, 200+i);
         if(i == 7)
             snprintf(tstr, 200, "%s %d", str, level);
         else
@@ -517,7 +510,7 @@ int print_display_data()
     }
 
     for(int i = 0; 10 > i; ++i){
-        str = getmsg(&kiosk_msg_file, &mesg, 400+i);
+        str = getmsg(&kiosk_msgfile, &mesg, 400+i);
         text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*(80 + 16 * i) + 420, str, 640, SM_WINDOW_WIDTH, colorTable[992]);
     }
 
