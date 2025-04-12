@@ -141,7 +141,6 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     gconfig_init(isMapper, argc, argv);
     gkioskconf_init();
     timer_init();
-    timer_inactive_init();
 
     game_in_mapper = isMapper;
 
@@ -360,6 +359,9 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     }
 
     debug_printf(">init_options_menu\n");
+
+    kiosk_load_msg();
+    timer_inactive_init();
 
     return 0;
 }
