@@ -22,7 +22,7 @@ int timer_att_1 = 0;
 int timer_att_2 = 0;
 int timer_att_3 = 0;
 
-int inactive_death(int a1)
+int inactive_death(int a1, int a2, int a3)
 {
     death_cause = "AFK";
     char_dump();
@@ -32,7 +32,7 @@ int inactive_death(int a1)
     return 0;
 }
 
-int inactive_attention(int a1)
+int inactive_attention(int a1, int a2, int a3)
 {
     char msg[160];
 
@@ -54,10 +54,10 @@ void timer_inactive_init()
     if(1 > timer_death)
         return;
 
-    timer_create(TIMER_INACTIVE_DEATH, &inactive_death, timer_death, 0);
-    timer_create(TIMER_INACTIVE_ATT_1, &inactive_attention, timer_death-timer_att_1, timer_att_1);
-    timer_create(TIMER_INACTIVE_ATT_2, &inactive_attention, timer_death-timer_att_2, timer_att_2);
-    timer_create(TIMER_INACTIVE_ATT_3, &inactive_attention, timer_death-timer_att_3, timer_att_3);
+    timer_create(TIMER_INACTIVE_DEATH, &inactive_death, timer_death, 0, 0, 0);
+    timer_create(TIMER_INACTIVE_ATT_1, &inactive_attention, timer_death-timer_att_1, timer_att_1, 0, 0);
+    timer_create(TIMER_INACTIVE_ATT_2, &inactive_attention, timer_death-timer_att_2, timer_att_2, 0, 0);
+    timer_create(TIMER_INACTIVE_ATT_3, &inactive_attention, timer_death-timer_att_3, timer_att_3, 0, 0);
 }
 
 }
