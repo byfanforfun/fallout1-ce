@@ -26,6 +26,7 @@
 #include "game/intface.h"
 #include "game/inventry.h"
 #include "game/item.h"
+#include "game/kiosk_msgfile.h"
 #include "game/loadsave.h"
 #include "game/map.h"
 #include "game/moviefx.h"
@@ -223,6 +224,7 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     critter_init();
     combat_ai_init();
     inven_reset_dude();
+    kiosk_load_msg();
 
     if (gsound_init() != 0) {
         debug_printf("Sound initialization failed.\n");
@@ -433,6 +435,7 @@ void game_exit()
     trait_exit();
     roll_exit();
     exit_message();
+    kiosk_msgfile_exit();
     automap_exit();
     palette_exit();
     FMExit();
