@@ -17,9 +17,6 @@
 
 namespace fallout {
 
-static MessageList kiosk_msg;
-static MessageListItem msg;
-
 int timer_death = 0;
 int timer_att_1 = 0;
 int timer_att_2 = 0;
