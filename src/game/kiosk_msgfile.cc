@@ -28,6 +28,7 @@ int kiosk_load_msg()
 void kiosk_msgfile_exit()
 {
     message_exit(&kiosk_msgfile);
+    kiosk_msgfile_init = 0;
 }
 
 bool kiosk_msgfile_initialized()
