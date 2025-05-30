@@ -30,6 +30,9 @@ bool config_save(Config* config, const char* filePath, bool isDb);
 bool config_get_double(Config* config, const char* sectionKey, const char* key, double* valuePtr);
 bool config_set_double(Config* config, const char* sectionKey, const char* key, double value);
 
+// Retrieves the configured render driver.
+const char* config_get_render_driver(Config* config);
+
 // TODO: Remove.
 bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr);
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value);

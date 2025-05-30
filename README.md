@@ -100,6 +100,30 @@ Recommendations:
 - **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
 - **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
 
+### Rendering Backend
+
+You can specify the rendering backend SDL should use by adding the `render_driver` option to your `fallout.cfg` file under the `[video]` section. This can be useful for compatibility or performance reasons on different systems.
+
+Example `fallout.cfg` entry:
+```ini
+[video]
+render_driver=opengl
+```
+
+Possible values for `render_driver` are:
+- `direct3d`
+- `direct3d11`
+- `direct3d12`
+- `opengl`
+- `opengles2`
+- `opengles`
+- `metal`
+- `software`
+
+If the `render_driver` option is not specified, it will default to "opengl". If the specified driver (or the default "opengl") is not available or fails to initialize, SDL will attempt to use another available backend based on its internal preference list.
+
+The availability of these rendering backends depends on the user's operating system, graphics hardware, drivers, and the way SDL2 was compiled. For example, "metal" is specific to Apple platforms, and "direct3d" variants are specific to Windows. The "software" renderer is a fallback that should always be available but may offer lower performance.
+
 In time this stuff will receive in-game interface, right now you have to do it manually.
 
 ## Contributing
