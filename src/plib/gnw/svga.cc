@@ -1,6 +1,5 @@
 #include "plib/gnw/svga.h"
 
-#include "game/config.h" // Added for config_get_render_driver (even if placeholder for now)
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/mouse.h"
@@ -8,10 +7,6 @@
 #include "plib/gnw/winmain.h"
 
 namespace fallout {
-
-// Forward declaration for game_config if not already available through headers.
-// extern Config game_config; // Assuming game_config is a global Config object.
-// It's likely available via "game/config.h" which includes it or via another game global header.
 
 static bool createRenderer(int width, int height);
 static void destroyRenderer();
@@ -88,11 +83,7 @@ void GNW95_ShowRect(unsigned char* src, unsigned int srcPitch, unsigned int a3, 
 
 bool svga_init(VideoOptions* video_options)
 {
-    // Set the render driver hint before initializing the video subsystem
-    // Assuming game_config is globally accessible here.
-    // If game_config is not directly visible, it would need to be passed to svga_init.
-    extern Config game_config; // Declare game_config as extern if not in a header visible here
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, config_get_render_driver(&game_config));
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         return false;

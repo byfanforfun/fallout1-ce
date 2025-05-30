@@ -271,6 +271,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/vcr.h"
     "src/plib/gnw/winmain.cc"
     "src/plib/gnw/winmain.h"
+    "src/plib/gnw/vulkan_renderer.cc" # Added Vulkan Renderer
+    "src/plib/gnw/vulkan_renderer.h" # Added Vulkan Renderer Header (though headers not strictly needed in target_sources)
     "src/movie_lib.cc"
     "src/movie_lib.h"
 )
@@ -367,14 +369,19 @@ else()
     find_package(SDL2)
 endif()
 
+# Find Vulkan SDK
+find_package(Vulkan REQUIRED)
+
 add_subdirectory("third_party/adecode")
 target_link_libraries(${EXECUTABLE_NAME} adecode::adecode)
 
 add_subdirectory("third_party/fpattern")
 target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
 
-target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
+# Link SDL2 and Vulkan
+# Vulkan::Vulkan is an imported target that should also provide include directories
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${SDL2_LIBRARIES} Vulkan::Vulkan)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS}) # SDL2_INCLUDE_DIRS might still be needed if not using SDL2::SDL2 target
 
 if(APPLE)
     if(IOS)
