@@ -26,6 +26,7 @@
 #include "game/gmouse.h"
 #include "game/gmovie.h"
 #include "game/gsound.h"
+#include "game/hall_of_fame.h"
 #include "game/loadsave.h"
 #include "game/mainmenu.h"
 #include "game/map.h"
@@ -206,8 +207,10 @@ int gnw_main(int argc, char** argv)
                     }
                     main_menu_create();
                 }else{
-                    mouse_show();
-                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                    main_menu_hide(true);
+                    game_handle_hof();
+                    //mouse_show();
+                    //dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case MAIN_MENU_TIMEOUT:
