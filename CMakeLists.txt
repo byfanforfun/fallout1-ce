@@ -103,6 +103,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/gsound.h"
     "src/game/heap.cc"
     "src/game/heap.h"
+    "src/game/hall_of_fame.cc"
+    "src/game/hall_of_fame.h"
     "src/game/intface.cc"
     "src/game/intface.h"
     "src/game/inventry.cc"
