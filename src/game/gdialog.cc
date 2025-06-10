@@ -4147,4 +4147,37 @@ static int about_lookup_name(const char* search)
     return 0;
 }
 
+int gDialogStartInventory(Object* target, int barter_mod, int background) {
+
+    dialog_target = target;
+    backgroundIndex = background;
+    talk_to_display_frame(NULL, 0);
+
+    talk_to_create_head_window();
+
+    talk_to_destroy_dialogue_win();
+    talk_to_create_barter_win();
+    gDialogProcessInit();
+
+    if(gOptionWin != -1)
+        win_delete(gOptionWin);
+
+    talk_to_refresh_background_window();
+
+    barter_inventory(dialogueWindow, dialog_target, peon_table_obj, barterer_table_obj, barter_mod);
+    dialogue_barter_cleanup_tables();
+
+    talk_to_destroy_barter_win();
+    talk_to_destroy_head_window();
+
+    dialogue_switch_mode = 0;
+    dialogue_state = 0;
+
+    if(gReplyWin != -1)
+        win_delete(gReplyWin);
+
+    return 0;
+}
+
+
 } // namespace fallout
