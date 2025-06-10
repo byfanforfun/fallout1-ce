@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-#define DIALOG_BACKGROUND_HEIST 13
+#define DIALOG_BACKGROUND_HEIST 14
 
 int start_inventory();
 }
