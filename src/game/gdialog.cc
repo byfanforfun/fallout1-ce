@@ -4147,22 +4147,45 @@ static int about_lookup_name(const char* search)
     return 0;
 }
 
+int copy_background(int background_id) {
+  int backgroundFid = art_id(OBJ_TYPE_BACKGROUND, background_id, 0, 0, 0);
+
+    CacheEntry* backgroundHandle;
+    Art* backgroundFrm = art_ptr_lock(backgroundFid, &backgroundHandle);
+    if (backgroundFrm == NULL) {
+        debug_printf("\tError locking background in display...\n");
+    }
+
+    unsigned char* backgroundFrmData = art_frame_data(backgroundFrm, 0, 0);
+    if (backgroundFrmData != NULL) {
+        buf_to_buf(backgroundFrmData, 388, 200, 388, headWindowBuffer, GAME_DIALOG_WINDOW_WIDTH);
+    } else {
+        debug_printf("\tError getting background data in display...\n");
+    }
+
+    art_ptr_unlock(backgroundHandle);
+    win_draw(dialogueBackWindow);
+
+    return 0;
+}
+
 int gDialogStartInventory(Object* target, int barter_mod, int background) {
 
     dialog_target = target;
-    backgroundIndex = background;
-    talk_to_display_frame(NULL, 0);
 
     talk_to_create_head_window();
+    copy_background(background);
 
     talk_to_destroy_dialogue_win();
     talk_to_create_barter_win();
+
     gDialogProcessInit();
 
     if(gOptionWin != -1)
         win_delete(gOptionWin);
 
     talk_to_refresh_background_window();
+    copy_background(background);
 
     barter_inventory(dialogueWindow, dialog_target, peon_table_obj, barterer_table_obj, barter_mod);
     dialogue_barter_cleanup_tables();
