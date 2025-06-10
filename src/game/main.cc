@@ -39,6 +39,7 @@
 #include "game/select.h"
 #include "game/selfrun.h"
 #include "game/stat.h"
+#include "game/start_inv_v.h"
 #include "game/start_message.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
@@ -145,6 +146,8 @@ int gnw_main(int argc, char** argv)
                 }
 
                 if(select_character() == 2) {
+                    start_inventory();
+
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
                     roll_set_seed(-1);
                     main_load_new(mainMap);
