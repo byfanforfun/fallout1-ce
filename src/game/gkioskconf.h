@@ -20,6 +20,8 @@ namespace fallout {
 #define KIOSK_CONFIG_OVERRIDE_GAME   "game_difficulty"
 #define KIOSK_CONFIG_OVERRIDE_COMBAT   "combat_difficulty"
 #define KIOSK_CONFIG_OVERRIDE_LFILTER   "language_filter"
+#define KIOSK_CONFIG_CAPS_START "caps_start"
+#define KIOSK_CONFIG_BARTER_MOD "barter_mod"
 
 extern Config kiosk_config;
 extern int gconfig_saveload_allowed;
