@@ -116,6 +116,10 @@ Custom config `kiosk.cfg`
 
 ```
 [game]
+;barter modifier for start inventory trade
+barter_mod=0
+;how much caps add to player for start inventory trade
+caps_start=2000
 ;how much experience add at game start
 exp_start=1000
 ;in how much seconds player inactivity dweller will die
@@ -140,6 +144,24 @@ language_filter=0
 
 ```
 
+
+Start inventory config `kiosk_inv.cfg`
+```
+[inventory]
+PID=COUNT
+```
+
+Example:
+```
+[inventory]
+111=1
+231=34
+10=3
+11=64
+55=1
+43=32
+23=22
+```
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
