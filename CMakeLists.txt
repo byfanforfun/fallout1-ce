@@ -373,10 +373,10 @@ endif()
 find_package(Vulkan REQUIRED)
 
 add_subdirectory("third_party/adecode")
-target_link_libraries(${EXECUTABLE_NAME} adecode::adecode)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE adecode::adecode)
 
 add_subdirectory("third_party/fpattern")
-target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE fpattern::fpattern)
 
 # Link SDL2 and Vulkan
 # Vulkan::Vulkan is an imported target that should also provide include directories
