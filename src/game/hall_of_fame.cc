@@ -1,4 +1,4 @@
-#include "hall_of_fame.h"
+#include "game/hall_of_fame.h"
 
 #include "game/art.h"
 
@@ -27,7 +27,6 @@
 namespace fallout {
 
 static HallOfFameWindow hof_window;
-
 
 int hof_handle_input(int key);
 void hof_load_entries();
@@ -460,7 +459,7 @@ void hof_redraw() {
     int base_offset = HOF_LINE_OFFSET;
 
     // Очистка фона
-    buf_fill(buf, width, height, width, colorTable[0x323232]);
+    //buf_fill(buf, width, height, width, colorTable[0x323232]);
 
     hof_draw_back();
 
