@@ -1204,7 +1204,8 @@ int game_quit_with_confirm()
     if (message_search(&misc_message_file, &messageListItem)) {
         rc = dialog_out(messageListItem.text, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], DIALOG_BOX_YES_NO);
         if (rc != 0) {
-            death_cause = "user just quit";
+            static MessageListItem mesg;
+            death_cause = getmsg(&kiosk_msgfile, &mesg, 1223);
             char_dump();
             game_user_wants_to_quit = 2;
         }
