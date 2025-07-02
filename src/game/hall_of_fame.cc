@@ -1,4 +1,4 @@
-#include "hall_of_fame.h"
+#include "game/hall_of_fame.h"
 
 #include "game/art.h"
 
@@ -8,6 +8,8 @@
 #include "game/gsound.h"
 
 #include "game/palette.h"
+
+#include "game/kiosk_msgfile.h"
 
 #include "plib/color/color.h"
 
@@ -28,7 +30,6 @@ namespace fallout {
 
 static HallOfFameWindow hof_window;
 
-
 int hof_handle_input(int key);
 void hof_load_entries();
 void hof_create_window();
@@ -44,6 +45,7 @@ int hof_draw_back();
 static void hof_perform_sort();
 int button_init();
 void PrintBigNum(int x, int y, int flags, int value, int previousValue, int windowHandle);
+static int hof_msg_load();
 
 static Size GInfoBigNum;
 
@@ -66,7 +68,22 @@ static CacheEntry* back_button_up_key = NULL;
 static CacheEntry* back_button_down_key = NULL;
 
 static unsigned char* bignum;
+
+static char* messageItemNum;
+static char* messageItemName;
+static char* messageItemLevel;
+static char* messageItemExp;
+static char* messageItemChip;
+static char* messageItemCath;
+static char* messageItemMaster;
+static char* messageItemDC;
+
+static char* messageItemYes;
+static char* messageItemNo;
+
 static CacheEntry* bignum_key;
+
+static MessageListItem mesg;
 
 static int fontsave;
 static int old_page;
@@ -75,7 +92,10 @@ static unsigned int frame_time;
 
 static bool initial_sort = false;
 
-void game_handle_hof() {
+int game_handle_hof() {
+    if(hof_msg_load() != 0)
+        return -1;
+
     hof_create_window();
     button_init();
 
@@ -85,7 +105,7 @@ void game_handle_hof() {
 
         key = get_input();
         if(hof_handle_input(key) != 0)
-            return;
+            return -1;
 
         hof_redraw();
 
@@ -93,7 +113,7 @@ void game_handle_hof() {
         sharedFpsLimiter.throttle();
     }
 
-    return;
+    return 0;
 }
 
 int hof_init() {
@@ -219,6 +239,26 @@ int button_init() {
 
     win_register_button_sound_func(back_button, gsound_red_butt_press, gsound_red_butt_release);
 
+
+    return 0;
+}
+
+int hof_msg_load()
+{
+    if (!kiosk_msgfile_initialized())
+        return -1;
+
+    messageItemNum = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NUM);
+    messageItemName = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NAME);
+    messageItemLevel = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_LEVEL);
+    messageItemExp = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_EXP);
+    messageItemChip = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_CHIP);
+    messageItemCath = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_CATH);
+    messageItemMaster = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_MASTER);
+    messageItemDC = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_DC);
+
+    messageItemYes = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_YES);
+    messageItemNo = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NO);
 
     return 0;
 }
@@ -460,12 +500,12 @@ void hof_redraw() {
     int base_offset = HOF_LINE_OFFSET;
 
     // Очистка фона
-    buf_fill(buf, width, height, width, colorTable[0x323232]);
+    //buf_fill(buf, width, height, width, colorTable[0x323232]);
 
     hof_draw_back();
 
     // Заголовки столбцов
-    const char* headers[] = {"#", "Name", "Level", "Exp", "Water Chip", "Cathedral", "Master", "Death Cause"};
+    const char* headers[] = {messageItemNum, messageItemName, messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
     int columns[] = {20, 70, 220, 270, 320, 400, 480, 560};
     int column_widths[] = {30, 150, 50, 50, 80, 80, 80, 120};
 
@@ -569,7 +609,7 @@ void hof_redraw() {
         // Водный чип
         text_to_buf(
             buf + width * y + columns[4] + base_offset,
-            entry->water_chip_found ? "YES" : "NO",
+            entry->water_chip_found ? messageItemYes : messageItemNo,
             width,
             width,
             entry->water_chip_found ? colorTable[16191] : colorTable[15855]
@@ -578,7 +618,7 @@ void hof_redraw() {
         // Собор
         text_to_buf(
             buf + width * y + columns[5] + base_offset,
-            entry->cathedral_destroyed ? "YES" : "NO",
+            entry->cathedral_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
             entry->cathedral_destroyed ? colorTable[16191] : colorTable[15855]
@@ -587,7 +627,7 @@ void hof_redraw() {
         // Мастер
         text_to_buf(
             buf + width * y + columns[6] + base_offset,
-            entry->master_destroyed ? "YES" : "NO",
+            entry->master_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
             entry->master_destroyed ? colorTable[16191] : colorTable[15855]
