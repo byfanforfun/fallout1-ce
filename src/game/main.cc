@@ -241,10 +241,22 @@ int gnw_main(int argc, char** argv)
                 break;
             case MAIN_MENU_EXIT:
             case -1:
-                done = true;
-                main_menu_hide(true);
-                main_menu_destroy();
-                gsound_background_stop();
+                if(gconfig_game_exit_allowed > 0) {
+                    done = true;
+                    main_menu_hide(true);
+                    main_menu_destroy();
+                    gsound_background_stop();
+                } else {
+                    bool cursorWasHidden = mouse_hidden();
+
+                    if(cursorWasHidden)
+                        mouse_show();
+
+                    static MessageListItem mesg;
+                    char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1218);
+                    dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                }
+
                 break;
             case MAIN_MENU_SELFRUN:
                 main_selfrun_record();
