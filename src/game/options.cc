@@ -17,6 +17,7 @@
 #include "game/gmouse.h"
 #include "game/graphlib.h"
 #include "game/gsound.h"
+#include "game/kiosk_msgfile.h"
 #include "game/loadsave.h"
 #include "game/message.h"
 #include "game/scripts.h"
@@ -387,6 +388,9 @@ int do_options()
         return -1;
     }
 
+    static MessageListItem mesg;
+    char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
+
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
@@ -414,7 +418,7 @@ int do_options()
                         rc = 1;
                     }
                 }else{
-                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                    dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case KEY_UPPERCASE_L:
@@ -425,7 +429,7 @@ int do_options()
                         rc = 1;
                     }
                 }else{
-                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                    dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case KEY_UPPERCASE_P:
