@@ -7,6 +7,7 @@
 #include "game/chardump.h"
 #include "game/game.h"
 #include "game/gkioskconf.h"
+#include "game/gmouse.h"
 #include "game/kiosk_msgfile.h"
 #include "game/object.h"
 #include "game/tile.h"
@@ -37,7 +38,7 @@ int timer_att_3 = 0;
 
 int inactive_death(int a1, int a2, int a3)
 {
-    death_cause = "AFK";
+    death_cause = getmsg(&kiosk_msgfile, &kmsg, 1224);
     char_dump();
     main_show_death_scene = 1;
     game_user_wants_to_quit = 2;
@@ -73,8 +74,11 @@ int inactive_attention(int a1, int a2, int a3)
     tm = getmsg(&kiosk_msgfile, &kmsg, index);
     strcpy(msg, tm);
 
+    int oldCursor = gmouse_get_cursor();
+    gmouse_set_cursor(MOUSE_CURSOR_ARROW);
     const char* a[] = {  dm };
     dialog_out(msg, a, 1, 169, 116, colorTable[32328], NULL, colorTable[32328], DIALOG_BOX_LARGE);
+    gmouse_set_cursor(oldCursor);
 
     return 0;
 }

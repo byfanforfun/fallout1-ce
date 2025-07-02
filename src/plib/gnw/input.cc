@@ -14,6 +14,7 @@
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
+#include "plib/gnw/timer.h"
 #include "plib/gnw/touch.h"
 #include "plib/gnw/vcr.h"
 #include "plib/gnw/winmain.h"
@@ -1093,6 +1094,8 @@ void GNW95_process_message()
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
+            timer_reset();
+            break;
         case SDL_MOUSEWHEEL:
             handleMouseEvent(&e);
             break;
