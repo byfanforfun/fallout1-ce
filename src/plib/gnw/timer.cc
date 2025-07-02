@@ -45,9 +45,9 @@ void timer_stop()
 
 void timer_tick()
 {
-    if(1 > timer_started){return;}
-
     current_time = compat_timeGetTime();
+    
+    if(1 > timer_started){return;}
 
     timer_call tc;
     for(int i = 0; TIMERS_MAX > i; ++i){
