@@ -21,6 +21,17 @@ namespace fallout {
 #define EDITOR_GRAPHIC_BIG_NUMBERS 0
 #define EDITOR_GRAPHIC_COUNT 50
 
+#define HOF_MSG_NUM 1200
+#define HOF_MSG_NAME 1201
+#define HOF_MSG_LEVEL 1202
+#define HOF_MSG_EXP 1203
+#define HOF_MSG_CHIP 1204
+#define HOF_MSG_CATH 1205
+#define HOF_MSG_MASTER 1206
+#define HOF_MSG_DC 1207
+#define HOF_MSG_YES 1210
+#define HOF_MSG_NO 1211
+
 typedef enum {
     HOF_SORT_RANK,
     HOF_SORT_NAME,
@@ -58,7 +69,7 @@ typedef struct HallOfFameWindow {
     int column_buttons[HOF_MAX_RAWS]; // ID кнопок для сортировки
 } HallOfFameWindow;
 
-void game_handle_hof();
+int game_handle_hof();
 
 }
 
