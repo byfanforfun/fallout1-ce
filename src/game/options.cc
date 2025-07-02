@@ -17,6 +17,7 @@
 #include "game/gmouse.h"
 #include "game/graphlib.h"
 #include "game/gsound.h"
+#include "game/kiosk_msgfile.h"
 #include "game/loadsave.h"
 #include "game/message.h"
 #include "game/scripts.h"
@@ -435,7 +436,9 @@ int do_options()
                 if(gconfig_options_allowed > 0){
                     showPreferences = true;
                 }else{
-                    dialog_out("Not available in kiosk mode", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                    static MessageListItem mesg;
+                    char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
+                    dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case KEY_PLUS:
