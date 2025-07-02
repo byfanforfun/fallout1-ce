@@ -7,6 +7,7 @@
 #include "game/chardump.h"
 #include "game/game.h"
 #include "game/gkioskconf.h"
+#include "game/gmouse.h"
 #include "game/kiosk_msgfile.h"
 #include "game/object.h"
 #include "game/tile.h"
@@ -73,8 +74,11 @@ int inactive_attention(int a1, int a2, int a3)
     tm = getmsg(&kiosk_msgfile, &kmsg, index);
     strcpy(msg, tm);
 
+    int oldCursor = gmouse_get_cursor();
+    gmouse_set_cursor(MOUSE_CURSOR_ARROW);
     const char* a[] = {  dm };
     dialog_out(msg, a, 1, 169, 116, colorTable[32328], NULL, colorTable[32328], DIALOG_BOX_LARGE);
+    gmouse_set_cursor(oldCursor);
 
     return 0;
 }
