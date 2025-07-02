@@ -132,6 +132,9 @@ int gnw_main(int argc, char** argv)
                 gmovie_play(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
                 break;
             case MAIN_MENU_NEW_GAME:
+                timer_reset();
+                timer_start();
+
                 main_menu_hide(true);
                 main_menu_destroy();
 
@@ -348,9 +351,6 @@ static void main_game_loop()
     if (cursorWasHidden) {
         mouse_show();
     }
-
-    timer_start();
-    timer_reset();
 
     main_game_paused = 0;
 
