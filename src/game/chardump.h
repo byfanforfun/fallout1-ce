@@ -17,6 +17,7 @@ namespace fallout {
 
 #define CHAR_CONFIG_CHAR_KEY	            "char"
 #define CHAR_CONFIG_CHAR_NAME_KEY           "name"
+#define CHAR_CONFIG_CHAR_SEX_KEY            "sex"
 #define CHAR_CONFIG_CHAR_STATUS_KEY         "status"
 #define CHAR_CONFIG_CHAR_KARMA_KEY          "karma"
 #define CHAR_CONFIG_CHAR_LVL_KEY            "level"
