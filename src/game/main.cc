@@ -133,7 +133,6 @@ int gnw_main(int argc, char** argv)
                 gmovie_play(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
                 break;
             case MAIN_MENU_NEW_GAME:
-                timer_reset();
                 timer_start();
 
                 main_menu_hide(true);
@@ -178,6 +177,8 @@ int gnw_main(int argc, char** argv)
 
                 break;
             case MAIN_MENU_LOAD_GAME:
+                timer_start();
+
                 if (gconfig_saveload_allowed > 0) {
                     int win = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                     main_menu_hide(true);
@@ -222,6 +223,7 @@ int gnw_main(int argc, char** argv)
                     //char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
                     //dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
+
                 break;
             case MAIN_MENU_TIMEOUT:
                 debug_printf("Main menu timed-out\n");
