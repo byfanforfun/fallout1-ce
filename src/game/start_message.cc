@@ -425,8 +425,6 @@ int start_message_msg_load()
 
 static void start_message_exit()
 {
-    message_exit(&kiosk_msgfile);
-
     if(start_message_window_id != -1) {
 
         if (next_button != -1) {
