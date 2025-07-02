@@ -14,6 +14,7 @@
 #include "game/gmovie.h"
 #include "game/inventry.h"
 #include "game/item.h"
+#include "game/kiosk_msgfile.h"
 #include "game/object.h"
 #include "game/perk.h"
 #include "game/proto_types.h"
@@ -36,6 +37,7 @@ int char_dir_create()
 int char_dump()
 {
     Config char_config;
+    static MessageListItem mesg;
 
     const char* char_name = critter_name(obj_dude);
     char file_name[COMPAT_MAX_PATH];
@@ -61,17 +63,18 @@ int char_dump()
     if(gvar_value > 1)
         config_set_value(&char_config, CHAR_CONFIG_QUEST_KEY, CHAR_CONFIG_QUEST_FOUND_CHIP_KEY, 1);
 
+
     gvar_value = game_get_global_var(GVAR_VAULT_WATER);
     //gmovie defined global variable
     if(1 >= gvar_value || dude_end_story_status == 1)
-        death_cause = "vault has died without water";
+        death_cause = getmsg(&kiosk_msgfile, &mesg, 1220);
 
     if(dude_end_story_status == 2)
-        death_cause = "goes to the wasteland";
+        death_cause = getmsg(&kiosk_msgfile, &mesg, 1221);
 
     if(dude_end_story_status == 3){
         config_set_value(&char_config, CHAR_CONFIG_QUEST_KEY, CHAR_CONFIG_QUEST_JOIN_MASTER_KEY, 1);
-        death_cause = "join Master's army";
+        death_cause = getmsg(&kiosk_msgfile, &mesg, 1222);
     }
 
     //char
@@ -158,7 +161,6 @@ int char_dump()
     char buffer[CHAR_MAX_PERKS];
 
     static MessageList editor_message_file;
-    static MessageListItem mesg;
     char path[COMPAT_MAX_PATH];
 
     memset(&names[0], 0, sizeof(names));
