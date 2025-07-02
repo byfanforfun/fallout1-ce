@@ -11,6 +11,7 @@
 #include "game/game.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/kiosk_msgfile.h"
 #include "game/map.h"
 #include "game/message.h"
 #include "game/object.h"
@@ -1156,11 +1157,18 @@ int critter_set_who_hit_me(Object* critter, Object* who_hit_me)
 
     critter->data.critter.combat.whoHitMe = who_hit_me;
 
+    static MessageListItem mesg;
+
     if (who_hit_me == obj_dude) {
         reaction_set(critter, 1);
-    }
+        death_cause = getmsg(&kiosk_msgfile, &mesg, 1213);
+    } else {
+        char* killer_msg = getmsg(&kiosk_msgfile, &mesg, 1212);
+        char killer[255];
 
-    death_cause = critter_name(who_hit_me);
+        snprintf(killer, 255, killer_msg, critter_name(who_hit_me));
+        strcpy(death_cause, killer);
+    }
 
     return 0;
 }
