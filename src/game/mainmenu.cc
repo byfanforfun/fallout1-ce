@@ -17,6 +17,7 @@
 #include "plib/gnw/input.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
+#include "plib/gnw/timer.h"
 
 namespace fallout {
 
@@ -318,6 +319,7 @@ unsigned int main_menu_get_timeout()
 // 0x47341C
 int main_menu_loop()
 {
+    timer_stop();
     in_main_menu = true;
 
     bool oldCursorIsHidden = mouse_hidden();
@@ -391,6 +393,7 @@ int main_menu_loop()
     }
 
     in_main_menu = false;
+    timer_reset();
 
     return rc;
 }
