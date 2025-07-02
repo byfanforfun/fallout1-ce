@@ -455,6 +455,9 @@ int game_handle_input(int eventCode, bool isInCombatMode)
         dialogue_system_enter();
     }
 
+    static MessageListItem mesg;
+    char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1216);
+
     if (eventCode == -1) {
         if ((mouse_get_buttons() & MOUSE_EVENT_WHEEL) != 0) {
             int wheelX;
@@ -847,7 +850,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 debug_printf("\n ** Error calling SaveGame()! **\n");
             }
         }else{
-            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_CTRL_L:
@@ -858,7 +861,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 debug_printf("\n ** Error calling LoadGame()! **\n");
             }
         }else{
-            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_F6:
@@ -875,7 +878,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 display_print(msg);
             }
         }else{
-            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_F7:
@@ -892,7 +895,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 display_print(msg);
             }
         }else{
-            dialog_out("Good try!", 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
         }
         break;
     case KEY_CTRL_V:
