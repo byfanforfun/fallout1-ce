@@ -166,6 +166,9 @@ int char_dump()
         snprintf(path, sizeof(path), "%s%s", msg_path, "editor.msg");
 
         if (message_load(&editor_message_file, path)) {
+            char *t_sex = getmsg(&editor_message_file, &mesg, 107 + stat_level(obj_dude, STAT_GENDER));
+            config_set_string(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_SEX_KEY, t_sex);
+
             for(int index = 0; index < 9; index++) {
                 if (game_get_global_var(karma_var_table[index]) > 0) {
                     t_name = getmsg(&editor_message_file, &mesg, 1001 + index);
