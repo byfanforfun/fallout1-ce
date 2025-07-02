@@ -5,16 +5,19 @@
 #include <string.h>
 
 #include "game/actions.h"
+#include "game/bmpdlog.h"
 #include "game/combat.h"
 #include "game/combatai.h"
 #include "game/critter.h"
 #include "game/cycle.h"
 #include "game/display.h"
 #include "game/game.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/kiosk_msgfile.h"
 #include "game/lip_sync.h"
 #include "game/message.h"
 #include "game/object.h"
@@ -1265,6 +1268,9 @@ static int gDialogProcess()
         }
     }
 
+    static MessageListItem mesg;
+    char* exit_msg_key_0 = getmsg(&kiosk_msgfile, &mesg, 1217);
+
     gdReenterLevel += 1;
 
     gDialogProcessUpdate();
@@ -1371,6 +1377,8 @@ static int gDialogProcess()
                 gDialogProcessHighlight(keyCode - 1200);
             } else if (keyCode >= 1300 && keyCode <= 1330) {
                 gDialogProcessUnHighlight(keyCode - 1300);
+            } else if (gconfig_dialog_exit_0_allowed == 0 && keyCode == 48) {
+                dialog_out(exit_msg_key_0, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
             } else if (keyCode >= 48 && keyCode <= 57) {
                 int option = keyCode - 49;
                 if (option < gdNumOptions) {
