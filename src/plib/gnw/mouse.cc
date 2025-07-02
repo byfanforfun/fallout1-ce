@@ -633,8 +633,6 @@ void mouse_simulate_input(int delta_x, int delta_y, int buttons)
 
         raw_x = mouse_x;
         raw_y = mouse_y;
-
-        timer_reset();
     }
 }
 
