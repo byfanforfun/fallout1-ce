@@ -38,7 +38,7 @@ int timer_att_3 = 0;
 
 int inactive_death(int a1, int a2, int a3)
 {
-    death_cause = "AFK";
+    death_cause = getmsg(&kiosk_msgfile, &kmsg, 1224);
     char_dump();
     main_show_death_scene = 1;
     game_user_wants_to_quit = 2;
