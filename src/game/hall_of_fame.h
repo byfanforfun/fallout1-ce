@@ -5,13 +5,13 @@ namespace fallout {
 
 #define HOF_STAR_SIGN "★"
 #define HOF_MAX_PAGES 99
-#define HOF_ENTRIES_PER_PAGE 18
+#define HOF_ENTRIES_PER_PAGE 13
 #define HOF_MAX_ENTRIES HOF_MAX_PAGES * HOF_ENTRIES_PER_PAGE
 #define HOF_MAX_RAWS 8
-#define HOF_LINE_OFFSET 50
+#define HOF_LINE_OFFSET 25
 
-#define HOF_WINDOW_WIDTH 800
-#define HOF_WINDOW_HEIGHT 600
+#define HOF_WINDOW_WIDTH 640
+#define HOF_WINDOW_HEIGHT 480
 
 #define ANIMATE 0x01
 #define RED_NUMBERS 0x02
@@ -23,6 +23,7 @@ namespace fallout {
 
 #define HOF_MSG_NUM 1200
 #define HOF_MSG_NAME 1201
+#define HOF_MSG_SEX 1208
 #define HOF_MSG_LEVEL 1202
 #define HOF_MSG_EXP 1203
 #define HOF_MSG_CHIP 1204
@@ -35,6 +36,7 @@ namespace fallout {
 typedef enum {
     HOF_SORT_RANK,
     HOF_SORT_NAME,
+    HOF_SORT_SEX,
     HOF_SORT_LEVEL,
     HOF_SORT_EXP,
     HOF_SORT_WATER_CHIP,
@@ -46,6 +48,7 @@ typedef enum {
 
 typedef struct HallOfFameEntry {
     char name[32];
+    char sex[8];
     int level;
     int exp;
     bool water_chip_found;
