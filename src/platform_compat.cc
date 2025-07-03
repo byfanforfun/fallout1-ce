@@ -371,4 +371,14 @@ long getFileSize(FILE* stream)
     return filesize;
 }
 
+int compat_exec(const char* cmd)
+{
+#ifdef _WIN32
+    //not impliment
+#else
+    system(cmd);
+#endif //_WIN32
+    return 0;
+}
+
 } // namespace fallout
