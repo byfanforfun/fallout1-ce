@@ -77,6 +77,9 @@ namespace fallout {
 
 int char_dir_create();
 int char_dump();
+unsigned int get_last_char_hash();
+unsigned int set_last_char_hash(unsigned int hash);
+unsigned int flush_last_char_hash();
 }
 
 #endif /* FALLOUT_GAME_CHARDUMP_H_ */

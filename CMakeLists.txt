@@ -252,6 +252,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/gnw.h"
     "src/plib/gnw/intrface.cc"
     "src/plib/gnw/intrface.h"
+    "src/plib/gnw/hash_fnv-1a.cc"
+    "src/plib/gnw/hash_fnv-1a.h"
     "src/plib/gnw/kb.cc"
     "src/plib/gnw/kb.h"
     "src/plib/gnw/memory.cc"
