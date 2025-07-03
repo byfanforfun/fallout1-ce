@@ -49,6 +49,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/intrface.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -105,6 +106,7 @@ int gnw_main(int argc, char** argv)
         return 1;
     }
 
+    bind_init();
     char_dir_create();
 
     gmovie_play(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
