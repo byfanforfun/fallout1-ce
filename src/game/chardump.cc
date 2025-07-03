@@ -24,6 +24,7 @@
 #include "game/trait.h"
 
 #include "plib/gnw/hash_fnv-1a.h"
+#include "plib/gnw/system_exec.h"
 
 namespace fallout {
 
@@ -54,6 +55,9 @@ int char_dir_create()
 
 int char_dump()
 {
+    int l[2] = {0, 1};
+    system_exec(l);
+
     Config char_config;
     static MessageListItem mesg;
 
