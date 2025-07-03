@@ -71,6 +71,7 @@ static unsigned char* bignum;
 
 static char* messageItemNum;
 static char* messageItemName;
+static char* messageItemSex;
 static char* messageItemLevel;
 static char* messageItemExp;
 static char* messageItemChip;
@@ -250,6 +251,7 @@ int hof_msg_load()
 
     messageItemNum = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NUM);
     messageItemName = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NAME);
+    messageItemSex = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_SEX);
     messageItemLevel = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_LEVEL);
     messageItemExp = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_EXP);
     messageItemChip = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_CHIP);
@@ -323,6 +325,9 @@ void hof_process_file(const char* path, int index) {
             char *str;
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_NAME_KEY, &str);
             memcpy(&entry->name, str, strlen(str)*sizeof(char));
+
+            config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_SEX_KEY, &str);
+            memcpy(&entry->sex, str, strlen(str)*sizeof(char));
 
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_KILLER_KEY, &str);
             memcpy(&entry->death_cause, str, strlen(str)*sizeof(char));
@@ -426,6 +431,10 @@ static int hof_compare_entries(const void* a, const void* b) {
         result = strcmp(entry_a->name, entry_b->name);
         break;
 
+    case HOF_SORT_SEX:
+        result = strcmp(entry_a->sex, entry_b->sex);
+        break;
+
     case HOF_SORT_LEVEL:
         result = entry_a->level - entry_b->level;
         break;
@@ -505,11 +514,11 @@ void hof_redraw() {
     hof_draw_back();
 
     // Заголовки столбцов
-    const char* headers[] = {messageItemNum, messageItemName, messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
-    int columns[] = {20, 50, 150, 175, 230, 280, 330, 385};
-    int column_widths[] = {15, 45, 50, 50, 30, 30, 30, 120};
+    const char* headers[] = {messageItemNum, messageItemName, messageItemSex,messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
+    int columns[] = {20, 50, 155, 195, 225, 275, 325, 375, 430};
+    int column_widths[] = {15, 45, 30, 50, 50, 30, 30, 30, 120};
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         // Текст заголовка
         text_to_buf(
             buf + width * 50 + columns[i] + base_offset,
@@ -589,9 +598,18 @@ void hof_redraw() {
             colorTable[14723]
         );
 
-        // Уровень
+        // Пол
         text_to_buf(
             buf + width * y + columns[2] + base_offset,
+            entry->sex,
+            width,
+            width,
+            colorTable[14723]
+        );
+
+        // Уровень
+        text_to_buf(
+            buf + width * y + columns[3] + base_offset,
             lvl,
             width,
             width,
@@ -600,7 +618,7 @@ void hof_redraw() {
 
         // Опыт
         text_to_buf(
-            buf + width * y + columns[3] + base_offset,
+            buf + width * y + columns[4] + base_offset,
             exp,
             width,
             width,
@@ -609,7 +627,7 @@ void hof_redraw() {
 
         // Водный чип
         text_to_buf(
-            buf + width * y + columns[4] + base_offset,
+            buf + width * y + columns[5] + base_offset,
             entry->water_chip_found ? messageItemYes : messageItemNo,
             width,
             width,
@@ -618,7 +636,7 @@ void hof_redraw() {
 
         // Собор
         text_to_buf(
-            buf + width * y + columns[5] + base_offset,
+            buf + width * y + columns[6] + base_offset,
             entry->cathedral_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
@@ -627,7 +645,7 @@ void hof_redraw() {
 
         // Мастер
         text_to_buf(
-            buf + width * y + columns[6] + base_offset,
+            buf + width * y + columns[7] + base_offset,
             entry->master_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
@@ -636,7 +654,7 @@ void hof_redraw() {
 
         // Причина смерти
         text_to_buf(
-            buf + width * y + columns[7] + base_offset,
+            buf + width * y + columns[8] + base_offset,
             entry->death_cause,
             width,
             width,
