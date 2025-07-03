@@ -162,6 +162,21 @@ Example:
 43=32
 23=22
 ```
+
+Exec config `kiosk_exec.cfg`
+**BEWARE! Lines will be system executed!**
+```
+[exec]
+LINE_NUM=CMD
+```
+
+Example:
+```
+[exec]
+0=touch /tmp/approach-apocalipse
+```
+
+Max 8 lines
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
