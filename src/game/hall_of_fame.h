@@ -7,7 +7,7 @@ namespace fallout {
 #define HOF_MAX_PAGES 99
 #define HOF_ENTRIES_PER_PAGE 13
 #define HOF_MAX_ENTRIES HOF_MAX_PAGES * HOF_ENTRIES_PER_PAGE
-#define HOF_MAX_RAWS 8
+#define HOF_MAX_RAWS 9
 #define HOF_LINE_OFFSET 25
 
 #define HOF_WINDOW_WIDTH 640
@@ -60,6 +60,7 @@ typedef struct HallOfFameEntry {
     int minutes;
     int victory_score;
     int permanent_rank;
+    unsigned int hash;
 } HallOfFameEntry;
 
 typedef struct HallOfFameWindow {
