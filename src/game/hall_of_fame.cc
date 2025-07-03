@@ -18,6 +18,7 @@
 
 #include "plib/gnw/button.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/hash_fnv-1a.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/text.h"
 #include "plib/gnw/svga.h"
@@ -46,6 +47,7 @@ static void hof_perform_sort();
 int button_init();
 void PrintBigNum(int x, int y, int flags, int value, int previousValue, int windowHandle);
 static int hof_msg_load();
+unsigned int hof_hash_path(const char* path);
 
 static Size GInfoBigNum;
 
@@ -113,6 +115,8 @@ int game_handle_hof() {
         renderPresent();
         sharedFpsLimiter.throttle();
     }
+
+    flush_last_char_hash();
 
     return 0;
 }
@@ -311,10 +315,22 @@ void hof_load_entries() {
     hof_window.sort_ascending = false;
     hof_perform_sort();
 
+    int last_char_page = 0;
+    unsigned int last_char_hash = get_last_char_hash();
+
     // Фиксируем ранги после первоначальной сортировки
     for (int i = 0; i < hof_window.num_entries; i++) {
         hof_window.entries[i].permanent_rank = i + 1;
+        if(last_char_hash == hof_window.entries[i].hash)
+            last_char_page = (i+1) / HOF_ENTRIES_PER_PAGE;
     }
+
+    if(last_char_page != 0)
+        hof_window.current_page = last_char_page;
+}
+
+unsigned int hof_hash_path(const char* path) {
+    return fnv1a_hash(path, strlen(path));
 }
 
 void hof_process_file(const char* path, int index) {
@@ -344,6 +360,8 @@ void hof_process_file(const char* path, int index) {
             config_get_value(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_LIFETIME_KEY, &entry->minutes);
 
             hof_increase_vic_point(entry);
+
+            entry->hash = hof_hash_path(path);
         }
 
         config_exit(&hof_config);
@@ -518,7 +536,7 @@ void hof_redraw() {
     int columns[] = {20, 50, 155, 195, 225, 275, 325, 375, 430};
     int column_widths[] = {15, 45, 30, 30, 50, 30, 30, 30, 120};
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < HOF_MAX_RAWS; i++) {
         // Текст заголовка
         text_to_buf(
             buf + width * 50 + columns[i] + base_offset,
@@ -561,6 +579,7 @@ void hof_redraw() {
     int start = hof_window.current_page * HOF_ENTRIES_PER_PAGE;
     char lvl[2];
     char exp[6];
+    unsigned int last_char_hash = get_last_char_hash();
 
     for (int i = 0; i < HOF_ENTRIES_PER_PAGE; i++) {
         int entry_idx = start + i;
@@ -586,7 +605,7 @@ void hof_redraw() {
             num_buf,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Имя
@@ -595,7 +614,7 @@ void hof_redraw() {
             entry->name,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Пол
@@ -604,7 +623,7 @@ void hof_redraw() {
             entry->sex,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Уровень
@@ -613,7 +632,7 @@ void hof_redraw() {
             lvl,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Опыт
@@ -622,7 +641,7 @@ void hof_redraw() {
             exp,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Водный чип
@@ -658,7 +677,7 @@ void hof_redraw() {
             entry->death_cause,
             width,
             width,
-            colorTable[14723]
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
         );
 
         // Звезда для победителей
@@ -686,7 +705,7 @@ void hof_redraw() {
 
 // ================== ОБРАБОТКА ВВОДА ==================
 void hof_column_click(int btn_id, int key_code) {
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < HOF_MAX_RAWS; i++) {
         if (hof_window.column_buttons[i] == btn_id) {
             if (hof_window.sort_column == i) {
                 hof_window.sort_ascending = !hof_window.sort_ascending;
@@ -899,7 +918,7 @@ void hof_destroy_window() {
     palette_fade_to(black_palette);
 
     if (hof_window.window_id != -1) {
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < HOF_MAX_RAWS; i++) {
             if (hof_window.column_buttons[i] != -1) {
                 win_delete_button(hof_window.column_buttons[i]);
             }
