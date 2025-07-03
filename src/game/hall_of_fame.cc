@@ -120,7 +120,7 @@ int game_handle_hof() {
 int hof_init() {
     memset(&hof_window, 0, sizeof(HallOfFameWindow));
     hof_window.window_id = -1;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         hof_window.column_buttons[i] = -1;
     }
     hof_window.sort_column = HOF_SORT_RANK;
@@ -516,7 +516,7 @@ void hof_redraw() {
     // Заголовки столбцов
     const char* headers[] = {messageItemNum, messageItemName, messageItemSex,messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
     int columns[] = {20, 50, 155, 195, 225, 275, 325, 375, 430};
-    int column_widths[] = {15, 45, 30, 50, 50, 30, 30, 30, 120};
+    int column_widths[] = {15, 45, 30, 30, 50, 30, 30, 30, 120};
 
     for (int i = 0; i < 9; i++) {
         // Текст заголовка
@@ -686,7 +686,7 @@ void hof_redraw() {
 
 // ================== ОБРАБОТКА ВВОДА ==================
 void hof_column_click(int btn_id, int key_code) {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         if (hof_window.column_buttons[i] == btn_id) {
             if (hof_window.sort_column == i) {
                 hof_window.sort_ascending = !hof_window.sort_ascending;
@@ -899,7 +899,7 @@ void hof_destroy_window() {
     palette_fade_to(black_palette);
 
     if (hof_window.window_id != -1) {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 9; i++) {
             if (hof_window.column_buttons[i] != -1) {
                 win_delete_button(hof_window.column_buttons[i]);
             }
