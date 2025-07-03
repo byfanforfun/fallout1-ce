@@ -71,6 +71,7 @@ static unsigned char* bignum;
 
 static char* messageItemNum;
 static char* messageItemName;
+static char* messageItemSex;
 static char* messageItemLevel;
 static char* messageItemExp;
 static char* messageItemChip;
@@ -159,8 +160,8 @@ int button_init() {
     }
 
     next_button = win_register_button(hof_window.window_id,
-        165,
-        HOF_WINDOW_HEIGHT-35,
+        146,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -190,8 +191,8 @@ int button_init() {
     }
 
     prev_button = win_register_button(hof_window.window_id,
-        260,
-        HOF_WINDOW_HEIGHT-35,
+        239,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -221,8 +222,8 @@ int button_init() {
     }
 
     back_button = win_register_button(hof_window.window_id,
-        606,
-        HOF_WINDOW_HEIGHT-35,
+        530,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -250,6 +251,7 @@ int hof_msg_load()
 
     messageItemNum = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NUM);
     messageItemName = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_NAME);
+    messageItemSex = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_SEX);
     messageItemLevel = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_LEVEL);
     messageItemExp = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_EXP);
     messageItemChip = getmsg(&kiosk_msgfile, &mesg, HOF_MSG_CHIP);
@@ -323,6 +325,9 @@ void hof_process_file(const char* path, int index) {
             char *str;
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_NAME_KEY, &str);
             memcpy(&entry->name, str, strlen(str)*sizeof(char));
+
+            config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_SEX_KEY, &str);
+            memcpy(&entry->sex, str, strlen(str)*sizeof(char));
 
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_KILLER_KEY, &str);
             memcpy(&entry->death_cause, str, strlen(str)*sizeof(char));
@@ -426,6 +431,10 @@ static int hof_compare_entries(const void* a, const void* b) {
         result = strcmp(entry_a->name, entry_b->name);
         break;
 
+    case HOF_SORT_SEX:
+        result = strcmp(entry_a->sex, entry_b->sex);
+        break;
+
     case HOF_SORT_LEVEL:
         result = entry_a->level - entry_b->level;
         break;
@@ -505,11 +514,11 @@ void hof_redraw() {
     hof_draw_back();
 
     // Заголовки столбцов
-    const char* headers[] = {messageItemNum, messageItemName, messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
-    int columns[] = {20, 70, 220, 270, 320, 400, 480, 560};
-    int column_widths[] = {30, 150, 50, 50, 80, 80, 80, 120};
+    const char* headers[] = {messageItemNum, messageItemName, messageItemSex,messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
+    int columns[] = {20, 50, 155, 195, 225, 275, 325, 375, 430};
+    int column_widths[] = {15, 45, 30, 50, 50, 30, 30, 30, 120};
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         // Текст заголовка
         text_to_buf(
             buf + width * 50 + columns[i] + base_offset,
@@ -521,7 +530,8 @@ void hof_redraw() {
 
         // Индикатор сортировки
         if (hof_window.sort_column == i) {
-            const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
+            //const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
+            const char* arrow = "";
             text_to_buf(
                 buf + width * 50 + columns[i] + column_widths[i] - 15 + base_offset,
                 arrow,
@@ -588,9 +598,18 @@ void hof_redraw() {
             colorTable[14723]
         );
 
-        // Уровень
+        // Пол
         text_to_buf(
             buf + width * y + columns[2] + base_offset,
+            entry->sex,
+            width,
+            width,
+            colorTable[14723]
+        );
+
+        // Уровень
+        text_to_buf(
+            buf + width * y + columns[3] + base_offset,
             lvl,
             width,
             width,
@@ -599,7 +618,7 @@ void hof_redraw() {
 
         // Опыт
         text_to_buf(
-            buf + width * y + columns[3] + base_offset,
+            buf + width * y + columns[4] + base_offset,
             exp,
             width,
             width,
@@ -608,7 +627,7 @@ void hof_redraw() {
 
         // Водный чип
         text_to_buf(
-            buf + width * y + columns[4] + base_offset,
+            buf + width * y + columns[5] + base_offset,
             entry->water_chip_found ? messageItemYes : messageItemNo,
             width,
             width,
@@ -617,7 +636,7 @@ void hof_redraw() {
 
         // Собор
         text_to_buf(
-            buf + width * y + columns[5] + base_offset,
+            buf + width * y + columns[6] + base_offset,
             entry->cathedral_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
@@ -626,7 +645,7 @@ void hof_redraw() {
 
         // Мастер
         text_to_buf(
-            buf + width * y + columns[6] + base_offset,
+            buf + width * y + columns[7] + base_offset,
             entry->master_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
@@ -635,7 +654,7 @@ void hof_redraw() {
 
         // Причина смерти
         text_to_buf(
-            buf + width * y + columns[7] + base_offset,
+            buf + width * y + columns[8] + base_offset,
             entry->death_cause,
             width,
             width,
@@ -660,7 +679,7 @@ void hof_redraw() {
     // Пагинация
     char page_str[32];
 
-    PrintBigNum(205, height-38, ANIMATE, hof_window.current_page+1, old_page+1, hof_window.window_id);
+    PrintBigNum(185, height-38, ANIMATE, hof_window.current_page+1, old_page+1, hof_window.window_id);
 
     win_draw(hof_window.window_id);
 }
