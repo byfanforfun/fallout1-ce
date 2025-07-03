@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "game/art.h"
+#include "game/chardump.h"
 #include "game/game.h"
 #include "game/gsound.h"
 #include "game/options.h"
@@ -318,6 +319,9 @@ unsigned int main_menu_get_timeout()
 // 0x47341C
 int main_menu_loop()
 {
+    if(get_last_char_hash() != 0)
+        return MAIN_MENU_LOAD_GAME;
+
     in_main_menu = true;
 
     bool oldCursorIsHidden = mouse_hidden();
