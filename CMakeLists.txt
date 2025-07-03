@@ -247,6 +247,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/grbuf.h"
     "src/plib/gnw/input.cc"
     "src/plib/gnw/input.h"
+    "src/plib/gnw/input_rebind.cc"
+    "src/plib/gnw/input_rebind.h"
     "src/plib/gnw/gnw_types.h"
     "src/plib/gnw/gnw.cc"
     "src/plib/gnw/gnw.h"
