@@ -23,7 +23,25 @@
 #include "game/stat.h"
 #include "game/trait.h"
 
+#include "plib/gnw/hash_fnv-1a.h"
+
 namespace fallout {
+
+unsigned int last_char_hash = 0;
+
+unsigned int get_last_char_hash() {
+    return last_char_hash;
+}
+
+unsigned int set_last_char_hash(unsigned int hash) {
+    last_char_hash = hash;
+    return last_char_hash;
+}
+
+unsigned int flush_last_char_hash() {
+    set_last_char_hash(0);
+    return last_char_hash;
+}
 
 int char_dir_create()
 {
@@ -47,6 +65,8 @@ int char_dump()
     if (!config_init(&char_config)) {
         return -1;
     }
+
+    set_last_char_hash(fnv1a_hash(file_name, strlen(file_name)));
 
     //quests
     int gvar_value = 0;
