@@ -159,8 +159,8 @@ int button_init() {
     }
 
     next_button = win_register_button(hof_window.window_id,
-        165,
-        HOF_WINDOW_HEIGHT-35,
+        146,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -190,8 +190,8 @@ int button_init() {
     }
 
     prev_button = win_register_button(hof_window.window_id,
-        260,
-        HOF_WINDOW_HEIGHT-35,
+        239,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -221,8 +221,8 @@ int button_init() {
     }
 
     back_button = win_register_button(hof_window.window_id,
-        606,
-        HOF_WINDOW_HEIGHT-35,
+        530,
+        HOF_WINDOW_HEIGHT-34,
         15,
         16,
         -1,
@@ -506,8 +506,8 @@ void hof_redraw() {
 
     // Заголовки столбцов
     const char* headers[] = {messageItemNum, messageItemName, messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
-    int columns[] = {20, 70, 220, 270, 320, 400, 480, 560};
-    int column_widths[] = {30, 150, 50, 50, 80, 80, 80, 120};
+    int columns[] = {20, 50, 150, 175, 230, 280, 330, 385};
+    int column_widths[] = {15, 45, 50, 50, 30, 30, 30, 120};
 
     for (int i = 0; i < 8; i++) {
         // Текст заголовка
@@ -521,7 +521,8 @@ void hof_redraw() {
 
         // Индикатор сортировки
         if (hof_window.sort_column == i) {
-            const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
+            //const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
+            const char* arrow = "";
             text_to_buf(
                 buf + width * 50 + columns[i] + column_widths[i] - 15 + base_offset,
                 arrow,
@@ -660,7 +661,7 @@ void hof_redraw() {
     // Пагинация
     char page_str[32];
 
-    PrintBigNum(205, height-38, ANIMATE, hof_window.current_page+1, old_page+1, hof_window.window_id);
+    PrintBigNum(185, height-38, ANIMATE, hof_window.current_page+1, old_page+1, hof_window.window_id);
 
     win_draw(hof_window.window_id);
 }
