@@ -42,6 +42,7 @@ void compat_windows_path_to_native(char* path);
 void compat_resolve_path(char* path);
 char* compat_strdup(const char* string);
 long getFileSize(FILE* stream);
+int compat_exec(const char* cmd);
 
 } // namespace fallout
 
