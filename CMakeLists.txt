@@ -262,6 +262,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/mouse.h"
     "src/plib/gnw/rect.cc"
     "src/plib/gnw/rect.h"
+    "src/plib/gnw/system_exec.cc"
+    "src/plib/gnw/system_exec.h"
     "src/plib/gnw/svga_types.h"
     "src/plib/gnw/svga.cc"
     "src/plib/gnw/svga.h"
