@@ -55,6 +55,10 @@ int char_dir_create()
 
 int char_dump()
 {
+    int exp = stat_pc_get(PC_STAT_EXPERIENCE);
+    if(exp == 0)
+        return -2;
+
     int l[2] = {0, 1};
     system_exec(l);
 
@@ -104,7 +108,7 @@ int char_dump()
     //char
     config_set_string(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_NAME_KEY, char_name);
     config_set_value(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_LVL_KEY, stat_pc_get(PC_STAT_LEVEL));
-    config_set_value(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_EXP_KEY, stat_pc_get(PC_STAT_EXPERIENCE));
+    config_set_value(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_EXP_KEY, exp);
 
     gvar_value = game_get_global_var(GVAR_PLAYER_REPUATION);
     config_set_value(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_KARMA_KEY, gvar_value);
