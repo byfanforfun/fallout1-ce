@@ -11,6 +11,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/intrface.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -194,6 +195,7 @@ int get_input()
     process_bk();
 
     v3 = get_input_buffer();
+    v3 = get_key(current_screen, v3);
     if (v3 == -1 && mouse_get_buttons() & 0x33) {
         mouse_get_position(&input_mx, &input_my);
         return -2;
