@@ -8,7 +8,7 @@
 namespace fallout {
 
 #define BIND_MAX_BIND 8
-#define BIND_MAX_KEY 256
+#define BIND_MAX_KEY 512
 #define BIND_CONFIG_FILE_NAME "fallout_keys.cfg"
 
 Config bind_config;
