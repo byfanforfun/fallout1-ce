@@ -90,6 +90,9 @@ bool bind_config_exit() {
 }
 
 int get_key(int screen, int key) {
+    if(key < 0)
+        return -1;
+
     if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX) || key > BIND_MAX_KEY)
         return key;
 
