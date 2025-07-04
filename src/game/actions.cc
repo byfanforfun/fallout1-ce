@@ -1033,7 +1033,7 @@ int a_use_obj(Object* a1, Object* a2, Object* a3)
 
     register_begin(anim_request_options);
 
-    if (action_points != -1 || obj_dist(a1, a2) < 5) {
+    if (action_points != -1 || obj_dist(a1, a2) < 5 || is_pc_flag(PC_FLAG_SNEAKING)) {
         register_object_move_to_object(a1, a2, action_points, 0);
     } else {
         register_object_run_to_object(a1, a2, -1, 0);
@@ -1110,7 +1110,7 @@ int action_get_an_object(Object* critter, Object* item)
         register_object_move_to_object(critter, item, critter->data.critter.combat.ap, 0);
     } else {
         register_begin(critter == obj_dude ? ANIMATION_REQUEST_RESERVED : ANIMATION_REQUEST_UNRESERVED);
-        if (obj_dist(critter, item) >= 5) {
+        if (obj_dist(critter, item) >= 5 && !is_pc_flag(PC_FLAG_SNEAKING)) {
             register_object_run_to_object(critter, item, -1, 0);
         } else {
             register_object_move_to_object(critter, item, -1, 0);
@@ -1206,7 +1206,7 @@ int action_loot_container(Object* critter, Object* container)
     } else {
         register_begin(critter == obj_dude ? ANIMATION_REQUEST_RESERVED : ANIMATION_REQUEST_UNRESERVED);
 
-        if (obj_dist(critter, container) < 5) {
+        if (obj_dist(critter, container) < 5 && !is_pc_flag(PC_FLAG_SNEAKING)) {
             register_object_move_to_object(critter, container, -1, 0);
         } else {
             register_object_run_to_object(critter, container, -1, 0);
@@ -1345,7 +1345,7 @@ int action_use_skill_on(Object* a1, Object* a2, int skill)
         }
 
         if (a2 != obj_dude) {
-            if (obj_dist(a1, a2) >= 5) {
+            if (!is_pc_flag(PC_FLAG_SNEAKING) && obj_dist(a1, a2) >= 5) {
                 register_object_run_to_object(a1, a2, -1, 0);
             } else {
                 register_object_move_to_object(a1, a2, -1, 0);
@@ -1822,7 +1822,10 @@ int action_talk_to(Object* a1, Object* a2)
         register_begin(a1 == obj_dude ? ANIMATION_REQUEST_RESERVED : ANIMATION_REQUEST_UNRESERVED);
 
         if (obj_dist(a1, a2) >= 9 || combat_is_shot_blocked(a1, a1->tile, a2->tile, a2, NULL)) {
-            register_object_run_to_object(a1, a2, -1, 0);
+            if(is_pc_flag(PC_FLAG_SNEAKING))
+                register_object_move_to_object(a1, a2, -1, 0);
+            else
+                register_object_run_to_object(a1, a2, -1, 0);
         }
     }
 
