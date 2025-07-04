@@ -380,6 +380,7 @@ static void main_game_loop()
         sharedFpsLimiter.mark();
 
         int keyCode = get_input();
+        current_screen = SCREEN_GAME;
         game_handle_input(keyCode, false);
 
         scripts_check_state();
