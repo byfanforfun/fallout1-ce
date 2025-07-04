@@ -885,6 +885,8 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 
             bool running;
             configGetBool(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_KEY, &running);
+            if(is_pc_flag(PC_FLAG_SNEAKING))
+                running = false;
 
             if (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) {
                 if (running) {
