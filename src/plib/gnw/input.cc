@@ -195,7 +195,6 @@ int get_input()
     process_bk();
 
     v3 = get_input_buffer();
-    v3 = get_key(current_screen, v3);
     if (v3 == -1 && mouse_get_buttons() & 0x33) {
         mouse_get_position(&input_mx, &input_my);
         return -2;
@@ -230,7 +229,7 @@ void process_bk()
         return;
     }
 
-    v1 = kb_getch();
+    v1 = get_key(current_screen, kb_getch());
     if (v1 != -1) {
         GNW_add_input_buffer(v1);
         return;
