@@ -177,6 +177,17 @@ Example:
 ```
 
 Max 8 lines
+
+Key rebind config `fallout_keys.cfg`
+```
+[main]
+[game]
+;set 'a' as 'b'
+97=98 
+[editor]
+[inventory]
+[pip]
+```
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
