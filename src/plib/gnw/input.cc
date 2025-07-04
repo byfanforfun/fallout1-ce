@@ -181,7 +181,7 @@ void GNW_input_exit()
 }
 
 // 0x4B33C8
-int get_input(int screen_num)
+int get_input()
 {
     int v3;
 
