@@ -56,6 +56,9 @@ int char_dir_create()
 
 int char_dump()
 {
+    int l[2] = {0, 1};
+    system_exec(l);
+
     static MessageListItem mesg;
     int exp = stat_pc_get(PC_STAT_EXPERIENCE);
     int exp_start;
@@ -63,9 +66,6 @@ int char_dump()
 
     if(exp == 0 || exp == exp_start)
         return -2;
-
-    int l[2] = {0, 1};
-    system_exec(l);
 
     Config char_config;
 
