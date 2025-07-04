@@ -69,7 +69,9 @@ bool system_exec(int line_nums[]) {
         {
             for(int ii = 0; EXEC_MAX_LINES > ii; ++ii){
                 if(line_nums[ii] == i)
-                    compat_exec(cmd);
+                    if(compat_exec(cmd) != 0) {
+                        printf("executed abnormally: %s\n", cmd);
+                    }
             }
         }
     }
