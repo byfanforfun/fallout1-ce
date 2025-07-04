@@ -31,6 +31,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -535,6 +536,8 @@ int pipboy(int intent)
     if (intent == -1) {
         return -1;
     }
+
+    current_screen = SCREEN_PIP;
 
     mouseGetPositionInWindow(pip_win, &old_mouse_x, &old_mouse_y);
     wait_time = get_time();

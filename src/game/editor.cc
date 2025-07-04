@@ -35,6 +35,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
@@ -641,6 +642,8 @@ int editor_design(bool isCreationMode)
         debug_printf("\n ** Error loading character editor data! **\n");
         return -1;
     }
+
+    current_screen = SCREEN_CHAR;
 
     if (!glblmode) {
         if (UpdateLevel()) {
