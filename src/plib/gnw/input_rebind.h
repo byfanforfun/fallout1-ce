@@ -36,6 +36,9 @@ typedef enum BindSection {
 #define BIND_SECTION_INV     "inv"
 #define BIND_SECTION_PIP     "pip"
 */
+
+extern int current_screen;
+
 bool bind_init();
 int get_key(int screen, int key);
 

@@ -16,6 +16,8 @@ static bool bind_config_initialized = false;
 static char bind_config_file_name[COMPAT_MAX_PATH];
 static int binded_keys[BIND_MAX_BIND][BIND_MAX_KEY];
 
+int current_screen = -1;
+
 constexpr std::array<std::pair<BindSection, const char*>, BindSection(BindSection_max)> BindSectionStrings = {{
     {BindSection::Main, "main"},
     {BindSection::Game, "game"},
