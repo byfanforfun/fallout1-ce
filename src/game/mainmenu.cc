@@ -16,6 +16,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 #include "plib/gnw/timer.h"
@@ -324,6 +325,8 @@ int main_menu_loop()
 
     if(get_last_char_hash() != 0)
         return MAIN_MENU_LOAD_GAME;
+
+    current_screen = SCREEN_MAIN;
     
     in_main_menu = true;
 

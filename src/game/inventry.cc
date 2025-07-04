@@ -42,6 +42,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
@@ -481,6 +482,8 @@ void handle_inventory()
     if (inven_init() == -1) {
         return;
     }
+
+    current_screen = SCREEN_INV;
 
     if (isInCombat()) {
         if (inven_dude == obj_dude) {
