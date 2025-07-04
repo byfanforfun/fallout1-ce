@@ -1,6 +1,8 @@
 #include "platform_compat.h"
 
 #include <string.h>
+#include <thread>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -371,13 +373,15 @@ long getFileSize(FILE* stream)
     return filesize;
 }
 
+void system_execute_cmd(const char* cmd) {
+    std::system(cmd);
+}
+
 int compat_exec(const char* cmd)
 {
-#ifdef _WIN32
-    //not impliment
-#else
-    system(cmd);
-#endif //_WIN32
+    std::thread worker(system_execute_cmd, cmd);
+    worker.detach();
+
     return 0;
 }
 
