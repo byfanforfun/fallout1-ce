@@ -12,6 +12,7 @@
 #include "game/game.h"
 #include "game/game_vars.h"
 #include "game/gmovie.h"
+#include "game/gkioskconf.h"
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/kiosk_msgfile.h"
@@ -55,15 +56,18 @@ int char_dir_create()
 
 int char_dump()
 {
+    static MessageListItem mesg;
     int exp = stat_pc_get(PC_STAT_EXPERIENCE);
-    if(exp == 0)
+    int exp_start;
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
+
+    if(exp == 0 || exp == exp_start)
         return -2;
 
     int l[2] = {0, 1};
     system_exec(l);
 
     Config char_config;
-    static MessageListItem mesg;
 
     const char* char_name = critter_name(obj_dude);
     char file_name[COMPAT_MAX_PATH];
