@@ -8,7 +8,7 @@
 namespace fallout {
 
 #define BIND_MAX_BIND 8
-#define BIND_MAX_KEY 255
+#define BIND_MAX_KEY 256
 #define BIND_CONFIG_FILE_NAME "fallout_keys.cfg"
 
 Config bind_config;
@@ -43,8 +43,8 @@ bool bind_init() {
     char ti[6];
     int key;
     for(int i = BindScreen(SCREEN_MAIN); BindScreen(SCREEN_MAX) >= i; ++i){
-        for(int ii = 0; BIND_MAX_KEY >= ii; ++ii){
-            snprintf(ti, 6, "%d", i);
+        for(int ii = 1; BIND_MAX_KEY >= ii; ++ii){
+            snprintf(ti, 6, "%d", ii);
             if(config_get_value(&bind_config, BindSectionToString(BindSection(i)), ti, &key)) {
                 binded_keys[i][ii] = key;
             }else{
