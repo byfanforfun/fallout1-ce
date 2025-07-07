@@ -44,8 +44,8 @@ bool bind_init() {
 
     char ti[6];
     int key;
-    for(int i = BindScreen(SCREEN_MAIN); BindScreen(SCREEN_MAX) >= i; ++i){
-        for(int ii = 1; BIND_MAX_KEY >= ii; ++ii){
+    for(int i = BindScreen(SCREEN_MAIN); BindScreen(SCREEN_MAX) > i; ++i){
+        for(int ii = 1; BIND_MAX_KEY > ii; ++ii){
             snprintf(ti, 6, "%d", ii);
             if(config_get_value(&bind_config, BindSectionToString(BindSection(i)), ti, &key)) {
                 binded_keys[i][ii] = key;
@@ -90,10 +90,7 @@ bool bind_config_exit() {
 }
 
 int get_key(int screen, int key) {
-    if(key < 0)
-        return -1;
-
-    if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX) || key > BIND_MAX_KEY)
+    if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX) || key >= BIND_MAX_KEY || 0 > key)
         return key;
 
     if(binded_keys[screen][key] != -1)
