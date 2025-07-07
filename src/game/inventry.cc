@@ -473,6 +473,8 @@ static bool handle_target_inventory_scroll_key(int keyCode, int& offset, Invento
 // 0x462480
 void handle_inventory()
 {
+    current_screen = SCREEN_INV;
+
     if (isInCombat()) {
         if (combat_whose_turn() != inven_dude) {
             return;
@@ -482,8 +484,6 @@ void handle_inventory()
     if (inven_init() == -1) {
         return;
     }
-
-    current_screen = SCREEN_INV;
 
     if (isInCombat()) {
         if (inven_dude == obj_dude) {
