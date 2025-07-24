@@ -66,6 +66,8 @@ namespace fallout {
 
 #define DIALOG_OPTION_ENTRIES_CAPACITY 30
 
+#define DIALOG_TALK_TO_SCROLL_SPEED 33
+
 typedef enum GameDialogReviewWindowButton {
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_SCROLL_UP,
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_SCROLL_DOWN,
@@ -2198,7 +2200,7 @@ static void talk_to_scroll_subwin(int win, int a2, unsigned char* a3, unsigned c
             v9 -= 10 * (GAME_DIALOG_WINDOW_WIDTH);
 
             tick = get_time();
-            while (elapsed_time(tick) < 33) {
+            while (elapsed_time(tick) < DIALOG_TALK_TO_SCROLL_SPEED) {
             }
 
             renderPresent();
@@ -2238,7 +2240,7 @@ static void talk_to_scroll_subwin(int win, int a2, unsigned char* a3, unsigned c
             rect.uly += 10;
 
             tick = get_time();
-            while (elapsed_time(tick) < 33) {
+            while (elapsed_time(tick) < DIALOG_TALK_TO_SCROLL_SPEED) {
             }
 
             renderPresent();
