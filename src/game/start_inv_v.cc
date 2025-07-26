@@ -39,6 +39,7 @@ static int start_process();
 static int start_exit();
 static int create_holder();
 static bool inv_conf_init();
+static bool inv_conf_exit();
 static int inv_destroy();
 static int clear_window(int window);
 
@@ -95,6 +96,7 @@ static int start_exit() {
     item_caps_adjust(obj_dude, -(caps_total));
 
     inv_destroy();
+    inv_conf_exit();
 
     if (cursorWasHidden) {
         mouse_hide();
@@ -155,6 +157,18 @@ static bool inv_conf_init()
     }
 
     inv_conf_initialized = true;
+
+    return true;
+}
+
+static bool inv_conf_exit()
+{
+    if (!inv_conf_initialized) {
+        return false;
+    }
+
+    config_exit(&inv_config);
+    inv_conf_initialized = false;
 
     return true;
 }
