@@ -112,6 +112,8 @@ Here is a couple of current goals. Open up an issue if you have suggestion or fe
 
 ## Kiosk
 
+Use asset files from [fallout1-kiosk-assets](https://github.com/byfanforfun/fallout1-kiosk-assets)
+
 Custom config `kiosk.cfg`
 
 ```
