@@ -225,7 +225,12 @@ int compat_stat(const char* path)
     compat_resolve_path(nativePath);
 
 #ifdef _WIN32
-    return stat(nativePath);
+    WIN32_FILE_ATTRIBUTE_DATA fileData;
+    if (!GetFileAttributesExA(nativePath, GetFileExInfoStandard, &fileData)) {
+        return -1;
+    }
+
+    return 0;
 #else
     struct stat st = {0};
     return stat(nativePath, &st);
