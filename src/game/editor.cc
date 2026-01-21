@@ -5214,9 +5214,12 @@ static int UpdateLevel()
                     sp = 0;
                 }
             }
+//fix SP at multiple level up
+/*
             if (sp > 99) {
                 sp = 99;
             }
+*/
 
             stat_pc_set(PC_STAT_UNSPENT_SKILL_POINTS, sp);
 
