@@ -249,6 +249,7 @@ static int DrawCard2(int frmId, const char* name, const char* rank, char* descri
 static void push_perks();
 static void pop_perks();
 static int PerkCount();
+static int PerkCountLevel();
 static int is_supper_bonus();
 
 // 0x431C40
@@ -5202,6 +5203,13 @@ void editor_reset()
 static int UpdateLevel()
 {
     int level = stat_pc_get(PC_STAT_LEVEL);
+    // NOTE: Uninline.
+    int selectedPerksCount = PerkCount();
+    int progression = 3;
+    if (trait_level(TRAIT_SKILLED)) {
+        progression += 1;
+    }
+
     if (level != last_level && level <= PC_LEVEL_MAX) {
         for (int nextLevel = last_level + 1; nextLevel <= level; nextLevel++) {
             int sp = stat_pc_get(PC_STAT_UNSPENT_SKILL_POINTS);
@@ -5222,21 +5230,16 @@ static int UpdateLevel()
 */
 
             stat_pc_set(PC_STAT_UNSPENT_SKILL_POINTS, sp);
-
-            // NOTE: Uninline.
-            int selectedPerksCount = PerkCount();
-
-            if (selectedPerksCount < 7) {
-                int progression = 3;
-                if (trait_level(TRAIT_SKILLED)) {
-                    progression += 1;
-                }
-
-                if (nextLevel % progression == 0) {
-                    free_perk = 1;
-                }
-            }
         }
+    }
+
+    if (selectedPerksCount < 7) {
+        int progression = 3;
+        if (trait_level(TRAIT_SKILLED)) {
+            progression += 1;
+        }
+
+        free_perk = (level / progression - PerkCountLevel());
     }
 
     if (free_perk != 0) {
@@ -6194,6 +6197,19 @@ static int PerkCount()
                 break;
             }
         }
+    }
+
+    return perkCount;
+}
+
+static int PerkCountLevel()
+{
+    int perk;
+    int perkCount;
+
+    perkCount = 0;
+    for (perk = 0; perk < PERK_COUNT; perk++) {
+        perkCount += perk_level(perk);
     }
 
     return perkCount;
