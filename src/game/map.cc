@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "game/anim.h"
+#include "game/art.h"
 #include "game/automap.h"
 #include "game/combat.h"
 #include "game/critter.h"
@@ -28,6 +29,7 @@
 #include "game/queue.h"
 #include "game/roll.h"
 #include "game/scripts.h"
+#include "game/stat.h"
 #include "game/textobj.h"
 #include "game/tile.h"
 #include "game/worldmap.h"
@@ -269,6 +271,11 @@ int display_win;
 
 static std::vector<void*> map_global_pointers;
 static std::vector<void*> map_local_pointers;
+
+#define LOAD_SCREEN_WINDOW_WIDTH 640
+#define LOAD_SCREEN_WINDOW_HEIGHT 480
+static unsigned char* load_screen_handle;
+static CacheEntry* load_screen_art = INVALID_CACHE_ENTRY;
 
 // 0x4738E8
 int iso_init()
@@ -926,6 +933,51 @@ int map_load_file(DB_FILE* stream)
     map_disable_bk_processes();
     partyMemberPrepLoad();
     gmouse_disable_scrolling();
+    mouse_hide();
+
+    int screenWidth = screenGetWidth();
+    int screenHeight = screenGetHeight();
+
+    int windowLoadScreenX = (screenWidth - LOAD_SCREEN_WINDOW_WIDTH) / 2;
+    int windowLoadScreenY = (screenHeight - LOAD_SCREEN_WINDOW_HEIGHT) / 2;
+
+    int loadscreenBackWin = win_add(0, 0, screenWidth, screenHeight, 0, WINDOW_MODAL);
+    unsigned char* loadscreenBackBuf = win_get_buf(loadscreenBackWin);
+    buf_fill(loadscreenBackBuf, screenWidth, screenHeight, screenWidth, 0);
+    win_draw(loadscreenBackWin);
+
+    int loadscreenWin = win_add(windowLoadScreenX, windowLoadScreenY, LOAD_SCREEN_WINDOW_WIDTH, LOAD_SCREEN_WINDOW_HEIGHT, 0, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    unsigned char* loadscreenBuf = win_get_buf(loadscreenWin);
+
+    int barWidth = 400;
+    int barHeight = 20;
+    int barX = (LOAD_SCREEN_WINDOW_WIDTH - barWidth) / 2;
+    int barY = LOAD_SCREEN_WINDOW_HEIGHT - (LOAD_SCREEN_WINDOW_HEIGHT - barHeight) / 4;
+
+    int ldscr_art_id = (stat_level(obj_dude, STAT_GENDER) == GENDER_MALE ? 341 : 342);
+    int fid = art_id(OBJ_TYPE_INTERFACE, ldscr_art_id, 0, 0, 0);
+
+    load_screen_handle = art_ptr_lock_data(fid, 0, 0, &load_screen_art);
+    if (load_screen_handle == NULL) {
+        return -1;
+    }
+
+    buf_fill(loadscreenBuf, LOAD_SCREEN_WINDOW_WIDTH, LOAD_SCREEN_WINDOW_HEIGHT, LOAD_SCREEN_WINDOW_WIDTH, 0);
+    buf_to_buf(load_screen_handle, LOAD_SCREEN_WINDOW_WIDTH, LOAD_SCREEN_WINDOW_HEIGHT, LOAD_SCREEN_WINDOW_WIDTH, loadscreenBuf, LOAD_SCREEN_WINDOW_WIDTH);
+    win_draw(loadscreenWin);
+
+    auto drawLoadingScreen = [&](int progressPercent) {
+        buf_fill(loadscreenBuf + barY * LOAD_SCREEN_WINDOW_WIDTH + barX, barWidth, barHeight, LOAD_SCREEN_WINDOW_WIDTH, colorTable[992]);
+        int progressWidth = barWidth * progressPercent / 100;
+        if (progressWidth > 0) {
+            buf_fill(loadscreenBuf + barY * LOAD_SCREEN_WINDOW_WIDTH + barX, progressWidth, barHeight, LOAD_SCREEN_WINDOW_WIDTH, colorTable[31744]);
+        }
+
+        win_draw(loadscreenWin);
+    };
+
+    drawLoadingScreen(0);
+
     gmouse_set_cursor(MOUSE_CURSOR_WAIT_PLANET);
     db_register_callback(gameMouseRefreshImmediately, 8192);
     tile_disable_refresh();
@@ -969,13 +1021,21 @@ int map_load_file(DB_FILE* stream)
         error = "Error loading local vars";
         if (map_load_local_vars(stream) != 0) break;
 
+        drawLoadingScreen(25);
+
         if (square_load(stream, map_data.flags) != 0) break;
+
+        drawLoadingScreen(50);
 
         error = "Error reading scripts";
         if (scr_load(stream) != 0) break;
 
+        drawLoadingScreen(70);
+
         error = "Error reading objects";
         if (obj_load(stream) != 0) break;
+
+        drawLoadingScreen(85);
 
         if ((map_data.flags & 1) == 0) {
             map_fix_critter_combat_data();
@@ -1075,6 +1135,17 @@ int map_load_file(DB_FILE* stream)
     gtime_q_add();
     db_register_callback(NULL, 0);
     gmouse_enable_scrolling();
+
+    drawLoadingScreen(100);
+
+    mouse_show();
+    win_delete(loadscreenWin);
+    win_delete(loadscreenBackWin);
+
+    if (load_screen_handle != NULL) {
+        art_ptr_unlock(load_screen_art);
+    }
+
     gmouse_set_cursor(MOUSE_CURSOR_NONE);
 
     return rc;
