@@ -36,6 +36,7 @@
 #include "game/palette.h"
 #include "game/proto.h"
 #include "game/roll.h"
+#include "game/screensaver.h"
 #include "game/scripts.h"
 #include "game/select.h"
 #include "game/selfrun.h"
@@ -113,6 +114,7 @@ int gnw_main(int argc, char** argv)
     gmovie_play(MOVIE_INTRO, 0);
 
     if (main_menu_create() == 0) {
+	unsigned int tick = get_time();
         int language_filter = 1;
 	int exp_start = 0;
         int msg_start = 0;
