@@ -157,6 +157,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/roll.h"
     "src/game/scripts.cc"
     "src/game/scripts.h"
+    "src/game/screensaver.cc"
+    "src/game/screensaver.h"
     "src/game/select.cc"
     "src/game/select.h"
     "src/game/selfrun.cc"

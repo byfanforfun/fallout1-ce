@@ -7,9 +7,11 @@
 #include "game/art.h"
 #include "game/chardump.h"
 #include "game/game.h"
+#include "game/gkioskconf.h"
 #include "game/gsound.h"
 #include "game/options.h"
 #include "game/palette.h"
+#include "game/screensaver.h"
 #include "game/version.h"
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
@@ -336,6 +338,7 @@ int main_menu_loop()
     }
 
     unsigned int tick = get_time();
+    unsigned int screenTimeout = gconfig_screensaver_enabled ? gconfig_screensaver_timeout * 1000 : 0;
 
     int rc = -1;
     while (rc == -1) {
@@ -387,8 +390,16 @@ int main_menu_loop()
         } else if (game_user_wants_to_quit == 2) {
             game_user_wants_to_quit = 0;
         } else {
-            if (elapsed_time(tick) >= main_menu_timeout) {
-                rc = MAIN_MENU_TIMEOUT;
+            if (screenTimeout > 0) {
+                if (elapsed_time(tick) >= screenTimeout) {
+                    Screensaver::Init();
+                    Screensaver::Play();
+                    tick = get_time();
+                }
+            } else {
+                if (elapsed_time(tick) >= main_menu_timeout) {
+                    rc = MAIN_MENU_TIMEOUT;
+                }
             }
         }
 
