@@ -136,6 +136,8 @@ inact3=20
 options=0
 ;allow player to save/load game
 saveload=0
+;show kiosk screen message
+start_message=1
 ;enable bomb screensaver
 screensaver_enabled=1
 ;screensaver idle timeout
