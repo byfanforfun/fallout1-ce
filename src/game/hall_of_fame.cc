@@ -5,11 +5,13 @@
 #include "game/chardump.h"
 
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gsound.h"
 
 #include "game/palette.h"
 
 #include "game/kiosk_msgfile.h"
+#include "game/screensaver.h"
 
 #include "plib/color/color.h"
 
@@ -102,6 +104,9 @@ int game_handle_hof() {
     hof_create_window();
     button_init();
 
+    unsigned int tick = get_time();
+    unsigned int hofTimeout = gconfig_screensaver_enabled ? gconfig_screensaver_timeout * 1000 : 0;
+
     int key = 0;
     while (hof_window.window_id != -1) {
         sharedFpsLimiter.mark();
@@ -109,6 +114,14 @@ int game_handle_hof() {
         key = get_input();
         if(hof_handle_input(key) != 0)
             return -1;
+
+        if (gconfig_screensaver_enabled && hofTimeout > 0) {
+            if (elapsed_time(tick) >= hofTimeout) {
+                Screensaver::Init();
+                Screensaver::Play();
+                tick = get_time();
+            }
+        }
 
         hof_redraw();
 

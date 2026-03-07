@@ -21,6 +21,8 @@ int gconfig_saveload_allowed;
 int gconfig_options_allowed;
 int gconfig_dialog_exit_0_allowed;
 int gconfig_game_exit_allowed;
+int gconfig_screensaver_enabled;
+int gconfig_screensaver_timeout;
 
 bool gkioskconf_init()
 {
@@ -44,6 +46,8 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_2, 30);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_3, 10);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, 1);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, 120);
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_GAME, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_COMBAT, 0);
@@ -66,6 +70,8 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_OPTIONS, &gconfig_options_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_DIALOG_EXIT_0, &gconfig_dialog_exit_0_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_GAME_EXIT, &gconfig_game_exit_allowed);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, &gconfig_screensaver_enabled);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, &gconfig_screensaver_timeout);
 
     gkioskconf_initialized = true;
 
