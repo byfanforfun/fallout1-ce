@@ -136,6 +136,10 @@ inact3=20
 options=0
 ;allow player to save/load game
 saveload=0
+;enable bomb screensaver
+screensaver_enabled=1
+;screensaver idle timeout
+screensaver_timeout=15
 
 ;override original config options
 [overrides]
