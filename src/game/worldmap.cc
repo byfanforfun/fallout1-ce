@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "game/anim.h"
 #include "game/art.h"
@@ -15,6 +17,7 @@
 #include "game/display.h"
 #include "game/game.h"
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/gmovie.h"
 #include "game/graphlib.h"
@@ -367,7 +370,22 @@ static const unsigned char WorldEcounTable[30][28] = {
 };
 
 // 0x4A9E64
-static const CityLocationEntry city_location[TOWN_COUNT] = {
+static CityLocationEntry city_location[TOWN_COUNT] = {
+    /*      VAULT 13 */ { 16, 1 },
+    /*      VAULT 15 */ { 25, 1 },
+    /*   SHADY SANDS */ { 21, 1 },
+    /*      JUNKTOWN */ { 17, 10 },
+    /*       RAIDERS */ { 22, 3 },
+    /*    NECROPOLIS */ { 22, 13 },
+    /*       THE HUB */ { 17, 14 },
+    /*   BROTHERHOOD */ { 12, 9 },
+    /* MILITARY BASE */ { 3, 1 },
+    /*      THE GLOW */ { 24, 25 },
+    /*      BONEYARD */ { 15, 18 },
+    /*     CATHEDRAL */ { 15, 20 },
+};
+
+static const CityLocationEntry original_city_location[TOWN_COUNT] = {
     /*      VAULT 13 */ { 16, 1 },
     /*      VAULT 15 */ { 25, 1 },
     /*   SHADY SANDS */ { 21, 1 },
@@ -875,11 +893,40 @@ static unsigned char WorldGrid[31][29];
 // 0x6713C4
 static unsigned char wwin_flag;
 
+static void randomize_world_map()
+    {
+        for (int i = 0; i < TOWN_COUNT; i++) {
+                city_location[i] = original_city_location[i];
+            }
+
+            for (int i = TOWN_COUNT - 1; i > 0; i--) {
+                int j = rand() % (i + 1);
+                CityLocationEntry temp = city_location[i];
+                city_location[i] = city_location[j];
+                city_location[j] = temp;
+            }
+
+            for (int i = 0; i < TOWN_COUNT; i++) {
+                if (city_location[i].column == original_city_location[TOWN_VAULT_13].column
+                                                     && city_location[i].row == original_city_location[TOWN_VAULT_13].row) {
+                        CityLocationEntry temp = city_location[i];
+                        city_location[i] = city_location[TOWN_VAULT_13];
+                        city_location[TOWN_VAULT_13] = temp;
+                        break;
+                    }
+            }
+    }
+
 // 0x4AA110
 int init_world_map()
 {
     int column;
     int row;
+
+    if (gconfig_random_locations) {
+        srand(time(NULL));
+        randomize_world_map();
+    }
 
     for (row = 0; row < 29; row++) {
         for (column = 0; column < 28; column++) {

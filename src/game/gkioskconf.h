@@ -26,6 +26,7 @@ namespace fallout {
 #define KIOSK_CONFIG_BARTER_MOD "barter_mod"
 #define KIOSK_CONFIG_SCREENSAVER_ENABLED "screensaver_enabled"
 #define KIOSK_CONFIG_SCREENSAVER_TIMEOUT "screensaver_timeout"
+#define KIOSK_CONFIG_RANDOM_LOCATIONS "random_locations"
 
 extern Config kiosk_config;
 extern int gconfig_saveload_allowed;
@@ -34,6 +35,7 @@ extern int gconfig_dialog_exit_0_allowed;
 extern int gconfig_game_exit_allowed;
 extern int gconfig_screensaver_enabled;
 extern int gconfig_screensaver_timeout;
+extern int gconfig_random_locations;
 
 bool gkioskconf_init();
 bool gkioskconf_save();
