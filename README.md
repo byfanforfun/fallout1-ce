@@ -142,6 +142,8 @@ start_message=1
 screensaver_enabled=1
 ;screensaver idle timeout
 screensaver_timeout=15
+;randomize locations. just shift each other
+random_locations=1
 
 ;override original config options
 [overrides]
