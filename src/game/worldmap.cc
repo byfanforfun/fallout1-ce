@@ -300,7 +300,7 @@ static const unsigned char WorldTerraTable[30][28] = {
 };
 
 // 0x4A97D4
-static const unsigned char WorldEcountChanceTable[30][28] = {
+static unsigned char WorldEcountChanceTable[30][28] = {
     { 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3 },
     { 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3 },
     { 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 3, 3 },
@@ -334,7 +334,7 @@ static const unsigned char WorldEcountChanceTable[30][28] = {
 };
 
 // 0x4A9B1C
-static const unsigned char WorldEcounTable[30][28] = {
+static unsigned char WorldEcounTable[30][28] = {
     // clang-format off
     { 11, 11, 11, 11, 11, 11, 11, 11, 11,  2,  2,  2,  2,  2,  2,  4,  4,  4,  2,  2,  5,  5,  5,  0,  0,  0,  0,  0 },
     { 11, 11, 11, 11, 11, 11, 11, 11, 11,  2,  2,  2,  2,  2,  2,  4,  4,  4,  4,  5,  5,  5,  5,  5,  0,  0,  0,  0 },
@@ -368,6 +368,11 @@ static const unsigned char WorldEcounTable[30][28] = {
     { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,  1,  1,  1,  1,  1,  1,  1 },
     // clang-format on
 };
+
+static unsigned char original_WorldEcounTable[30][28];
+static unsigned char original_WorldEcountChanceTable[30][28];
+int mb_new_col = -1;
+int mb_new_row = -1;
 
 // 0x4A9E64
 static CityLocationEntry city_location[TOWN_COUNT] = {
@@ -893,29 +898,244 @@ static unsigned char WorldGrid[31][29];
 // 0x6713C4
 static unsigned char wwin_flag;
 
-static void randomize_world_map()
-    {
-        for (int i = 0; i < TOWN_COUNT; i++) {
-                city_location[i] = original_city_location[i];
-            }
+struct RegionCell {
+    int col;
+    int row;
+};
 
-            for (int i = TOWN_COUNT - 1; i > 0; i--) {
-                int j = rand() % (i + 1);
-                CityLocationEntry temp = city_location[i];
-                city_location[i] = city_location[j];
-                city_location[j] = temp;
-            }
+struct ConnectedRegion {
+    unsigned char value;
+    std::vector<RegionCell> cells;
+    int town_idx;
+};
 
-            for (int i = 0; i < TOWN_COUNT; i++) {
-                if (city_location[i].column == original_city_location[TOWN_VAULT_13].column
-                                                     && city_location[i].row == original_city_location[TOWN_VAULT_13].row) {
-                        CityLocationEntry temp = city_location[i];
-                        city_location[i] = city_location[TOWN_VAULT_13];
-                        city_location[TOWN_VAULT_13] = temp;
-                        break;
+static bool is_within_bounds(int col, int row)
+{
+    return col >= 0 && col < 28 && row >= 0 && row < 30;
+}
+
+static void find_connected_region(unsigned char value, bool visited[30][28], std::vector<RegionCell>& region)
+{
+    static const int dr[4] = {-1, 0, 1, 0};
+    static const int dc[4] = {0, 1, 0, -1};
+
+    for (int r = 0; r < 30; r++) {
+        for (int c = 0; c < 28; c++) {
+            if (!visited[r][c] && original_WorldEcounTable[r][c] == value) {
+                std::vector<RegionCell> stack;
+                stack.push_back({c, r});
+                visited[r][c] = true;
+
+                while (!stack.empty()) {
+                    RegionCell cell = stack.back();
+                    stack.pop_back();
+                    region.push_back(cell);
+
+                    for (int i = 0; i < 4; i++) {
+                        int nr = cell.row + dr[i];
+                        int nc = cell.col + dc[i];
+                        if (is_within_bounds(nc, nr) && !visited[nr][nc] && original_WorldEcounTable[nr][nc] == value) {
+                            visited[nr][nc] = true;
+                            stack.push_back({nc, nr});
+                        }
                     }
+                }
+            }
+        }
+    }
+}
+
+static std::vector<ConnectedRegion> find_all_connected_regions()
+{
+    std::vector<ConnectedRegion> regions;
+    bool visited[30][28] = {false};
+
+    for (int r = 0; r < 30; r++) {
+        for (int c = 0; c < 28; c++) {
+            if (!visited[r][c] && original_WorldEcounTable[r][c] != 0) {
+                unsigned char value = original_WorldEcounTable[r][c];
+
+                ConnectedRegion region;
+                region.value = value;
+                find_connected_region(value, visited, region.cells);
+
+                region.town_idx = -1;
+
+                for (int t = 0; t < TOWN_COUNT; t++) {
+                    for (auto& cell : region.cells) {
+                        if (cell.col == original_city_location[t].column && cell.row == original_city_location[t].row) {
+                            region.town_idx = t;
+                            break;
+                        }
+                    }
+                    if (region.town_idx != -1) break;
+                }
+
+                if (region.town_idx != -1) {
+                    regions.push_back(region);
+                }
+            }
+        }
+    }
+
+    return regions;
+}
+
+static std::pair<int, int> rotate_offset(int dx, int dy, int rotation)
+{
+    switch (rotation) {
+    case 0: return {dx, dy};
+    case 1: return {-dy, dx};
+    case 2: return {-dx, -dy};
+    case 3: return {dy, -dx};
+    }
+    return {dx, dy};
+}
+
+static bool can_place_region(const ConnectedRegion& region, int new_col, int new_row, int rotation)
+{
+    for (auto& cell : region.cells) {
+        int dx = cell.col - original_city_location[region.town_idx].column;
+        int dy = cell.row - original_city_location[region.town_idx].row;
+
+        auto [rdx, rdy] = rotate_offset(dx, dy, rotation);
+        int nx = new_col + rdx;
+        int ny = new_row + rdy;
+
+        if (!is_within_bounds(nx, ny)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void place_region(const ConnectedRegion& region, int new_col, int new_row, int rotation, unsigned char newEcountChance[30][28], unsigned char newEcoun[30][28])
+{
+    for (auto& cell : region.cells) {
+        int dx = cell.col - original_city_location[region.town_idx].column;
+        int dy = cell.row - original_city_location[region.town_idx].row;
+
+        auto [rdx, rdy] = rotate_offset(dx, dy, rotation);
+        int nx = new_col + rdx;
+        int ny = new_row + rdy;
+
+        if (is_within_bounds(nx, ny)) {
+            newEcoun[ny][nx] = original_WorldEcounTable[cell.row][cell.col];
+            newEcountChance[ny][nx] = original_WorldEcountChanceTable[cell.row][cell.col];
+        }
+    }
+}
+
+static void randomize_world_map()
+{
+    for (int i = 0; i < TOWN_COUNT; i++) {
+        city_location[i] = original_city_location[i];
+    }
+
+    for (int i = 0; i < 30; i++) {
+        for (int j = 0; j < 28; j++) {
+            original_WorldEcounTable[i][j] = WorldEcounTable[i][j];
+            original_WorldEcountChanceTable[i][j] = WorldEcountChanceTable[i][j];
+        }
+    }
+
+    for (int i = TOWN_COUNT - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        CityLocationEntry temp = city_location[i];
+        city_location[i] = city_location[j];
+        city_location[j] = temp;
+    }
+
+    for (int i = 0; i < TOWN_COUNT; i++) {
+        if (city_location[i].column == original_city_location[TOWN_VAULT_13].column
+            && city_location[i].row == original_city_location[TOWN_VAULT_13].row) {
+            CityLocationEntry temp = city_location[i];
+            city_location[i] = city_location[TOWN_VAULT_13];
+            city_location[TOWN_VAULT_13] = temp;
+            break;
+        }
+    }
+
+    std::vector<ConnectedRegion> regions = find_all_connected_regions();
+
+    unsigned char newEcountChance[30][28] = {0};
+    unsigned char newEcoun[30][28] = {0};
+
+    for (auto& region : regions) {
+        if (region.town_idx == -1) continue;
+
+        int new_col = city_location[region.town_idx].column;
+        int new_row = city_location[region.town_idx].row;
+
+        int placed_rotation = 0;
+        bool placed = false;
+
+        for (int rot = 0; rot < 4; rot++) {
+            if (can_place_region(region, new_col, new_row, rot)) {
+                place_region(region, new_col, new_row, rot, newEcountChance, newEcoun);
+                placed = true;
+                placed_rotation = rot;
+                break;
+            }
+        }
+
+        if (!placed) {
+            place_region(region, new_col, new_row, 0, newEcountChance, newEcoun);
+        }
+    }
+
+    for (int t = 0; t < TOWN_COUNT; t++) {
+            if (t == TOWN_MILITARY_BASE) {
+                    mb_new_col = city_location[t].column;
+                    mb_new_row = city_location[t].row;
+                    break;
             }
     }
+
+    if (mb_new_col != -1) {
+        int min_dist = 100;
+        for (int t = 0; t < TOWN_COUNT; t++) {
+            if (t == TOWN_MILITARY_BASE) continue;
+            int dist = abs(city_location[t].column - mb_new_col) + abs(city_location[t].row - mb_new_row);
+            if (dist < min_dist) min_dist = dist;
+        }
+
+        if (min_dist < 10) {
+            int max_radius = min_dist - 1;
+            if (max_radius < 1) max_radius = 1;
+
+            for (int r = 0; r < 30; r++) {
+                for (int c = 0; c < 28; c++) {
+                    if (newEcoun[r][c] != 0 && newEcoun[r][c] != 11) {
+                        int dist = abs(c - mb_new_col) + abs(r - mb_new_row);
+                        if (dist > max_radius) {
+                                newEcoun[r][c] = 0;
+                                newEcountChance[r][c] = 0;
+                        } else if (dist > 0) {
+                            float falloff = 1.0f - ((float)dist / (float)(max_radius + 1));
+                            if (falloff < 0.2f) falloff = 0.2f;
+
+                            int old_chance = newEcountChance[r][c];
+                            int new_chance = (int)(old_chance * falloff);
+
+                            if (new_chance < 1) new_chance = 1;
+                            if (new_chance > 3) new_chance = 3;
+
+                            newEcountChance[r][c] = new_chance;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for (int r = 0; r < 30; r++) {
+        for (int c = 0; c < 28; c++) {
+            WorldEcounTable[r][c] = newEcoun[r][c];
+            WorldEcountChanceTable[r][c] = newEcountChance[r][c];
+        }
+    }
+}
 
 // 0x4AA110
 int init_world_map()
@@ -2182,9 +2402,17 @@ int world_map(WorldMapContext ctx)
                     return -1;
                 }
             } else {
-                game_global_vars[GVAR_WORLD_TERRAIN] = WorldEcounTable[world_ypos / 50][world_xpos / 50];
+                int tx = world_xpos / 50;
+                int ty = world_ypos / 50;
+                int twenc = WorldEcounTable[ty][tx];
 
-                terrain = WorldTerraTable[world_ypos / 50][world_xpos / 50];
+                //do not encounter mutant before found chip
+                if (abs(tx - mb_new_row) < 10 && abs(ty - mb_new_col) < 10 && game_get_global_var(GVAR_FIND_WATER_CHIP) < 1){
+                    twenc = rand() % 10;
+                }
+                game_global_vars[GVAR_WORLD_TERRAIN] = twenc;
+
+                terrain = WorldTerraTable[ty][tx];
                 while (1) {
                     map_index = roll_random(0, 2);
                     if (RandEnctNames[terrain][map_index] != NULL) {
