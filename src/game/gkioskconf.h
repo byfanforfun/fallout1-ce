@@ -27,6 +27,10 @@ namespace fallout {
 #define KIOSK_CONFIG_SCREENSAVER_ENABLED "screensaver_enabled"
 #define KIOSK_CONFIG_SCREENSAVER_TIMEOUT "screensaver_timeout"
 #define KIOSK_CONFIG_RANDOM_LOCATIONS "random_locations"
+#define KIOSK_CONFIG_RANDOM_CONTAINERS "random_containers"
+#define KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE "random_containers_base_chance"
+#define KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR "random_containers_luck_factor"
+#define KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR "random_containers_barter_factor"
 
 extern Config kiosk_config;
 extern int gconfig_saveload_allowed;
@@ -36,6 +40,10 @@ extern int gconfig_game_exit_allowed;
 extern int gconfig_screensaver_enabled;
 extern int gconfig_screensaver_timeout;
 extern int gconfig_random_locations;
+extern int gconfig_random_containers;
+extern int gconfig_random_containers_base_chance;
+extern int gconfig_random_containers_luck_factor;
+extern int gconfig_random_containers_barter_factor;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

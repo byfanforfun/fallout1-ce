@@ -2,6 +2,7 @@
 
 #include "game/gdialog.h"
 #include "game/gkioskconf.h"
+#include "game/gkioskinv.h"
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/palette.h"
@@ -17,31 +18,22 @@
 
 namespace fallout {
 
-#define INV_CONFIG_FILE_NAME        "kiosk_inv.cfg"
-#define INV_CONFIG_INVENTORY_KEY    "inventory"
-#define INV_MAX_PROTO               255
-
 static Object* inventory_objs[INV_MAX_PROTO] = {0};
 static Object* inventory_holder = NULL;
-static Config inv_config;
-
-static char inv_conf_file_name[COMPAT_MAX_PATH];
 
 static int inventory_proto[INV_MAX_PROTO] = {0};
 static int caps_start = 0;
 static int barter_mod = 0;
 
 static bool cursorWasHidden = false;
-static bool inv_conf_initialized = false;
 
 static int start_init();
 static int start_process();
 static int start_exit();
 static int create_holder();
-static bool inv_conf_init();
-static bool inv_conf_exit();
 static int inv_destroy();
 static int clear_window(int window);
+static int load_proto();
 
 int start_inventory() {
 
@@ -80,6 +72,8 @@ static int start_init() {
     if(!inv_conf_init())
         return -1;
 
+    load_proto();
+
     inven_reset_dude();
 
     return 0;
@@ -117,24 +111,13 @@ static int create_holder()
     return 0;
 }
 
-static bool inv_conf_init()
+static int load_proto()
 {
-    if (inv_conf_initialized) {
-        return false;
-    }
-
-    if (!config_init(&inv_config)) {
-        return false;
-    }
-
-    strcpy(inv_conf_file_name, INV_CONFIG_FILE_NAME);
-    config_load(&inv_config, inv_conf_file_name, false);
-
     int proto_count = 0;
     char ti[4];
     for(int i = 0; INV_MAX_PROTO > i; ++i){
         snprintf(ti, 4, "%d", i);
-        if(config_get_value(&inv_config, INV_CONFIG_INVENTORY_KEY, ti, &proto_count))
+        if(config_get_value(&gkiosk_inv_config, INV_CONFIG_INVENTORY_KEY, ti, &proto_count))
         {
             inventory_proto[i] = proto_count;
         }
@@ -156,22 +139,9 @@ static bool inv_conf_init()
             }
     }
 
-    inv_conf_initialized = true;
-
-    return true;
+    return 0;
 }
 
-static bool inv_conf_exit()
-{
-    if (!inv_conf_initialized) {
-        return false;
-    }
-
-    config_exit(&inv_config);
-    inv_conf_initialized = false;
-
-    return true;
-}
 
 static int inv_destroy()
 {
