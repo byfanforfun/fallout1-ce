@@ -24,6 +24,10 @@ int gconfig_game_exit_allowed;
 int gconfig_screensaver_enabled;
 int gconfig_screensaver_timeout;
 int gconfig_random_locations;
+int gconfig_random_containers;
+int gconfig_random_containers_base_chance;
+int gconfig_random_containers_luck_factor;
+int gconfig_random_containers_barter_factor;
 
 bool gkioskconf_init()
 {
@@ -50,6 +54,10 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, 120);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, 50);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, 5);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, 5);
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_GAME, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_COMBAT, 0);
@@ -75,6 +83,10 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, &gconfig_screensaver_enabled);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, &gconfig_screensaver_timeout);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, &gconfig_random_locations);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, &gconfig_random_containers);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, &gconfig_random_containers_base_chance);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, &gconfig_random_containers_luck_factor);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, &gconfig_random_containers_barter_factor);
 
     gkioskconf_initialized = true;
 
