@@ -144,6 +144,8 @@ screensaver_enabled=1
 screensaver_timeout=15
 ;randomize locations. just shift each other
 random_locations=1
+;randomize containers items
+random_containers=1
 
 ;override original config options
 [overrides]
@@ -155,11 +157,26 @@ language_filter=0
 ```
 
 
-Start inventory config `kiosk_inv.cfg`
+Start inventory and random containers config `kiosk_inv.cfg`
 ```
+;start trade inventory
 [inventory]
 PID=COUNT
+
+;this items not been added to generation stack 
+[exclude]
+LINE_NUM=PID
+
+;this items will be keeped in container 
+[keep]
+LINE_NUM=PID
+
+;this items will be spawned only once per game 
+[once]
+LINE_NUM=PID
 ```
+
+Max lines is 256 for each sections
 
 Example:
 ```
@@ -171,6 +188,29 @@ Example:
 55=1
 43=32
 23=22
+
+[exclude]
+0=58
+1=164
+2=190
+3=191
+4=195
+5=196
+6=215
+7=238
+8=55
+9=114
+
+[keep]
+0=127
+
+[once]
+0=216
+1=192
+2=193
+3=194
+4=217
+
 ```
 
 Exec config `kiosk_exec.cfg`
