@@ -146,6 +146,29 @@ screensaver_timeout=15
 random_locations=1
 ;randomize containers items
 random_containers=1
+;how much quality levels is, 0 for disable
+quality_total=6
+;quality modifiers
+quality_mod_0=0.75
+quality_mod_1=0.90
+quality_mod_2=1.00
+quality_mod_3=1.25
+quality_mod_4=1.50
+quality_mod_5=2.50
+;npc hp step for each quality level
+quality_npc_hp_0=10
+quality_npc_hp_1=25
+quality_npc_hp_2=50
+quality_npc_hp_3=100
+quality_npc_hp_4=150
+quality_npc_hp_5=250
+;chance for items on ground by quality level
+quality_ground_0=20
+quality_ground_1=20
+quality_ground_2=30
+quality_ground_3=15
+quality_ground_4=10
+quality_ground_5=1
 
 ;override original config options
 [overrides]
