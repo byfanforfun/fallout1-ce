@@ -170,10 +170,12 @@ typedef struct Inventory {
 typedef struct WeaponObjectData {
     int ammoQuantity; // obj_pudg.pudweapon.cur_ammo_quantity
     int ammoTypePid; // obj_pudg.pudweapon.cur_ammo_type_pid
+    int ammoQuality; // quality of loaded ammo
 } WeaponObjectData;
 
 typedef struct AmmoItemData {
     int quantity; // obj_pudg.pudammo.cur_ammo_quantity
+    int quality; // item quality level
 } AmmoItemData;
 
 typedef struct MiscItemData {
@@ -283,6 +285,7 @@ typedef struct Object {
     int sid; // obj_sid
     Object* owner;
     int field_80;
+    int quality; // item quality level
 } Object;
 
 typedef struct ObjectListNode {

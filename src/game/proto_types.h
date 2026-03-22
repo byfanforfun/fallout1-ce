@@ -295,6 +295,7 @@ typedef struct ItemProto {
     int cost; // cost
     int inventoryFid; // inv_fid
     unsigned char field_80;
+    int quality; // quality level: -1 = none, 0-N = level
 } ItemProto;
 
 typedef struct CritterProtoData {
