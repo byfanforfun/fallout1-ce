@@ -26,6 +26,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/item_quality.h"
 #include "game/light.h"
 #include "game/loadsave.h"
 #include "game/object.h"
@@ -1048,6 +1049,10 @@ int map_load_file(DB_FILE* stream)
 
         if (gconfig_random_containers && map_data.lastVisitTime == 0) {
             map_randomize_containers(drawLoadingScreen);
+        }
+
+        if (gconfig_quality_levels > 0 && map_data.lastVisitTime == 0) {
+            items_apply_quality_on_map();
         }
 
         if ((map_data.flags & 1) == 0) {
