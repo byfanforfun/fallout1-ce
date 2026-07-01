@@ -99,4 +99,16 @@ int get_key(int screen, int key) {
     return key;
 }
 
+int get_physical_key(int screen, int logical_key) {
+    if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX))
+        return logical_key;
+
+    for(int i = 1; i < BIND_MAX_KEY; i++) {
+        if(binded_keys[screen][i] == logical_key)
+            return i;
+    }
+
+    return logical_key;
+}
+
 }
