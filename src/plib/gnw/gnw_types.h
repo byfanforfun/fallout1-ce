@@ -17,11 +17,12 @@ typedef enum WindowFlags {
     WINDOW_HIDDEN = 0x8,
     // Sfall calls this Exclusive.
     WINDOW_MODAL = 0x10,
-    WINDOW_TRANSPARENT = 0x20,
-    WINDOW_FLAG_0x40 = 0x40,
+    WINDOW_POPUP = 0x20,
+    WINDOW_TRANSPARENT = 0x40,
+    WINDOW_FLAG_0x40 = 0x80,
     // Draggable?
-    WINDOW_FLAG_0x80 = 0x80,
-    WINDOW_MANAGED = 0x100,
+    WINDOW_FLAG_0x80 = 0x100,
+    WINDOW_MANAGED = 0x200,
 } WindowFlags;
 
 typedef enum ButtonFlags {

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "game/actions.h"
+#include "game/art.h"
 #include "game/anim.h"
 #include "game/automap.h"
 #include "game/bmpdlog.h"
@@ -27,6 +28,7 @@
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/kiosk_msgfile.h"
+#include "game/mainmenu.h"
 #include "game/loadsave.h"
 #include "game/map.h"
 #include "game/moviefx.h"
@@ -58,6 +60,7 @@
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
 #include "plib/gnw/input_rebind.h"
+#include "plib/gnw/button.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -65,18 +68,19 @@
 
 namespace fallout {
 
-#define HELP_SCREEN_WIDTH 640
-#define HELP_SCREEN_HEIGHT 480
-
 #define SPLASH_WIDTH 640
 #define SPLASH_HEIGHT 480
 #define SPLASH_COUNT 10
 
+#define MAX_BUTTON_COUNT 5
+
+
 static int game_screendump(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void game_unload_info();
-static void game_help();
 static int game_init_databases();
 static void game_splash_screen();
+
+#include "game/screen_help.h"
 
 // TODO: Remove.
 // 0x4F190C
@@ -628,7 +632,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 MessageListItem messageListItem;
                 char title[128];
                 strcpy(title, getmsg(&misc_message_file, &messageListItem, 7));
-                dialog_out(title, NULL, 0, 192, 116, colorTable[32328], NULL, colorTable[32328], 0);
+                dialog_out(title, NULL, 0, 192, 116, colorTable[992], NULL, colorTable[992], 0);
             } else {
                 gsound_play_sfx_file("ib1p1xx1");
                 pipboy(false);
@@ -696,7 +700,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 MessageListItem messageListItem;
                 char title[128];
                 strcpy(title, getmsg(&misc_message_file, &messageListItem, 7));
-                dialog_out(title, NULL, 0, 192, 116, colorTable[32328], NULL, colorTable[32328], 0);
+                dialog_out(title, NULL, 0, 192, 116, colorTable[992], NULL, colorTable[992], 0);
             } else {
                 gsound_play_sfx_file("ib1p1xx1");
                 pipboy(true);
@@ -834,11 +838,14 @@ int game_handle_input(int eventCode, bool isInCombatMode)
         }
         break;
     case KEY_F1:
-        gsound_play_sfx_file("ib1p1xx1");
-        game_help();
+        gsound_set_master_volume(gsound_get_master_volume() - 2047);
+        break;
+    case KEY_F12:
+        main_menu_loop();
         break;
     case KEY_F2:
-        gsound_set_master_volume(gsound_get_master_volume() - 2047);
+        gsound_play_sfx_file("ib1p1xx1");
+        game_help();
         break;
     case KEY_F3:
         gsound_set_master_volume(gsound_get_master_volume() + 2047);
@@ -851,7 +858,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 debug_printf("\n ** Error calling SaveGame()! **\n");
             }
         }else{
-            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
     case KEY_CTRL_L:
@@ -862,7 +869,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 debug_printf("\n ** Error calling LoadGame()! **\n");
             }
         }else{
-            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
     case KEY_F6:
@@ -879,7 +886,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 display_print(msg);
             }
         }else{
-            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
     case KEY_F7:
@@ -896,7 +903,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 display_print(msg);
             }
         }else{
-            dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+            dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
     case KEY_CTRL_V:
@@ -1117,91 +1124,12 @@ static int game_screendump(int width, int height, unsigned char* buffer, unsigne
     return 0;
 }
 
-// 0x43D10C
 static void game_unload_info()
 {
     num_game_global_vars = 0;
     if (game_global_vars != NULL) {
         mem_free(game_global_vars);
         game_global_vars = NULL;
-    }
-}
-
-// 0x43D130
-static void game_help()
-{
-    bool isoWasEnabled = map_disable_bk_processes();
-    gmouse_3d_off();
-
-    gmouse_set_cursor(MOUSE_CURSOR_NONE);
-
-    bool colorCycleWasEnabled = cycle_is_enabled();
-    cycle_disable();
-
-    // CE: Help screen uses separate color palette which is incompatible with
-    // colors in other windows. Setup overlay to hide everything.
-    int overlay = win_add(0, 0, screenGetWidth(), screenGetHeight(), 0, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
-
-    int helpWindowX = (screenGetWidth() - HELP_SCREEN_WIDTH) / 2;
-    int helpWindowY = (screenGetHeight() - HELP_SCREEN_HEIGHT) / 2;
-    int win = win_add(helpWindowX, helpWindowY, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT, 0, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
-    if (win != -1) {
-        unsigned char* windowBuffer = win_get_buf(win);
-        if (windowBuffer != NULL) {
-            int backgroundFid = art_id(OBJ_TYPE_INTERFACE, 297, 0, 0, 0);
-            CacheEntry* backgroundHandle;
-            unsigned char* backgroundData = art_ptr_lock_data(backgroundFid, 0, 0, &backgroundHandle);
-            if (backgroundData != NULL) {
-                palette_set_to(black_palette);
-                buf_to_buf(backgroundData, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT, HELP_SCREEN_WIDTH, windowBuffer, HELP_SCREEN_WIDTH);
-                art_ptr_unlock(backgroundHandle);
-                loadColorTable("art\\intrface\\helpscrn.pal");
-                palette_set_to(cmap);
-
-                // CE: Fill overlay with darkest color in the palette. It might
-                // not be completely black, but at least it's uniform.
-                buf_fill(win_get_buf(overlay),
-                    screenGetWidth(),
-                    screenGetHeight(),
-                    screenGetWidth(),
-                    intensityColorTable[colorTable[0]][0]);
-
-                win_show(overlay);
-                win_show(win);
-
-                while (get_input() == -1 && game_user_wants_to_quit == 0) {
-                    sharedFpsLimiter.mark();
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
-                }
-
-                while (mouse_get_buttons() != 0) {
-                    sharedFpsLimiter.mark();
-
-                    get_input();
-
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
-                }
-
-                palette_set_to(black_palette);
-            }
-        }
-
-        win_delete(overlay);
-        win_delete(win);
-        loadColorTable("color.pal");
-        palette_set_to(cmap);
-    }
-
-    if (colorCycleWasEnabled) {
-        cycle_enable();
-    }
-
-    gmouse_3d_on();
-
-    if (isoWasEnabled) {
-        map_enable_bk_processes();
     }
 }
 
@@ -1235,7 +1163,7 @@ int game_quit_with_confirm()
     MessageListItem messageListItem;
     messageListItem.num = 0;
     if (message_search(&misc_message_file, &messageListItem)) {
-        rc = dialog_out(messageListItem.text, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], DIALOG_BOX_YES_NO);
+        rc = dialog_out(messageListItem.text, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], DIALOG_BOX_YES_NO);
         if (rc != 0) {
             static MessageListItem mesg;
             death_cause = getmsg(&kiosk_msgfile, &mesg, 1223);

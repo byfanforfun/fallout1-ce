@@ -28,6 +28,8 @@ void main_menu_set_timeout(unsigned int timeout);
 unsigned int main_menu_get_timeout();
 int main_menu_loop();
 
+void main_menu_play_sound(const char* fileName);
+
 } // namespace fallout
 
 #endif /* FALLOUT_GAME_MAINMENU_H_ */

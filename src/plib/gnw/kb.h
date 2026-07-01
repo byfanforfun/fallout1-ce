@@ -43,6 +43,7 @@ typedef enum Key {
     KEY_TAB = '\x09',
     KEY_BACKSPACE = '\x08',
     KEY_RETURN = '\r',
+    KEY_ENTER = '\r',
 
     KEY_SPACE = ' ',
     KEY_EXCLAMATION = '!',
@@ -315,6 +316,10 @@ typedef enum Key {
     KEY_ARROW_UP = 328,
     KEY_CTRL_ARROW_UP = 397,
     KEY_ALT_ARROW_UP = 408,
+    KEY_LEFT = 331,
+    KEY_RIGHT = 333,
+    KEY_UP = 328,
+    KEY_DOWN = 336,
 
     KEY_ARROW_DOWN = 336,
     KEY_CTRL_ARROW_DOWN = 401,

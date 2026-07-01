@@ -83,6 +83,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/game_vars.h"
     "src/game/game.cc"
     "src/game/game.h"
+    "src/game/screen_help.cc"
+    "src/game/screen_help.h"
     "src/game/gconfig.cc"
     "src/game/gconfig.h"
     "src/game/gdebug.cc"

@@ -38,7 +38,6 @@ typedef enum MainMenuButton {
 } MainMenuButton;
 
 static int main_menu_fatal_error();
-static void main_menu_play_sound(const char* fileName);
 
 // 0x505A84
 static int main_window = -1;
@@ -372,6 +371,10 @@ int main_menu_loop()
             } else if (keyCode == KEY_UPPERCASE_D || keyCode == KEY_LOWERCASE_D) {
                 rc = MAIN_MENU_SCREENSAVER;
                 continue;
+            } else if (keyCode == KEY_F2) {
+                // CE: Help screen on F2
+                game_help();
+                continue;
             } else if (keyCode == 1111) {
                 if (!(mouse_get_buttons() & MOUSE_EVENT_LEFT_BUTTON_REPEAT)) {
                     // NOTE: Uninline.
@@ -426,7 +429,7 @@ static int main_menu_fatal_error()
 }
 
 // 0x4735C4
-static void main_menu_play_sound(const char* fileName)
+void main_menu_play_sound(const char* fileName)
 {
     gsound_play_sfx_file(fileName);
 }

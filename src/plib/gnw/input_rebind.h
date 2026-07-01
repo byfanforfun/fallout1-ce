@@ -41,6 +41,7 @@ extern int current_screen;
 
 bool bind_init();
 int get_key(int screen, int key);
+int get_physical_key(int screen, int logical_key);
 
 }
 
