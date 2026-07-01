@@ -41,6 +41,8 @@ int game_state();
 int game_state_request(int a1);
 void game_state_update();
 int game_quit_with_confirm();
+int main_menu_loop();
+extern int game_help();
 
 } // namespace fallout
 
