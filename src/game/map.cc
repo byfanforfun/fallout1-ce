@@ -964,13 +964,24 @@ int map_load_file(DB_FILE* stream)
 
     buf_fill(loadscreenBuf, LOAD_SCREEN_WINDOW_WIDTH, LOAD_SCREEN_WINDOW_HEIGHT, LOAD_SCREEN_WINDOW_WIDTH, 0);
     buf_to_buf(load_screen_handle, LOAD_SCREEN_WINDOW_WIDTH, LOAD_SCREEN_WINDOW_HEIGHT, LOAD_SCREEN_WINDOW_WIDTH, loadscreenBuf, LOAD_SCREEN_WINDOW_WIDTH);
+
+    {
+        int borderFid = art_id(OBJ_TYPE_INTERFACE, 343, 0, 0, 0);
+        CacheEntry* borderKey;
+        int borderW, borderH;
+        unsigned char* borderData = art_lock(borderFid, &borderKey, &borderW, &borderH);
+        if (borderData != NULL) {
+            trans_buf_to_buf(borderData, borderW, borderH, borderW, loadscreenBuf, LOAD_SCREEN_WINDOW_WIDTH);
+            art_ptr_unlock(borderKey);
+        }
+    }
+
     win_draw(loadscreenWin);
 
     auto drawLoadingScreen = [&](int progressPercent) {
-        buf_fill(loadscreenBuf + barY * LOAD_SCREEN_WINDOW_WIDTH + barX, barWidth, barHeight, LOAD_SCREEN_WINDOW_WIDTH, colorTable[992]);
         int progressWidth = barWidth * progressPercent / 100;
         if (progressWidth > 0) {
-            buf_fill(loadscreenBuf + barY * LOAD_SCREEN_WINDOW_WIDTH + barX, progressWidth, barHeight, LOAD_SCREEN_WINDOW_WIDTH, colorTable[31744]);
+            buf_fill(loadscreenBuf + barY * LOAD_SCREEN_WINDOW_WIDTH + barX, progressWidth, barHeight, LOAD_SCREEN_WINDOW_WIDTH, colorTable[21091]);
         }
 
         win_draw(loadscreenWin);
