@@ -54,7 +54,7 @@ namespace fallout {
 
 static int map_age_dead_critters();
 typedef std::function<void(int)> ProgressCallback;
-static void map_randomize_containers(ProgressCallback progressCallback);
+static void map_randomize_containers(ProgressCallback progressCallback, int startPercent, int endPercent);
 static void map_match_map_number();
 static void map_display_draw(Rect* rect);
 static void map_scroll_refresh_game(Rect* rect);
@@ -1041,25 +1041,27 @@ int map_load_file(DB_FILE* stream)
         error = "Error loading local vars";
         if (map_load_local_vars(stream) != 0) break;
 
-        drawLoadingScreen(25);
+        drawLoadingScreen(15);
 
         if (square_load(stream, map_data.flags) != 0) break;
 
-        drawLoadingScreen(50);
+        drawLoadingScreen(30);
 
         error = "Error reading scripts";
         if (scr_load(stream) != 0) break;
 
-        drawLoadingScreen(70);
+        drawLoadingScreen(45);
 
         error = "Error reading objects";
         if (obj_load(stream) != 0) break;
 
-        drawLoadingScreen(50);
+        drawLoadingScreen(60);
 
         if (gconfig_random_containers && map_data.lastVisitTime == 0) {
-            map_randomize_containers(drawLoadingScreen);
+            map_randomize_containers(drawLoadingScreen, 60, 75);
         }
+
+        drawLoadingScreen(75);
 
         if ((map_data.flags & 1) == 0) {
             map_fix_critter_combat_data();
@@ -1075,6 +1077,8 @@ int map_load_file(DB_FILE* stream)
         obj_move_to_tile(obj_dude, tile_center_tile, map_elevation, NULL);
         obj_set_rotation(obj_dude, map_data.enteringRotation, NULL);
         map_match_map_number();
+
+        drawLoadingScreen(80);
 
         if ((map_data.flags & 1) == 0) {
             char path[COMPAT_MAX_PATH];
@@ -1130,8 +1134,12 @@ int map_load_file(DB_FILE* stream)
         map_new_map();
         rc = -1;
     } else {
-        obj_preload_art_cache(map_data.flags);
+        obj_preload_art_cache(map_data.flags, [&](int pct) {
+            drawLoadingScreen(80 + pct * 4 / 100);
+        });    
     }
+
+    drawLoadingScreen(84);
 
     partyMemberRecoverLoad();
     intface_show();
@@ -1140,12 +1148,27 @@ int map_load_file(DB_FILE* stream)
     gmouse_disable_scrolling();
     gmouse_set_cursor(MOUSE_CURSOR_WAIT_PLANET);
 
-    if (scr_load_all_scripts() == -1) {
+    drawLoadingScreen(87);
+
+    if (scr_load_all_scripts([&](int pct) {
+       drawLoadingScreen(87 + pct * 4 / 100);
+    }) == -1) {
         debug_printf("\n   Error: scr_load_all_scripts failed!");
     }
 
-    scr_exec_map_enter_scripts();
-    scr_exec_map_update_scripts();
+    drawLoadingScreen(91);
+
+    scr_exec_map_enter_scripts([&](int pct) {
+        drawLoadingScreen(91 + pct * 4 / 100);
+    });
+
+    drawLoadingScreen(95);
+
+    scr_exec_map_update_scripts([&](int pct) {
+        drawLoadingScreen(95 + pct * 3 / 100);
+    });
+
+    drawLoadingScreen(98);
     tile_enable_refresh();
 
     if (map_state.map > 0) {
@@ -1341,11 +1364,14 @@ static int get_map_type()
     return 0;
 }
 
-static void map_randomize_containers(ProgressCallback progressCallback)
+static void map_randomize_containers(ProgressCallback progressCallback, int startPercent, int endPercent)
 {
     srand(time(NULL));
     
     int mapType = get_map_type();
+    int range = endPercent - startPercent;
+    if (range <= 0) range = 1;
+
     bool isEncounterMap = (mapType == 1);
     bool isSpecialEncounter = (mapType == 2);
     
@@ -1390,7 +1416,8 @@ static void map_randomize_containers(ProgressCallback progressCallback)
     for (Object* container : containers) {
         processedContainers++;
         progress = 50 + (processedContainers * 50 / totalContainers);
-        if (progress > 100) progress = 100;
+        progress = startPercent + (processedContainers * range / totalContainers);
+        if (progress > endPercent) progress = endPercent;        
         if (progressCallback != nullptr) {
             progressCallback(progress);
         }
