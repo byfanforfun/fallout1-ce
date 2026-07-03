@@ -20,6 +20,7 @@
 #include "game/gconfig.h"
 #include "game/gdialog.h"
 #include "game/gkioskconf.h"
+#include "game/gkioskinv.h"
 #include "game/gmemory.h"
 #include "game/gmouse.h"
 #include "game/gmovie.h"
@@ -405,6 +406,7 @@ void game_reset()
     gdialog_reset();
     combat_reset();
     game_user_wants_to_quit = 0;
+    gkioskinv_reset();
     automap_reset();
     init_options_menu();
     timer_stop();
