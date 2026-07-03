@@ -37,7 +37,9 @@ static int load_proto();
 
 int start_inventory() {
 
-    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &caps_start);
+if (!config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &caps_start)) {
+    caps_start = 1;
+}    
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_BARTER_MOD, &barter_mod);
 
     if(1 > caps_start)
