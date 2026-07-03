@@ -223,4 +223,15 @@ static void init_cached_item_pids()
     cachedItemsInitialized = true;
 }
 
+void gkioskinv_reset()
+{
+    inv_conf_exit();
+    rndex_conf_initialized = false;
+    cachedItemsInitialized = false;
+    cachedItemPids.clear();
+    rndex_exclude_count = 0;
+    rndex_keep_count = 0;
+    rndex_once_count = 0;
+}
+
 }
