@@ -1165,9 +1165,10 @@ int critter_set_who_hit_me(Object* critter, Object* who_hit_me)
     } else {
         char* killer_msg = getmsg(&kiosk_msgfile, &mesg, 1212);
         char killer[255];
+        static char killer_buf[260];
 
-        snprintf(killer, 255, killer_msg, critter_name(who_hit_me));
-        strcpy(death_cause, killer);
+        snprintf(killer_buf, sizeof(killer_buf), killer_msg, critter_name(who_hit_me));
+        death_cause = killer_buf; 
     }
 
     return 0;
