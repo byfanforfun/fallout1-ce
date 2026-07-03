@@ -2388,8 +2388,18 @@ bool tile_in_tile_bound(int tile1, int radius, int tile2)
 }
 
 // 0x494960
-int scr_load_all_scripts()
+int scr_load_all_scripts(std::function<void(int)> progress)
 {
+    int totalScripts = 0;
+    for (int i = 0; i < SCRIPT_TYPE_COUNT; i++) {
+        ScriptListExtent* ext = scriptlists[i].head;
+        while (ext != NULL) {
+            totalScripts += ext->length;
+            ext = ext->next;
+        }
+    }
+
+    int processed = 0;
     for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
         ScriptList* scriptList = &(scriptlists[scriptListIndex]);
         ScriptListExtent* extent = scriptList->head;
@@ -2397,6 +2407,10 @@ int scr_load_all_scripts()
             for (int scriptIndex = 0; scriptIndex < extent->length; scriptIndex++) {
                 Script* script = &(extent->scripts[scriptIndex]);
                 exec_script_proc(script->scr_id, SCRIPT_PROC_START);
+                processed++;
+                if (progress && totalScripts > 0) {
+                    progress(processed * 100 / totalScripts);
+                }
             }
             extent = extent->next;
         }
@@ -2406,7 +2420,7 @@ int scr_load_all_scripts()
 }
 
 // 0x4949C0
-void scr_exec_map_enter_scripts()
+void scr_exec_map_enter_scripts(std::function<void(int)> progress)
 {
     int script_type;
     ScriptListExtent* script_list_extent;
@@ -2414,6 +2428,22 @@ void scr_exec_map_enter_scripts()
     int sid;
 
     scr_spatials_disable();
+
+    int totalScripts = 0;
+    for (script_type = 0; script_type < SCRIPT_TYPE_COUNT; script_type++) {
+        script_list_extent = scriptlists[script_type].head;
+        while (script_list_extent != NULL) {
+            for (script_index = 0; script_index < script_list_extent->length; script_index++) {
+                if (script_list_extent->scripts[script_index].procs[SCRIPT_PROC_MAP_ENTER] > 0
+                    && script_list_extent->scripts[script_index].scr_id != map_script_id) {
+                    totalScripts++;
+                }
+            }
+            script_list_extent = script_list_extent->next;
+        }
+    }
+
+    int processed = 0;
 
     for (script_type = 0; script_type < SCRIPT_TYPE_COUNT; script_type++) {
         script_list_extent = scriptlists[script_type].head;
@@ -2424,6 +2454,10 @@ void scr_exec_map_enter_scripts()
                     if (sid != map_script_id) {
                         scr_set_ext_param(sid, (map_data.flags & 0x1) == 0);
                         exec_script_proc(sid, SCRIPT_PROC_MAP_ENTER);
+                        processed++;
+                        if (progress && totalScripts > 0) {
+                            progress(processed * 100 / totalScripts);
+                        }
                     }
                 }
             }
@@ -2435,7 +2469,7 @@ void scr_exec_map_enter_scripts()
 }
 
 // 0x494A70
-void scr_exec_map_update_scripts()
+void scr_exec_map_update_scripts(std::function<void(int)> progress)
 {
     int script_type;
     ScriptListExtent* script_list_extent;
@@ -2446,6 +2480,22 @@ void scr_exec_map_update_scripts()
 
     exec_script_proc(map_script_id, SCRIPT_PROC_MAP_UPDATE);
 
+    int totalScripts = 0;
+    for (script_type = 0; script_type < SCRIPT_TYPE_COUNT; script_type++) {
+        script_list_extent = scriptlists[script_type].head;
+        while (script_list_extent != NULL) {
+            for (script_index = 0; script_index < script_list_extent->length; script_index++) {
+                if (script_list_extent->scripts[script_index].procs[SCRIPT_PROC_MAP_UPDATE] > 0
+                    && script_list_extent->scripts[script_index].scr_id != map_script_id) {
+                    totalScripts++;
+                }
+            }
+            script_list_extent = script_list_extent->next;
+        }
+    }
+
+    int processed = 0;
+
     for (script_type = 0; script_type < SCRIPT_TYPE_COUNT; script_type++) {
         script_list_extent = scriptlists[script_type].head;
         while (script_list_extent != NULL) {
@@ -2454,6 +2504,10 @@ void scr_exec_map_update_scripts()
                     sid = script_list_extent->scripts[script_index].scr_id;
                     if (sid != map_script_id) {
                         exec_script_proc(sid, SCRIPT_PROC_MAP_UPDATE);
+                        processed++;
+                        if (progress && totalScripts > 0) {
+                            progress(processed * 100 / totalScripts);
+                        }
                     }
                 }
             }

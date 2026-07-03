@@ -1,6 +1,8 @@
 #ifndef FALLOUT_GAME_SCRIPTS_H_
 #define FALLOUT_GAME_SCRIPTS_H_
 
+#include <functional>
+
 #include "game/combat_defs.h"
 #include "game/message.h"
 #include "game/object_types.h"
@@ -203,9 +205,9 @@ void scr_spatials_enable();
 void scr_spatials_disable();
 bool scr_chk_spatials_in(Object* obj, int tile, int elevation);
 bool tile_in_tile_bound(int tile1, int radius, int tile2);
-int scr_load_all_scripts();
-void scr_exec_map_enter_scripts();
-void scr_exec_map_update_scripts();
+int scr_load_all_scripts(std::function<void(int)> progress = nullptr);
+void scr_exec_map_enter_scripts(std::function<void(int)> progress = nullptr);
+void scr_exec_map_update_scripts(std::function<void(int)> progress = nullptr);
 void scr_exec_map_exit_scripts();
 int scr_get_dialog_msg_file(int a1, MessageList** out_message_list);
 char* scr_get_msg_str(int messageListId, int messageId);

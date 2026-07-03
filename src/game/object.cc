@@ -2883,7 +2883,7 @@ char* object_description(Object* obj)
 }
 
 // 0x47E01C
-void obj_preload_art_cache(int flags)
+void obj_preload_art_cache(int flags, std::function<void(int)> progress)
 {
     if (preload_list == NULL) {
         return;
@@ -2916,6 +2916,8 @@ void obj_preload_art_cache(int flags)
         }
     }
 
+    if (progress) progress(10);
+
     qsort(preload_list, preload_list_index, sizeof(*preload_list), obj_preload_sort);
 
     int v11 = preload_list_index;
@@ -2942,7 +2944,13 @@ void obj_preload_art_cache(int flags)
                 art_ptr_unlock(cache_handle);
             }
         }
+
+        if (progress && i % 4 == 0) {
+            progress(10 + i * 30 / v11);
+        }
     }
+
+    if (progress) progress(40);
 
     for (int i = 0; i < 4096; i++) {
         if (arr[i] != 0) {
@@ -2951,7 +2959,12 @@ void obj_preload_art_cache(int flags)
                 art_ptr_unlock(cache_handle);
             }
         }
+        if (progress && i % 128 == 0) {
+            progress(40 + i * 30 / 4096);
+        }
     }
+
+    if (progress) progress(70);
 
     for (int i = v11; i < preload_list_index; i++) {
         if (preload_list[i - 1] != preload_list[i]) {
@@ -2959,7 +2972,13 @@ void obj_preload_art_cache(int flags)
                 art_ptr_unlock(cache_handle);
             }
         }
+        int remaining = preload_list_index - v11;
+        if (progress && remaining > 0 && (i - v11) % 4 == 0) {
+            progress(70 + (i - v11) * 30 / remaining);
+        }
     }
+
+    if (progress) progress(100);
 
     mem_free(preload_list);
     preload_list = NULL;

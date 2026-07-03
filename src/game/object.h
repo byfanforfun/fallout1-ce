@@ -1,6 +1,8 @@
 #ifndef FALLOUT_GAME_OBJECT_H_
 #define FALLOUT_GAME_OBJECT_H_
 
+#include <functional>
+
 #include "game/inventry.h"
 #include "game/map_defs.h"
 #include "game/object_types.h"
@@ -88,7 +90,7 @@ void obj_set_seen(int tile);
 void obj_process_seen();
 char* object_name(Object* obj);
 char* object_description(Object* obj);
-void obj_preload_art_cache(int flags);
+void obj_preload_art_cache(int flags, std::function<void(int)> progress = nullptr);
 int obj_save_obj(DB_FILE* stream, Object* object);
 int obj_load_obj(DB_FILE* stream, Object** objectPtr, int elevation, Object* owner);
 int obj_save_dude(DB_FILE* stream);
