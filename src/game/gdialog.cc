@@ -580,6 +580,17 @@ int gdialog_init()
 int gdialog_reset()
 {
     gdialog_free_speech();
+    if (gReplyWin != -1) {
+        win_delete(gReplyWin);
+        gReplyWin = -1;
+    }
+    if (gOptionWin != -1) {
+        win_delete(gOptionWin);
+        gOptionWin = -1;
+    }
+    headWindowBuffer = NULL;
+    dial_win_created = false;
+
     return 0;
 }
 
@@ -4158,12 +4169,13 @@ static int about_lookup_name(const char* search)
 }
 
 int copy_background(int background_id) {
-  int backgroundFid = art_id(OBJ_TYPE_BACKGROUND, background_id, 0, 0, 0);
+    int backgroundFid = art_id(OBJ_TYPE_BACKGROUND, background_id, 0, 0, 0);
 
     CacheEntry* backgroundHandle;
     Art* backgroundFrm = art_ptr_lock(backgroundFid, &backgroundHandle);
     if (backgroundFrm == NULL) {
         debug_printf("\tError locking background in display...\n");
+        return -1;
     }
 
     unsigned char* backgroundFrmData = art_frame_data(backgroundFrm, 0, 0);
@@ -4191,8 +4203,10 @@ int gDialogStartInventory(Object* target, int barter_mod, int background) {
 
     gDialogProcessInit();
 
-    if(gOptionWin != -1)
+    if(gOptionWin != -1) {
         win_delete(gOptionWin);
+        gOptionWin = -1;
+    }
 
     talk_to_refresh_background_window();
     copy_background(background);
@@ -4206,8 +4220,10 @@ int gDialogStartInventory(Object* target, int barter_mod, int background) {
     dialogue_switch_mode = 0;
     dialogue_state = 0;
 
-    if(gReplyWin != -1)
+    if(gReplyWin != -1) {
         win_delete(gReplyWin);
+        gOptionWin = -1;
+    }
 
     return 0;
 }
