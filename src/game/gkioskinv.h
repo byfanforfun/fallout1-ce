@@ -20,6 +20,7 @@ bool inv_conf_init();
 bool inv_conf_exit();
 void inv_generate_items_for_value(Object* container, int targetValue);
 bool should_keep_item(int pid);
+void gkioskinv_reset();
 
 }
 
