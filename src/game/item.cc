@@ -1053,8 +1053,11 @@ int item_w_damage_min_max(Object* weapon, int* min_damage, int* max_damage)
     int weaponQuality = get_quality_for_object(weapon);
     double qualityMod = get_quality_modifier(weaponQuality);
     
-    int ammoQuality = get_ammo_quality(weapon);
-    double ammoMod = get_quality_modifier(ammoQuality);
+    double ammoMod = 1.0;
+    if (item_w_curr_ammo(weapon) > 0) {
+        int ammoQuality = get_ammo_quality(weapon);
+        ammoMod = get_quality_modifier(ammoQuality);
+    }
     
     double totalMod = qualityMod * ammoMod;
 
@@ -1665,7 +1668,9 @@ Object* item_w_unload(Object* weapon)
         remainingQuantity = ammoQuantity - ammoCapacity;
     }
     item_w_set_curr_ammo(weapon, remainingQuantity);
-    apply_quality_to_ammo_normal(weapon);
+    if (remainingQuantity == 0) {
+        apply_quality_to_ammo_normal(weapon);
+    }
 
     return ammo;
 }
@@ -2314,12 +2319,29 @@ int item_d_take_drug(Object* critter, Object* item)
     wd_onset = proto->item.data.drug.withdrawalOnset;
 
     queue_clear_type(EVENT_TYPE_WITHDRAWAL, item_wd_clear_all);
-    perform_drug_effect(critter, proto->item.data.drug.stat, proto->item.data.drug.amount, true);
-    insert_drug_effect(critter, item, proto->item.data.drug.duration1, proto->item.data.drug.stat, proto->item.data.drug.amount1);
-    insert_drug_effect(critter, item, proto->item.data.drug.duration2, proto->item.data.drug.stat, proto->item.data.drug.amount2);
+
+    int drugQuality = get_quality_for_object(item);
+    double qualityMod = get_quality_modifier(drugQuality);
+
+    int amount[3], amount1[3], amount2[3];
+    for (int i = 0; i < 3; i++) {
+        amount[i] = (int)(proto->item.data.drug.amount[i] * qualityMod);
+        amount1[i] = (int)(proto->item.data.drug.amount1[i] * qualityMod);
+        amount2[i] = (int)(proto->item.data.drug.amount2[i] * qualityMod);
+    }
+
+    int duration1 = (int)(proto->item.data.drug.duration1 * qualityMod);
+    int duration2 = (int)(proto->item.data.drug.duration2 * qualityMod);
+
+    perform_drug_effect(critter, proto->item.data.drug.stat, amount, true);
+    insert_drug_effect(critter, item, duration1, proto->item.data.drug.stat, amount1);
+    insert_drug_effect(critter, item, duration2, proto->item.data.drug.stat, amount2);
 
     if (!item_d_check_addict(item->pid)) {
         addiction_chance = proto->item.data.drug.addictionChance;
+        if (qualityMod != 0.0) {
+            addiction_chance = (int)(addiction_chance / qualityMod);
+        }
         if (critter == obj_dude) {
             if (trait_level(TRAIT_CHEM_RELIANT)) {
                 addiction_chance *= 2;

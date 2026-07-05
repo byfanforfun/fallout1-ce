@@ -35,6 +35,8 @@ namespace fallout {
 #define KIOSK_CONFIG_QUALITY_MOD_BASE "quality_mod_"
 #define KIOSK_CONFIG_QUALITY_NPC_HP_BASE "quality_npc_hp_"
 #define KIOSK_CONFIG_QUALITY_GROUND_BASE "quality_ground_"
+#define KIOSK_CONFIG_QUALITY_ENCOUNTER_BASE "quality_encounter_"
+#define KIOSK_CONFIG_DEBUG_SPAWN_DRUGS "debug_spawn_drugs"
 #define MAX_QUALITY_LEVELS 10
 
 extern Config kiosk_config;
@@ -54,6 +56,8 @@ extern int gconfig_quality_default_index;
 extern double gconfig_quality_mods[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_npc_hp[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
+extern int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
+extern int gconfig_debug_spawn_drugs;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

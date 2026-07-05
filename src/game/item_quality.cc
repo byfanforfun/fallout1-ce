@@ -22,6 +22,7 @@
 #include "game/bmpdlog.h"
 #include "plib/color/color.h"
 #include "platform_compat.h"
+#include "game/map.h"
 
 namespace fallout {
 
@@ -145,6 +146,28 @@ int get_quality_for_ground(Object* obj) {
     return gconfig_quality_levels - 1;
 }
 
+int get_quality_for_encounter() {
+    if (!items_quality_initialized) {
+        items_quality_init();
+    }
+    
+    if (gconfig_quality_levels <= 0) {
+        return 2;
+    }
+    
+    int roll = roll_random(1, 100);
+    int cumulative = 0;
+    
+    for (int i = 0; i < gconfig_quality_levels; i++) {
+        cumulative += gconfig_quality_encounter_chance[i];
+        if (roll <= cumulative) {
+            return i;
+        }
+    }
+    
+    return gconfig_quality_levels - 1;
+}
+
 int get_quality_cost(int baseCost, int quality) {
     if (quality <= 0 || quality > gconfig_quality_levels) {
         return baseCost;
@@ -239,7 +262,7 @@ void apply_quality_to_ammo_normal(Object* item) {
     set_ammo_quality(item, gconfig_quality_default_index);
 }
 
-static void process_inventory(Object* container, int quality) {
+static void process_inventory(Object* container, bool isEncounter) {
     if (container == NULL) return;
     
     Inventory* inv = &(container->data.inventory);
@@ -259,6 +282,7 @@ static void process_inventory(Object* container, int quality) {
 
         if (proto_ptr(item->pid, &proto) != 0) continue;
         
+        int quality = isEncounter ? get_quality_for_encounter() : get_quality_for_ground(NULL);
         int item_type = proto->item.type;
         
         if (item_type == ITEM_TYPE_WEAPON) {
@@ -285,47 +309,41 @@ void items_apply_quality_on_map() {
         return;
     }
     
-    int qc_n = 0;
-    int qc_c = 0;
-    int qc_m = 0;
-    int quality = gconfig_quality_default_index;
-
+    bool isEncounter = false;
+    {
+        const char* name = map_data.name;
+        if (name != NULL && name[0] != '\0') {
+            if (strncmp(name, "DESERT", 6) == 0 ||
+                strncmp(name, "MOUNTN", 6) == 0 ||
+                strncmp(name, "CITY", 4) == 0 ||
+                strncmp(name, "COAST", 5) == 0) {
+                isEncounter = true;
+            }
+        }
+    }
+    
     for (Object* obj = obj_find_first(); obj != NULL; obj = obj_find_next()) {
         if (obj == obj_dude) continue;
         
         if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
-            quality = get_quality_for_npc(obj);
-            process_inventory(obj, quality);
-            qc_n++;
+            process_inventory(obj, isEncounter);
         }
         else if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
             Proto* proto;
             if (proto_ptr(obj->pid, &proto) != 0) continue;
             
             if (proto->item.type == ITEM_TYPE_CONTAINER) {
-                Object* owner = obj->owner;
-                quality = gconfig_quality_default_index;
-
-                if (owner != NULL && PID_TYPE(owner->pid) == OBJ_TYPE_CRITTER) {
-                    quality = get_quality_for_npc(owner);
-                } else {
-                    quality = get_quality_for_ground(obj);
-                }
-                process_inventory(obj, quality);
-                qc_c++;
+                process_inventory(obj, isEncounter);
             }
             else {
                 Object* owner = obj->owner;
                 if (owner == NULL || owner == obj) {
-                    int quality = get_quality_for_ground(obj);
+                    int quality = isEncounter ? get_quality_for_encounter() : get_quality_for_ground(NULL);
                     apply_quality_to_item(obj, quality);
-                    qc_m++;
                 }
             }
         }
     }
-
-    debug_printf("\n[QUALITY] Applied: npc=%d, containers=%d, items=%d", qc_n, qc_c, qc_m);
 }
 
 static char quality_name_buffer[256] = {0};
