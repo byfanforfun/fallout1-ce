@@ -1047,11 +1047,18 @@ int map_load_file(DB_FILE* stream)
 
         drawLoadingScreen(50);
 
-        if (gconfig_random_containers && map_data.lastVisitTime == 0) {
+        // HACK: original .MAP files have garbage at offset 0x38
+        // where CE expects lastVisitTime (hubdwntn.map = 264644).
+        int lastVisitTime = map_data.lastVisitTime;
+        if (lastVisitTime > 0 && lastVisitTime < 1000000) {
+            lastVisitTime = 0;
+        }
+
+        if (gconfig_random_containers && lastVisitTime == 0) {
             map_randomize_containers(drawLoadingScreen);
         }
 
-        if (gconfig_quality_levels > 0 && map_data.lastVisitTime == 0) {
+        if (gconfig_quality_levels > 0 && lastVisitTime == 0) {
             items_apply_quality_on_map();
         }
 

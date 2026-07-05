@@ -15,6 +15,7 @@ int get_quality_levels();
 int get_quality_for_object(Object* obj);
 int get_quality_for_npc(Object* npc);
 int get_quality_for_ground(Object* obj);
+int get_quality_for_encounter();
 double get_quality_modifier(int quality);
 const char* get_quality_name(int quality);
 int get_quality_cost(int baseCost, int quality);
