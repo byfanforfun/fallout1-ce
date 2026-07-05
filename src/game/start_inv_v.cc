@@ -5,7 +5,9 @@
 #include "game/gkioskinv.h"
 #include "game/inventry.h"
 #include "game/item.h"
+#include "game/item_quality.h"
 #include "game/palette.h"
+#include "game/proto.h"
 #include "game/object.h"
 
 #include "plib/color/color.h"
@@ -126,9 +128,23 @@ static int load_proto()
     }
 
     Object *to;
+    Proto *proto;
+    int item_type = -1;
     for(int i = 0; INV_MAX_PROTO > i; ++i){
         if(inventory_proto[i] != 0)
             if(obj_pid_new(&to, i) == 0){
+                if (proto_ptr(to->pid, &proto) == 0){
+                    item_type = proto->item.type;
+                    if (item_type == ITEM_TYPE_WEAPON) {
+                        apply_quality_to_item_normal(to);
+                        apply_quality_to_ammo_normal(to);
+                    }else if(item_type == ITEM_TYPE_AMMO || item_type == ITEM_TYPE_ARMOR || item_type == ITEM_TYPE_DRUG){
+                        apply_quality_to_item_normal(to);
+                    }
+
+                    debug_printf("proto %d set quality %d\n", i);
+                }
+
                 inventory_objs[i] = to;
                 obj_disconnect(to, NULL);
 

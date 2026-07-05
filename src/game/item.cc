@@ -11,6 +11,7 @@
 #include "game/game.h"
 #include "game/intface.h"
 #include "game/inventry.h"
+#include "game/item_quality.h"
 #include "game/light.h"
 #include "game/map.h"
 #include "game/message.h"
@@ -510,6 +511,10 @@ static bool item_identical(Object* a1, Object* a2)
         return false;
     }
 
+    if (a1->quality != a2->quality) {
+        return false;
+    }
+
     if (a1->sid != a2->sid) {
         return false;
     }
@@ -526,6 +531,12 @@ static bool item_identical(Object* a1, Object* a2)
     proto_ptr(a1->pid, &proto);
     if (proto->item.type == ITEM_TYPE_CONTAINER) {
         return false;
+    }
+
+    if (proto->item.type == ITEM_TYPE_WEAPON) {
+        if (a1->data.item.weapon.ammoQuality != a2->data.item.weapon.ammoQuality) {
+            return false;
+        }
     }
 
     Inventory* inventory1 = &(a1->data.inventory);
@@ -567,7 +578,7 @@ char* item_name(Object* obj)
     // 0x5057DC
     static char* name = _name;
 
-    name = proto_name(obj->pid);
+    name = items_get_item_name(obj);
     return name;
 }
 
@@ -657,10 +668,12 @@ int item_cost(Object* obj)
         return 0;
     }
 
+    items_quality_init();
+
     Proto* proto;
     proto_ptr(obj->pid, &proto);
 
-    int cost = proto->item.cost;
+    int cost = get_quality_cost(proto->item.cost, obj->quality);
 
     switch (proto->item.type) {
     case ITEM_TYPE_CONTAINER:
@@ -720,7 +733,7 @@ int item_total_cost(Object* obj)
             //
             // In order to correctly calculate cost of the ammo stack, add cost
             // of all full clips...
-            cost += proto->item.cost * (inventoryItem->quantity - 1);
+            cost += get_quality_cost(proto->item.cost, inventoryItem->item->quality) * (inventoryItem->quantity - 1);
 
             // ...and add cost of the current clip, which is proportional to
             // it's capacity.
@@ -1037,12 +1050,23 @@ int item_w_damage_min_max(Object* weapon, int* min_damage, int* max_damage)
 
     proto_ptr(weapon->pid, &proto);
 
+    int weaponQuality = get_quality_for_object(weapon);
+    double qualityMod = get_quality_modifier(weaponQuality);
+    
+    double ammoMod = 1.0;
+    if (item_w_curr_ammo(weapon) > 0) {
+        int ammoQuality = get_ammo_quality(weapon);
+        ammoMod = get_quality_modifier(ammoQuality);
+    }
+    
+    double totalMod = qualityMod * ammoMod;
+
     if (min_damage != NULL) {
-        *min_damage = proto->item.data.weapon.minDamage;
+        *min_damage = (int)(proto->item.data.weapon.minDamage * totalMod);
     }
 
     if (max_damage != NULL) {
-        *max_damage = proto->item.data.weapon.maxDamage;
+        *max_damage = (int)(proto->item.data.weapon.maxDamage * totalMod);
     }
 
     return 0;
@@ -1291,6 +1315,10 @@ bool item_w_can_reload(Object* weapon, Object* ammo)
         if (weapon->data.item.weapon.ammoTypePid != ammo->pid) {
             return false;
         }
+
+        if (weapon->data.item.weapon.ammoQuality != ammo->quality) {
+            return false;
+        }
     }
 
     return true;
@@ -1324,6 +1352,7 @@ int item_w_reload(Object* weapon, Object* ammo)
         }
 
         weapon->data.item.weapon.ammoTypePid = ammo->pid;
+        weapon->data.item.weapon.ammoQuality = ammo->quality;
 
         item_w_set_curr_ammo(ammo, v11);
         item_w_set_curr_ammo(weapon, v12);
@@ -1354,6 +1383,11 @@ int item_w_range(Object* critter, int hit_mode)
     } else {
         range = proto->item.data.weapon.maxRange2;
     }
+
+    int weaponQuality = get_quality_for_object(weapon);
+    double qualityMod = get_quality_modifier(weaponQuality);
+    range = (int)(range * qualityMod);
+    if (range < 1) range = 1;
 
     if (item_w_subtype(weapon, hit_mode) == ATTACK_TYPE_THROW) {
         if (critter == obj_dude) {
@@ -1616,6 +1650,9 @@ Object* item_w_unload(Object* weapon)
 
     obj_disconnect(ammo, NULL);
 
+    // Copy ammo quality from weapon to ammo
+    ammo->quality = get_ammo_quality(weapon);
+
     // NOTE: Uninline.
     int ammoQuantity = item_w_curr_ammo(weapon);
 
@@ -1631,6 +1668,9 @@ Object* item_w_unload(Object* weapon)
         remainingQuantity = ammoQuantity - ammoCapacity;
     }
     item_w_set_curr_ammo(weapon, remainingQuantity);
+    if (remainingQuantity == 0) {
+        apply_quality_to_ammo_normal(weapon);
+    }
 
     return ammo;
 }
@@ -1671,7 +1711,11 @@ int item_ar_ac(Object* armor)
     }
 
     proto_ptr(armor->pid, &proto);
-    return proto->item.data.armor.armorClass;
+    
+    int armorQuality = get_quality_for_object(armor);
+    double qualityMod = get_quality_modifier(armorQuality);
+    
+    return (int)(proto->item.data.armor.armorClass * qualityMod);
 }
 
 // 0x46B6C0
@@ -1684,7 +1728,11 @@ int item_ar_dr(Object* armor, int damageType)
     }
 
     proto_ptr(armor->pid, &proto);
-    return proto->item.data.armor.damageResistance[damageType];
+    
+    int armorQuality = get_quality_for_object(armor);
+    double qualityMod = get_quality_modifier(armorQuality);
+    
+    return (int)(proto->item.data.armor.damageResistance[damageType] * qualityMod);
 }
 
 // 0x46B6E0
@@ -1697,7 +1745,11 @@ int item_ar_dt(Object* armor, int damageType)
     }
 
     proto_ptr(armor->pid, &proto);
-    return proto->item.data.armor.damageThreshold[damageType];
+    
+    int armorQuality = get_quality_for_object(armor);
+    double qualityMod = get_quality_modifier(armorQuality);
+    
+    return (int)(proto->item.data.armor.damageThreshold[damageType] * qualityMod);
 }
 
 // 0x46B700
@@ -2267,12 +2319,29 @@ int item_d_take_drug(Object* critter, Object* item)
     wd_onset = proto->item.data.drug.withdrawalOnset;
 
     queue_clear_type(EVENT_TYPE_WITHDRAWAL, item_wd_clear_all);
-    perform_drug_effect(critter, proto->item.data.drug.stat, proto->item.data.drug.amount, true);
-    insert_drug_effect(critter, item, proto->item.data.drug.duration1, proto->item.data.drug.stat, proto->item.data.drug.amount1);
-    insert_drug_effect(critter, item, proto->item.data.drug.duration2, proto->item.data.drug.stat, proto->item.data.drug.amount2);
+
+    int drugQuality = get_quality_for_object(item);
+    double qualityMod = get_quality_modifier(drugQuality);
+
+    int amount[3], amount1[3], amount2[3];
+    for (int i = 0; i < 3; i++) {
+        amount[i] = (int)(proto->item.data.drug.amount[i] * qualityMod);
+        amount1[i] = (int)(proto->item.data.drug.amount1[i] * qualityMod);
+        amount2[i] = (int)(proto->item.data.drug.amount2[i] * qualityMod);
+    }
+
+    int duration1 = (int)(proto->item.data.drug.duration1 * qualityMod);
+    int duration2 = (int)(proto->item.data.drug.duration2 * qualityMod);
+
+    perform_drug_effect(critter, proto->item.data.drug.stat, amount, true);
+    insert_drug_effect(critter, item, duration1, proto->item.data.drug.stat, amount1);
+    insert_drug_effect(critter, item, duration2, proto->item.data.drug.stat, amount2);
 
     if (!item_d_check_addict(item->pid)) {
         addiction_chance = proto->item.data.drug.addictionChance;
+        if (qualityMod != 0.0) {
+            addiction_chance = (int)(addiction_chance / qualityMod);
+        }
         if (critter == obj_dude) {
             if (trait_level(TRAIT_CHEM_RELIANT)) {
                 addiction_chance *= 2;

@@ -21,6 +21,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/item_quality.h"
 #include "game/light.h"
 #include "game/map.h"
 #include "game/message.h"
@@ -2742,14 +2743,12 @@ void display_stats()
         offset += INVENTORY_WINDOW_WIDTH * text_height();
 
         if (item_w_max_ammo(item) > 0) {
-            int ammoTypePid = item_w_ammo_pid(item);
-
             formattedText[0] = '\0';
 
             messageListItem.num = 17; // Ammo:
             if (message_search(&inventry_message_file, &messageListItem)) {
-                if (ammoTypePid != 0) {
-                    const char* ammoName = proto_name(ammoTypePid);
+                if (item_w_ammo_pid(item) != 0) {
+                    const char* ammoName = get_weapon_ammo_name(item);
                     int capacity = item_w_max_ammo(item);
                     int quantity = item_w_curr_ammo(item);
                     snprintf(formattedText, sizeof(formattedText), "%s %d/%d %s", messageListItem.text, quantity, capacity, ammoName);

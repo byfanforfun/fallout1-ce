@@ -12,6 +12,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/item_quality.h"
 #include "game/map.h"
 #include "game/message.h"
 #include "game/object.h"
@@ -315,7 +316,7 @@ int obj_examine_func(Object* critter, Object* target, void (*fn)(char* string))
 
                 if (item_w_caliber(item2) != 0) {
                     const int ammoTypePid = item_w_ammo_pid(item2);
-                    const char* ammoName = proto_name(ammoTypePid);
+                    const char* ammoName = get_weapon_ammo_name(item2);
                     const int ammoCapacity = item_w_max_ammo(item2);
                     const int ammoQuantity = item_w_curr_ammo(item2);
                     const char* weaponName = object_name(item2);
@@ -456,7 +457,7 @@ int obj_examine_func(Object* critter, Object* target, void (*fn)(char* string))
                 }
 
                 int ammoTypePid = item_w_ammo_pid(target);
-                const char* ammoName = proto_name(ammoTypePid);
+                const char* ammoName = get_weapon_ammo_name(target);
                 int ammoCapacity = item_w_max_ammo(target);
                 int ammoQuantity = item_w_curr_ammo(target);
                 snprintf(formattedText, sizeof(formattedText), weaponMessageListItem.text, ammoQuantity, ammoCapacity, ammoName);
