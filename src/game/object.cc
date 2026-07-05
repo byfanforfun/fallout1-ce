@@ -11,8 +11,10 @@
 #include "game/critter.h"
 #include "game/game.h"
 #include "game/gconfig.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/item.h"
+#include "game/item_quality.h"
 #include "game/light.h"
 #include "game/map.h"
 #include "game/party.h"
@@ -3497,6 +3499,11 @@ static int obj_create_object(Object** objectPtr)
     object->sid = -1;
     object->owner = NULL;
     object->field_80 = -1;
+
+    int quality = ITEM_QUALITY_DEFAULT;
+    if(gconfig_quality_default_index != ITEM_QUALITY_DEFAULT) quality = gconfig_quality_default_index;
+
+    object->quality = quality;
 
     return 0;
 }
