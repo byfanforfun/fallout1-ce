@@ -29,6 +29,14 @@ int gconfig_random_containers_base_chance;
 int gconfig_random_containers_luck_factor;
 int gconfig_random_containers_barter_factor;
 
+double gconfig_quality_mods[MAX_QUALITY_LEVELS + 1];
+int gconfig_quality_levels;
+int gconfig_quality_default_index;
+int gconfig_quality_npc_hp[MAX_QUALITY_LEVELS + 1];
+int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
+int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
+int gconfig_debug_spawn_drugs;
+
 bool gkioskconf_init()
 {
     char* sep;
@@ -59,9 +67,19 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, 5);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, 5);
 
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, 5);
+
+    double defaultMods[] = { 0.5, 0.75, 1.0, 1.5, 2.0 };
+    char modKey[32];
+    for (int i = 0; i < 5 && i < MAX_QUALITY_LEVELS; i++) {
+        snprintf(modKey, sizeof(modKey), "%s%d", KIOSK_CONFIG_QUALITY_MOD_BASE, i);
+        config_set_double(&kiosk_config, KIOSK_CONFIG_GAME_KEY, modKey, defaultMods[i]);
+    }
+
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_GAME, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_COMBAT, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_LFILTER, 0);
+
 
     strcpy(gkioskconf_file_name, KIOSK_CONFIG_FILE_NAME);
     config_load(&kiosk_config, gkioskconf_file_name, false);
@@ -87,6 +105,39 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, &gconfig_random_containers_base_chance);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, &gconfig_random_containers_luck_factor);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, &gconfig_random_containers_barter_factor);
+
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, &gconfig_quality_levels);
+
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_DEBUG_SPAWN_DRUGS, &gconfig_debug_spawn_drugs);
+
+    char key[32];
+    for (int i = 0; i < gconfig_quality_levels && i < MAX_QUALITY_LEVELS; i++) {
+        snprintf(key, sizeof(key), "%s%d", KIOSK_CONFIG_QUALITY_MOD_BASE, i);
+
+        config_get_double(&kiosk_config, KIOSK_CONFIG_GAME_KEY, key, &gconfig_quality_mods[i]);
+        if (gconfig_quality_mods[i] == 0.0) {
+            gconfig_quality_mods[i] = 1.0;
+        }
+
+        if (gconfig_quality_mods[i] == 1.0) {
+            gconfig_quality_default_index = i;
+        }
+
+        gconfig_quality_npc_hp[i] = i * 25;
+        snprintf(key, sizeof(key), "%s%d", KIOSK_CONFIG_QUALITY_NPC_HP_BASE, i);
+        config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, key, &gconfig_quality_npc_hp[i]);
+
+        gconfig_quality_ground_chance[i] = (gconfig_quality_levels > 0) ? (100 / gconfig_quality_levels) : 0;
+        snprintf(key, sizeof(key), "%s%d", KIOSK_CONFIG_QUALITY_GROUND_BASE, i);
+        config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, key, &gconfig_quality_ground_chance[i]);
+    }
+
+    int encounterChances[] = { 5, 10, 25, 30, 30 };
+    for (int i = 0; i < gconfig_quality_levels && i < MAX_QUALITY_LEVELS; i++) {
+        gconfig_quality_encounter_chance[i] = (i < 5) ? encounterChances[i] : 0;
+        snprintf(key, sizeof(key), "%s%d", KIOSK_CONFIG_QUALITY_ENCOUNTER_BASE, i);
+        config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, key, &gconfig_quality_encounter_chance[i]);
+    }
 
     gkioskconf_initialized = true;
 

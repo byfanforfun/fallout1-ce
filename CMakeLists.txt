@@ -115,6 +115,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/inventry.h"
     "src/game/item.cc"
     "src/game/item.h"
+    "src/game/item_quality.cc"
+    "src/game/item_quality.h"
     "src/game/kiosk_msgfile.cc"
     "src/game/kiosk_msgfile.h"
     "src/game/light.cc"
