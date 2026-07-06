@@ -146,35 +146,50 @@ int gnw_main(int argc, char** argv)
                 config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
 
                 if(msg_start) {
-                    if (start_message() != 2) {
-                        main_menu_create();
+                    bool startGame = false;
+                    while (true) {
+                        if (start_message() != 2) {
+                            main_menu_create();
+                            break;
+                        }
+
+                        int selectRc = select_character();
+                        if (selectRc == 2) {
+                            startGame = true;
+                            break;
+                        }
+
+                        // Back from character select → loop to start_message again
+                    }
+
+                    if (!startGame) {
                         break;
                     }
+                } else if (select_character() != 2) {
+                    main_menu_create();
+                    break;
                 }
 
-                if(select_character() == 2) {
-                    start_inventory();
+                start_inventory();
 
-                    gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
-                    roll_set_seed(-1);
-                    main_load_new(mainMap);
+                gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
+                roll_set_seed(-1);
+                main_load_new(mainMap);
 
-                    stat_pc_add_experience(exp_start);
+                stat_pc_add_experience(exp_start);
 
-                    main_game_loop();
-                    palette_fade_to(white_palette);
+                main_game_loop();
+                palette_fade_to(white_palette);
 
-                    // NOTE: Uninline.
-                    main_unload_new();
+                // NOTE: Uninline.
+                main_unload_new();
 
-                    // NOTE: Uninline.
-                    main_reset_system();
+                // NOTE: Uninline.
+                main_reset_system();
 
-                    if (main_show_death_scene != 0) {
-                        main_death_scene();
-                        main_show_death_scene = 0;
-                    }
-
+                if (main_show_death_scene != 0) {
+                    main_death_scene();
+                    main_show_death_scene = 0;
                 }
 
                 main_menu_create();
