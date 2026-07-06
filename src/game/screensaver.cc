@@ -140,7 +140,7 @@ bool Screensaver::Play()
         if (roll_random(0, 10000) < 3000) {
             for (int i = 0; i < SCREENSAVER_BOMB_COUNT; i++) {
                 if (!bombs[i].active) {
-                    bombs[i].x = roll_random(0, screenWidth);
+                    bombs[i].x = roll_random(0, screenWidth * 2);
                     bombs[i].y = -bombHeight;
                     bombs[i].speed = (float)(roll_random(0, 10000) / 10000.0 * 2.0 + 0.5);
                     bombs[i].offset = 0.0f;
