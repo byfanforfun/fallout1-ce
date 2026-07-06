@@ -17,6 +17,8 @@ int _language_filter = 0;
 
 static bool gkioskconf_initialized = false;
 static char gkioskconf_file_name[COMPAT_MAX_PATH];
+int gconfig_exp_start;
+int gconfig_caps_start;
 int gconfig_saveload_allowed;
 int gconfig_options_allowed;
 int gconfig_dialog_exit_0_allowed;
@@ -50,6 +52,7 @@ bool gkioskconf_init()
     }
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_SAVELOAD, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_OPTIONS, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_DIALOG_EXIT_0, 0);
@@ -94,6 +97,8 @@ bool gkioskconf_init()
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, _language_filter);
 
     //set global vars
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &gconfig_caps_start);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &gconfig_exp_start);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_SAVELOAD, &gconfig_saveload_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_OPTIONS, &gconfig_options_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_DIALOG_EXIT_0, &gconfig_dialog_exit_0_allowed);
