@@ -8,6 +8,7 @@
 #include "game/kiosk_msgfile.h"
 #include "game/message.h"
 #include "game/palette.h"
+#include "game/wordwrap.h"
 
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
@@ -42,6 +43,55 @@ namespace fallout {
 
 #define SM_KNOB_LFILTER_X 167
 #define SM_KNOB_LFILTER_Y 416
+
+#define SM_OPTIONS_PER_PAGE 10
+#define SM_OPTIONS_Y 80
+#define SM_LINE_HEIGHT 16
+#define SM_OPTIONS_TEXT_X 50
+#define SM_OPTIONS_VALUE_X 420
+#define SM_OPTIONS_AREA_WIDTH 170
+//#define SM_OPTIONS_AREA_WIDTH 170
+#define SM_OPTIONS_AREA_HEIGHT ((SM_OPTIONS_PER_PAGE + 1) * SM_LINE_HEIGHT)
+#define SM_OPTIONS_VALUE_FIRST 400
+#define SM_OPTIONS_VALUE_COUNT 10
+#define SM_PAGINATION_Y 255
+#define SM_PAGINATION_CENTER_X ((SM_WINDOW_BACKGROUND_X + SM_OPTIONS_VALUE_X) / 2)
+#define SM_PAGINATION_PREV_X (SM_PAGINATION_CENTER_X - 120)
+#define SM_PAGINATION_NEXT_X (SM_PAGINATION_CENTER_X - 75)
+#define SM_PAGINATION_FONT 101
+#define SM_PAGINATION_ACTIVE_COLOR SM_GREEN_COLOR
+#define SM_PAGINATION_INACTIVE_COLOR (SM_GREEN_COLOR - 1)
+#define SM_TITLE_Y 64
+#define SM_SUBTITLE_Y 255
+#define SM_TEXT_COLOR 992
+#define SM_GREEN_COLOR SM_TEXT_COLOR
+
+typedef struct {
+    int msgId;
+    int* configPtr;
+} KioskOptionDef;
+
+static KioskOptionDef kioskOptions[] = {
+    { 200, NULL },
+    { 201, NULL },
+    { 202, &gconfig_saveload_allowed },
+    { 203, &gconfig_options_allowed },
+    { 204, &gconfig_exp_start },
+    { 205, &gconfig_caps_start },
+    { 206, &gconfig_dialog_exit_0_allowed },
+    { 207, &gconfig_game_exit_allowed },
+    { 208, &gconfig_screensaver_enabled },
+    { 209, &gconfig_random_locations },
+    { 210, &gconfig_random_containers },
+    { 211, &gconfig_quality_levels },
+};
+
+#define MSGID_QUALITY_LEVEL 210
+
+#define NUM_KIOSK_OPTIONS (sizeof(kioskOptions) / sizeof(kioskOptions[0]))
+#define SM_LEFT_MSG_FIRST 200
+#define SM_LEFT_MSG_LAST 211
+#define SM_LEFT_MSG_COUNT (SM_LEFT_MSG_LAST - SM_LEFT_MSG_FIRST + 1)
 
 static int fontsave = 0;
 
@@ -81,6 +131,11 @@ int combat_difficulty = 0;
 int language_filter = 0;
 
 bool needsRefresh = false;
+
+static int sm_enabled_opts[SM_LEFT_MSG_COUNT];
+static int sm_enabled_count = 0;
+static int sm_current_page = 0;
+static int sm_max_page = 0;
 
 static bool start_message_fatal_error(bool rc);
 static void start_message_exit();
@@ -128,7 +183,24 @@ int start_message()
         start_message_knob_set(difficulty_knob, &t_difficulty, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y);
         start_message_knob_set(language_knob, &t_lfilter, SM_KNOB_LFILTER_X, SM_KNOB_LFILTER_Y);
 
+        // Pagination click handling
+        if (mouse_get_buttons() & 0x10) {
+            int mx, my;
+            mouseGetPositionInWindow(start_message_window_id, &mx, &my);
+            if (my >= SM_PAGINATION_Y && my < SM_PAGINATION_Y + text_height()) {
+                if (sm_current_page > 0 && mx >= SM_PAGINATION_PREV_X && mx < SM_PAGINATION_PREV_X + 20) {
+                    sm_current_page--;
+                    needsRefresh = true;
+                }
+                if (sm_current_page < sm_max_page && mx >= SM_PAGINATION_NEXT_X && mx < SM_PAGINATION_NEXT_X + 20) {
+                    sm_current_page++;
+                    needsRefresh = true;
+                }
+            }
+        }
+
         if(needsRefresh){
+            print_display_data();
             win_draw(start_message_window_id);
         }
 
@@ -488,29 +560,150 @@ int print_display_data()
 
     text_char_width(0x20);
     length = text_width(tstr);
-    text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*64 + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[992]);
+    text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_TITLE_Y + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[SM_TEXT_COLOR]);
 
     str = getmsg(&kiosk_msgfile, &mesg, 101);
     strcpy(tstr, str);
 
     length = text_width(tstr);
 
-    text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*255 + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[992]);
+    text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_SUBTITLE_Y + SM_WINDOW_WIDTH / 2 - length / 2, tstr, 640, SM_WINDOW_WIDTH, colorTable[SM_TEXT_COLOR]);
 
-    for(int i = 0; 11 > i; ++i){
-        str = getmsg(&kiosk_msgfile, &mesg, 200+i);
-        if(i == 7)
-            snprintf(tstr, 200, "%s %d", str, level);
-        else
-            snprintf(tstr, 200, "%s %s", str, "");
-
-        text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*(80 + 16 * i) + 50, tstr, 640, SM_WINDOW_WIDTH, colorTable[992]);
+    // Build list of enabled options
+    sm_enabled_count = 0;
+    for (int msgId = SM_LEFT_MSG_FIRST; msgId <= SM_LEFT_MSG_LAST; msgId++) {
+        const char* msgStr = getmsg(&kiosk_msgfile, &mesg, msgId);
+        if (msgStr == NULL || msgStr[0] == '\0') {
+            continue;
+        }
+        KioskOptionDef* opt = NULL;
+        for (int i = 0; i < (int)NUM_KIOSK_OPTIONS; i++) {
+            if (kioskOptions[i].msgId == msgId) {
+                opt = &kioskOptions[i];
+                break;
+            }
+        }
+        if (opt == NULL) {
+            continue;
+        }
+        if (opt->configPtr == NULL) {
+            sm_enabled_opts[sm_enabled_count++] = msgId;
+            continue;
+        }
+        if (*opt->configPtr <= 0) {
+            continue;
+        }
+        sm_enabled_opts[sm_enabled_count++] = msgId;
     }
 
-    for(int i = 0; 10 > i; ++i){
-        str = getmsg(&kiosk_msgfile, &mesg, 400+i);
-        text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH*(80 + 16 * i) + 420, str, 640, SM_WINDOW_WIDTH, colorTable[992]);
+    // Restore options area from monitor
+    buf_to_buf(monitor + (SM_OPTIONS_Y - SM_WINDOW_BACKGROUND_Y) * SM_WINDOW_BACKGROUND_WIDTH,
+               SM_WINDOW_BACKGROUND_WIDTH, SM_OPTIONS_AREA_HEIGHT,
+               SM_WINDOW_BACKGROUND_WIDTH,
+               start_message_window_buffer + SM_WINDOW_WIDTH * SM_OPTIONS_Y + SM_WINDOW_BACKGROUND_X,
+               SM_WINDOW_WIDTH);
+
+    // Calculate word-wrapped line count per option and total lines
+    text_font(101);
+    int lineHeight = text_height();
+    int indentWidth = text_width("  ");
+    int linesPerPage = SM_OPTIONS_AREA_HEIGHT / lineHeight;
+    short wrapBuf[WORD_WRAP_MAX_COUNT];
+    short wrapCount;
+    int lineCounts[SM_LEFT_MSG_COUNT];
+    int totalLines = 0;
+
+    for (int i = 0; i < sm_enabled_count; i++) {
+        int msgId = sm_enabled_opts[i];
+        const char* src = getmsg(&kiosk_msgfile, &mesg, msgId);
+        if (msgId == MSGID_QUALITY_LEVEL) {
+            snprintf(tstr, sizeof(tstr), src, level);
+        } else {
+            snprintf(tstr, sizeof(tstr), "%s", src);
+        }
+
+        if (word_wrap(tstr, SM_OPTIONS_AREA_WIDTH - indentWidth, wrapBuf, &wrapCount) == 0) {
+            lineCounts[i] = wrapCount - 1;
+        } else {
+            lineCounts[i] = 1;
+        }
+        totalLines += lineCounts[i];
     }
+
+    sm_max_page = (totalLines > 0) ? ((totalLines - 1) / linesPerPage) : 0;
+    if (sm_current_page > sm_max_page) {
+        sm_current_page = 0;
+    }
+
+    // Draw left column — word_wrap + vertical flow pagination
+    int yy = SM_OPTIONS_Y;
+    int currentGlobalLine = 0;
+    int pageStartLine = sm_current_page * linesPerPage;
+    int pageEndLine = pageStartLine + linesPerPage;
+
+    for (int i = 0; i < sm_enabled_count && currentGlobalLine < pageEndLine; i++) {
+        int msgId = sm_enabled_opts[i];
+
+        if (currentGlobalLine + lineCounts[i] <= pageStartLine) {
+            currentGlobalLine += lineCounts[i];
+            continue;
+        }
+
+        const char* src = getmsg(&kiosk_msgfile, &mesg, msgId);
+
+        snprintf(tstr, sizeof(tstr), "%s", src);
+        if (msgId == MSGID_QUALITY_LEVEL) {
+            snprintf(tstr, sizeof(tstr), src, level);
+        }
+
+        char lineBuf[256];
+        short breakpoints[WORD_WRAP_MAX_COUNT];
+        short count;
+        if (word_wrap(tstr, SM_OPTIONS_AREA_WIDTH - indentWidth, breakpoints, &count) == 0) {
+            int startLine = (currentGlobalLine < pageStartLine) ? (pageStartLine - currentGlobalLine) : 0;
+
+            for (int li = startLine; li < count - 1 && yy < SM_OPTIONS_Y + SM_OPTIONS_AREA_HEIGHT; li++) {
+                char saved = tstr[breakpoints[li + 1]];
+                tstr[breakpoints[li + 1]] = '\0';
+
+                if (li == 0) {
+                    snprintf(lineBuf, sizeof(lineBuf), "%s", tstr + breakpoints[li]);
+                } else {
+                    snprintf(lineBuf, sizeof(lineBuf), "  %s", tstr + breakpoints[li]);
+                }
+                text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * yy + SM_OPTIONS_TEXT_X,
+                            lineBuf, SM_OPTIONS_AREA_WIDTH, SM_WINDOW_WIDTH,
+                            colorTable[SM_TEXT_COLOR]);
+
+                tstr[breakpoints[li + 1]] = saved;
+                yy += lineHeight;
+            }
+        }
+        currentGlobalLine += lineCounts[i];
+    }
+
+    // Draw right column — all values, unchanged
+    for (int i = 0; i < SM_OPTIONS_VALUE_COUNT; i++) {
+        str = getmsg(&kiosk_msgfile, &mesg, SM_OPTIONS_VALUE_FIRST + i);
+        text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * (SM_OPTIONS_Y + SM_LINE_HEIGHT * i) + SM_OPTIONS_VALUE_X,
+                    str, 640, SM_WINDOW_WIDTH, colorTable[SM_TEXT_COLOR]);
+    }
+
+    // Pagination buttons
+    text_font(SM_PAGINATION_FONT);
+    if (sm_max_page > 0) {
+        int prevColor = (sm_current_page > 0) ? SM_PAGINATION_ACTIVE_COLOR : SM_PAGINATION_INACTIVE_COLOR;
+        int nextColor = (sm_current_page < sm_max_page) ? SM_PAGINATION_ACTIVE_COLOR : SM_PAGINATION_INACTIVE_COLOR;
+
+        strcpy(tstr, "<");
+        text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_PAGINATION_Y + SM_PAGINATION_PREV_X,
+                    tstr, 640, SM_WINDOW_WIDTH, colorTable[prevColor]);
+
+        strcpy(tstr, ">");
+        text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_PAGINATION_Y + SM_PAGINATION_NEXT_X,
+                    tstr, 640, SM_WINDOW_WIDTH, colorTable[nextColor]);
+    }
+    text_font(fontsave);
 
     return 0;
 }
