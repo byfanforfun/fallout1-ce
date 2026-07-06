@@ -9,8 +9,8 @@ namespace fallout {
 
 #define KIOSK_CONFIG_GAME_KEY	"game"
 #define KIOSK_CONFIG_EXP_START_KEY "exp_start"
-#define KIOSK_CONFIG_ENABLE_SAVELOAD   "saveload"
-#define KIOSK_CONFIG_ENABLE_OPTIONS   "options"
+#define KIOSK_CONFIG_ENABLE_SAVELOAD   "disable_saveload"
+#define KIOSK_CONFIG_ENABLE_OPTIONS   "disable_options"
 #define KIOSK_CONFIG_ENABLE_DIALOG_EXIT_0 "dialog_exit_0"
 #define KIOSK_CONFIG_ENABLE_GAME_EXIT "game_exit"
 #define KIOSK_CONFIG_TIMER_INACTIVE_1   "inact1"
@@ -40,6 +40,8 @@ namespace fallout {
 #define MAX_QUALITY_LEVELS 10
 
 extern Config kiosk_config;
+extern int gconfig_exp_start;
+extern int gconfig_caps_start;
 extern int gconfig_saveload_allowed;
 extern int gconfig_options_allowed;
 extern int gconfig_dialog_exit_0_allowed;
