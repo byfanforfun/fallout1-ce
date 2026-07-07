@@ -413,7 +413,7 @@ int do_options()
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
             case 500:
-                if(gconfig_saveload_allowed > 0) {
+                if(gconfig_saveload_allowed == 0) {
                     if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
@@ -424,7 +424,7 @@ int do_options()
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
             case 501:
-                if(gconfig_saveload_allowed > 0) {
+                if(gconfig_saveload_allowed == 0) {
                     if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
@@ -438,7 +438,7 @@ int do_options()
                 // FALLTHROUGH
             case 502:
                 // PREFERENCES
-                if(gconfig_options_allowed > 0){
+                if(gconfig_options_allowed == 0){
                     showPreferences = true;
                 }else{
                     static MessageListItem mesg;
