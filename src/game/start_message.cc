@@ -74,8 +74,8 @@ typedef struct {
 static KioskOptionDef kioskOptions[] = {
     { 200, NULL },
     { 201, NULL },
-    { 202, &gconfig_saveload_allowed },
-    { 203, &gconfig_options_allowed },
+    { 202, &gconfig_saveload_disabled },
+    { 203, &gconfig_options_disabled },
     { 204, &gconfig_exp_start },
     { 205, &gconfig_caps_start },
     { 206, &gconfig_dialog_exit_0_allowed },
