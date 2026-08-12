@@ -339,7 +339,7 @@ void ResetLoadSave()
 // 0x46D9C4
 int SaveGame(int mode)
 {
-    if(1 > gconfig_saveload_allowed) {return 0;}
+    if(gconfig_saveload_disabled > 0) {return 0;}
 
     MessageListItem messageListItem;
 
@@ -849,7 +849,7 @@ static int QuickSnapShot()
 // 0x46E754
 int LoadGame(int mode)
 {
-    if(1 > gconfig_saveload_allowed) {return 0;}
+    if(gconfig_saveload_disabled > 0) {return 0;}
 
     MessageListItem messageListItem;
 
