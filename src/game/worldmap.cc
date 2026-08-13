@@ -2407,7 +2407,10 @@ int world_map(WorldMapContext ctx)
                 int twenc = WorldEcounTable[ty][tx];
 
                 //do not encounter mutant before found chip
-                if (abs(tx - mb_new_row) < 10 && abs(ty - mb_new_col) < 10 && game_get_global_var(GVAR_FIND_WATER_CHIP) < 1){
+                if (gconfig_random_locations
+                    && abs(tx - mb_new_col) < 10
+                    && abs(ty - mb_new_row) < 10
+                    && game_get_global_var(GVAR_FIND_WATER_CHIP) < 1) {
                     twenc = rand() % 10;
                 }
                 game_global_vars[GVAR_WORLD_TERRAIN] = twenc;
