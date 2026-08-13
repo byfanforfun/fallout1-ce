@@ -86,7 +86,7 @@ static KioskOptionDef kioskOptions[] = {
     { 211, &gconfig_quality_levels },
 };
 
-#define MSGID_QUALITY_LEVEL 210
+#define MSGID_START_LEVEL 204
 
 #define NUM_KIOSK_OPTIONS (sizeof(kioskOptions) / sizeof(kioskOptions[0]))
 #define SM_LEFT_MSG_FIRST 200
@@ -543,6 +543,16 @@ static void start_message_exit()
     }
 }
 
+static void sm_format_option_text(char* buf, size_t bufSize, int msgId, int level)
+{
+    const char* src = getmsg(&kiosk_msgfile, &mesg, msgId);
+    if (msgId == MSGID_START_LEVEL) {
+        snprintf(buf, bufSize, src, level);
+    } else {
+        snprintf(buf, bufSize, "%s", src);
+    }
+}
+
 int print_display_data()
 {
     char* str;
@@ -614,13 +624,7 @@ int print_display_data()
     int totalLines = 0;
 
     for (int i = 0; i < sm_enabled_count; i++) {
-        int msgId = sm_enabled_opts[i];
-        const char* src = getmsg(&kiosk_msgfile, &mesg, msgId);
-        if (msgId == MSGID_QUALITY_LEVEL) {
-            snprintf(tstr, sizeof(tstr), src, level);
-        } else {
-            snprintf(tstr, sizeof(tstr), "%s", src);
-        }
+        sm_format_option_text(tstr, sizeof(tstr), sm_enabled_opts[i], level);
 
         if (word_wrap(tstr, SM_OPTIONS_AREA_WIDTH - indentWidth, wrapBuf, &wrapCount) == 0) {
             lineCounts[i] = wrapCount - 1;
@@ -649,12 +653,7 @@ int print_display_data()
             continue;
         }
 
-        const char* src = getmsg(&kiosk_msgfile, &mesg, msgId);
-
-        snprintf(tstr, sizeof(tstr), "%s", src);
-        if (msgId == MSGID_QUALITY_LEVEL) {
-            snprintf(tstr, sizeof(tstr), src, level);
-        }
+        sm_format_option_text(tstr, sizeof(tstr), msgId, level);
 
         char lineBuf[256];
         short breakpoints[WORD_WRAP_MAX_COUNT];
