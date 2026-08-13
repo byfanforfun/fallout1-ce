@@ -10,6 +10,7 @@
 
 #include "plib/color/color.h"
 
+#include "plib/gnw/dxinput.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/hash_fnv-1a.h"
@@ -135,6 +136,13 @@ bool Screensaver::Play()
         
         if (get_input() != -1 || oldMouseX != mouseX || oldMouseY != mouseY) {
             break;
+        }
+
+        MouseData mouseData;
+        if (dxinput_get_mouse_state(&mouseData)) {
+            if (mouseData.buttons[0] || mouseData.buttons[1] || mouseData.x != 0 || mouseData.y != 0) {
+                break;
+            }
         }
 
         if (roll_random(0, 10000) < 3000) {
