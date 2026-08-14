@@ -243,6 +243,8 @@ int gnw_main(int argc, char** argv)
                     //dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
 
+                flush_last_char_hash();
+
                 break;
             case MAIN_MENU_TIMEOUT:
                 debug_printf("Main menu timed-out\n");
@@ -343,6 +345,9 @@ static int main_load_new(char* mapFileName)
 
     loadColorTable("color.pal");
     palette_fade_to(cmap);
+
+    KillOldMaps();
+
     map_init();
     gmouse_set_cursor(MOUSE_CURSOR_NONE);
     mouse_show();

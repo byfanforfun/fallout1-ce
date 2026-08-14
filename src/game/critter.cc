@@ -1157,18 +1157,22 @@ int critter_set_who_hit_me(Object* critter, Object* who_hit_me)
 
     critter->data.critter.combat.whoHitMe = who_hit_me;
 
-    static MessageListItem mesg;
-
     if (who_hit_me == obj_dude) {
         reaction_set(critter, 1);
-        death_cause = getmsg(&kiosk_msgfile, &mesg, 1213);
-    } else {
-        char* killer_msg = getmsg(&kiosk_msgfile, &mesg, 1212);
-        char killer[255];
-        static char killer_buf[260];
+    }
 
-        snprintf(killer_buf, sizeof(killer_buf), killer_msg, critter_name(who_hit_me));
-        death_cause = killer_buf; 
+    static MessageListItem mesg;
+
+    if (critter == obj_dude) {
+        if (who_hit_me == obj_dude) {
+            death_cause = getmsg(&kiosk_msgfile, &mesg, 1213);
+        } else if (who_hit_me != NULL) {
+            char* killer_msg = getmsg(&kiosk_msgfile, &mesg, 1212);
+            static char killer_buf[260];
+
+            snprintf(killer_buf, sizeof(killer_buf), killer_msg, critter_name(who_hit_me));
+            death_cause = killer_buf;
+        }
     }
 
     return 0;

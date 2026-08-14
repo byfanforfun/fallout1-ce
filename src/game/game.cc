@@ -377,6 +377,7 @@ void game_reset()
 {
     tile_disable_refresh();
     palette_reset();
+    death_cause = NULL;
     roll_reset();
     skill_reset();
     stat_reset();
