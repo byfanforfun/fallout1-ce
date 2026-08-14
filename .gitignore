@@ -392,3 +392,5 @@ FodyWeavers.xsd
 /out
 /build
 /cmake-*
+
+AGENTS.md
