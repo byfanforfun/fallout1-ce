@@ -96,9 +96,9 @@ int char_dump()
         config_set_value(&char_config, CHAR_CONFIG_QUEST_KEY, CHAR_CONFIG_QUEST_FOUND_CHIP_KEY, 1);
 
 
-    gvar_value = game_get_global_var(GVAR_VAULT_WATER);
-    //gmovie defined global variable
-    if(1 >= gvar_value || dude_end_story_status == 1)
+    // Only override the death cause for story endings. For a regular death in
+    // combat death_cause already holds the killer set by critter_set_who_hit_me.
+    if(dude_end_story_status == 1)
         death_cause = getmsg(&kiosk_msgfile, &mesg, 1220);
 
     if(dude_end_story_status == 2)
@@ -125,7 +125,7 @@ int char_dump()
     if(trait_2 != 0)
         config_set_string(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_TRAIT_2_KEY, trait_name(trait_2));
 
-    if(strlen(death_cause) > 0)
+    if(death_cause != NULL && strlen(death_cause) > 0)
         config_set_string(&char_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_KILLER_KEY, death_cause);
 
     int day;
