@@ -86,6 +86,7 @@ bool svga_init(VideoOptions* video_options)
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "svga: SDL_InitSubSystem(SDL_INIT_VIDEO) failed: %s\n", SDL_GetError());
         return false;
     }
 
@@ -103,10 +104,12 @@ bool svga_init(VideoOptions* video_options)
         video_options->height * video_options->scale,
         windowFlags);
     if (gSdlWindow == NULL) {
+        fprintf(stderr, "svga: SDL_CreateWindow failed: %s\n", SDL_GetError());
         return false;
     }
 
     if (!createRenderer(video_options->width, video_options->height)) {
+        fprintf(stderr, "svga: createRenderer failed: %s\n", SDL_GetError());
         destroyRenderer();
 
         SDL_DestroyWindow(gSdlWindow);
