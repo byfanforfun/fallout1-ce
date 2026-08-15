@@ -105,6 +105,17 @@ bool svga_init(VideoOptions* video_options)
         windowFlags);
     if (gSdlWindow == NULL) {
         fprintf(stderr, "svga: SDL_CreateWindow failed: %s\n", SDL_GetError());
+        if (windowFlags & SDL_WINDOW_OPENGL) {
+            SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+            windowFlags &= ~SDL_WINDOW_OPENGL;
+            gSdlWindow = SDL_CreateWindow(GNW95_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                video_options->width * video_options->scale,
+                video_options->height * video_options->scale,
+                windowFlags);
+        }
+    }
+    if (gSdlWindow == NULL) {
+        fprintf(stderr, "svga: SDL_CreateWindow failed: %s\n", SDL_GetError());
         return false;
     }
 
