@@ -180,6 +180,10 @@ static bool createRenderer(int width, int height)
 {
     gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
     if (gSdlRenderer == NULL) {
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+        gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
+    }
+    if (gSdlRenderer == NULL) {
         return false;
     }
 
