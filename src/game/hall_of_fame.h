@@ -77,4 +77,4 @@ int game_handle_hof();
 
 }
 
-#endif //FALLOUT_GAME_HALL_OF_FAME_H_
+#endif // FALLOUT_GAME_HALL_OF_FAME_H_

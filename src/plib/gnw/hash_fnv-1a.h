@@ -12,4 +12,4 @@ namespace fallout {
 unsigned int fnv1a_hash(const char* data, size_t len);
 }
 
-#endif //FALLOUT_PLIB_GNW__HASH_FNV_1A_H_
+#endif // FALLOUT_PLIB_GNW__HASH_FNV_1A_H_
