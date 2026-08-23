@@ -1822,7 +1822,7 @@ int action_talk_to(Object* a1, Object* a2)
         register_begin(a1 == obj_dude ? ANIMATION_REQUEST_RESERVED : ANIMATION_REQUEST_UNRESERVED);
 
         if (obj_dist(a1, a2) >= 9 || combat_is_shot_blocked(a1, a1->tile, a2->tile, a2, NULL)) {
-            if(is_pc_flag(PC_FLAG_SNEAKING))
+            if (is_pc_flag(PC_FLAG_SNEAKING))
                 register_object_move_to_object(a1, a2, -1, 0);
             else
                 register_object_run_to_object(a1, a2, -1, 0);
