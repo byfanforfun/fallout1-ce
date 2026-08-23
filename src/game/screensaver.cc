@@ -11,12 +11,12 @@
 #include "plib/color/color.h"
 
 #include "plib/gnw/dxinput.h"
+#include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
-#include "plib/gnw/memory.h"
 #include "plib/gnw/hash_fnv-1a.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
-#include "plib/gnw/gnw.h"
 
 namespace fallout {
 
@@ -33,11 +33,11 @@ void Screensaver::Init()
     if (initialized) {
         return;
     }
-    
+
     bombFid = art_id(OBJ_TYPE_INTERFACE, 226, 0, 0, 0);
-    
+
     bombArt = art_lock(bombFid, &bombKey, &bombWidth, &bombHeight);
-    
+
     timeout = 120;
     initialized = true;
 }
@@ -47,13 +47,13 @@ void Screensaver::Shutdown()
     if (!initialized) {
         return;
     }
-    
+
     if (bombArt != nullptr && bombKey != nullptr) {
         art_ptr_unlock(bombKey);
         bombArt = nullptr;
         bombKey = nullptr;
     }
-    
+
     initialized = false;
 }
 
@@ -72,10 +72,10 @@ bool Screensaver::ShouldStart(unsigned int lastActivityTime)
     if (!initialized) {
         Init();
     }
-    
+
     unsigned int currentTime = get_time() / 1000;
     unsigned int elapsed = currentTime - lastActivityTime;
-    
+
     return elapsed >= (timeout * 1000);
 }
 
@@ -84,7 +84,7 @@ bool Screensaver::Play()
     if (!initialized) {
         Init();
     }
-    
+
     if (bombArt == nullptr) {
         return false;
     }
@@ -107,11 +107,11 @@ bool Screensaver::Play()
 
     ScreensaverBomb bombs[SCREENSAVER_BOMB_COUNT];
     memset(bombs, 0, sizeof(bombs));
-    
+
     int oldMouseX = 0;
     int oldMouseY = 0;
     mouse_get_position(&oldMouseX, &oldMouseY);
-    
+
     unsigned int frameTime = get_time();
     bool firstFrame = true;
 
@@ -126,14 +126,14 @@ bool Screensaver::Play()
     int mouseY = oldMouseY;
 
     unsigned int currentTime = 0;
-    
+
     while (true) {
         sharedFpsLimiter.mark();
 
         buf_fill(screenBuffer, screenWidth, screenHeight, screenWidth, 0);
 
         mouse_get_position(&mouseX, &mouseY);
-        
+
         if (get_input() != -1 || oldMouseX != mouseX || oldMouseY != mouseY) {
             break;
         }
@@ -157,7 +157,7 @@ bool Screensaver::Play()
                 }
             }
         }
-        
+
         if (!firstFrame) {
             for (int i = 0; i < SCREENSAVER_BOMB_COUNT; i++) {
                 if (bombs[i].active) {
@@ -167,27 +167,27 @@ bool Screensaver::Play()
                     srcHeight = bombHeight;
                     destX = bombs[i].x;
                     destY = bombs[i].y;
-                    
+
                     if (destX < 0) {
                         srcX = -destX;
                         srcWidth = bombWidth - srcX;
                         destX = 0;
                     }
-                    
+
                     if (destX + srcWidth > screenWidth) {
                         srcWidth = screenWidth - destX;
                     }
-                    
+
                     if (destY < 0) {
                         srcY = -destY;
                         srcHeight = bombHeight - srcY;
                         destY = 0;
                     }
-                    
+
                     if (destY + srcHeight > screenHeight) {
                         srcHeight = screenHeight - destY;
                     }
-                    
+
                     if (srcWidth > 0 && srcHeight > 0) {
                         trans_buf_to_buf(
                             bombArt + bombWidth * srcY + srcX,
@@ -197,31 +197,31 @@ bool Screensaver::Play()
                             screenBuffer + screenWidth * destY + destX,
                             screenWidth);
                     }
-                    
+
                     bombs[i].offset += bombs[i].speed;
                     if (bombs[i].offset >= 1.0f) {
                         bombs[i].x = (int)((float)bombs[i].x - bombs[i].offset);
                         bombs[i].y = (int)((float)bombs[i].y + bombs[i].offset);
                         bombs[i].offset = 0.0f;
                     }
-                    
+
                     if (bombs[i].y > screenHeight) {
                         bombs[i].active = false;
                     }
                 }
             }
         }
-        
+
         if (firstFrame) {
             firstFrame = false;
         }
-        
+
         win_draw(screensaverWin);
-        
+
         while (elapsed_time(frameTime) < 33) {
         }
         frameTime = get_time();
-        
+
         renderPresent();
         sharedFpsLimiter.throttle();
     }
@@ -231,7 +231,7 @@ bool Screensaver::Play()
     palette_fade_to(cmap);
 
     mouse_show();
-    
+
     return true;
 }
 

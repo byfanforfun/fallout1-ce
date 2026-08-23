@@ -1,11 +1,11 @@
 #include "game/map.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
 #include <algorithm>
 #include <functional>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <vector>
 
 #include "game/anim.h"
@@ -20,8 +20,6 @@
 #include "game/gkioskconf.h"
 #include "game/gkioskinv.h"
 #include "game/gmouse.h"
-#include "game/perk.h"
-#include "game/skill.h"
 #include "game/gmovie.h"
 #include "game/gsound.h"
 #include "game/intface.h"
@@ -31,12 +29,14 @@
 #include "game/loadsave.h"
 #include "game/object.h"
 #include "game/palette.h"
+#include "game/perk.h"
 #include "game/pipboy.h"
 #include "game/protinst.h"
 #include "game/proto.h"
 #include "game/queue.h"
 #include "game/roll.h"
 #include "game/scripts.h"
+#include "game/skill.h"
 #include "game/stat.h"
 #include "game/textobj.h"
 #include "game/tile.h"
@@ -1148,7 +1148,7 @@ int map_load_file(DB_FILE* stream)
     } else {
         obj_preload_art_cache(map_data.flags, [&](int pct) {
             drawLoadingScreen(80 + pct * 4 / 100);
-        });    
+        });
     }
 
     drawLoadingScreen(84);
@@ -1163,8 +1163,9 @@ int map_load_file(DB_FILE* stream)
     drawLoadingScreen(87);
 
     if (scr_load_all_scripts([&](int pct) {
-       drawLoadingScreen(87 + pct * 4 / 100);
-    }) == -1) {
+            drawLoadingScreen(87 + pct * 4 / 100);
+        })
+        == -1) {
         debug_printf("\n   Error: scr_load_all_scripts failed!");
     }
 
@@ -1356,53 +1357,45 @@ static int get_map_type()
     if (name == NULL || name[0] == '\0') {
         return 0;
     }
-    
-    if (strncmp(name, "DESERT", 6) == 0 || 
-        strncmp(name, "MOUNTN", 6) == 0 ||
-        strncmp(name, "CITY", 4) == 0 ||
-        strncmp(name, "COAST", 5) == 0) {
+
+    if (strncmp(name, "DESERT", 6) == 0 || strncmp(name, "MOUNTN", 6) == 0 || strncmp(name, "CITY", 4) == 0 || strncmp(name, "COAST", 5) == 0) {
         return 1;
     }
-    
-    if (strcmp(name, "FOOT") == 0 ||
-        strcmp(name, "TARDIS") == 0 ||
-        strcmp(name, "USEDCAR") == 0 ||
-        strcmp(name, "TALKCOW") == 0 ||
-        strcmp(name, "COLATRUK") == 0 ||
-        strcmp(name, "FSAUSER") == 0) {
+
+    if (strcmp(name, "FOOT") == 0 || strcmp(name, "TARDIS") == 0 || strcmp(name, "USEDCAR") == 0 || strcmp(name, "TALKCOW") == 0 || strcmp(name, "COLATRUK") == 0 || strcmp(name, "FSAUSER") == 0) {
         return 2;
     }
-    
+
     return 0;
 }
 
 static void map_randomize_containers(ProgressCallback progressCallback, int startPercent, int endPercent)
 {
     srand(time(NULL));
-    
+
     int mapType = get_map_type();
     int range = endPercent - startPercent;
     if (range <= 0) range = 1;
 
     bool isEncounterMap = (mapType == 1);
     bool isSpecialEncounter = (mapType == 2);
-    
+
     if (isSpecialEncounter) {
         return;
     }
-    
+
     int luck = stat_level(obj_dude, STAT_LUCK);
     if (luck < 1) luck = 1;
     if (luck > 10) luck = 10;
-    
+
     int barter = skill_level(obj_dude, SKILL_BARTER);
     if (barter < 0) barter = 0;
-    
+
     int outdoorsman = skill_level(obj_dude, SKILL_OUTDOORSMAN);
     if (outdoorsman < 0) outdoorsman = 0;
-    
+
     bool hasExplorer = perk_level(PERK_EXPLORER) > 0;
-    
+
     std::vector<Object*> containers;
     Object* obj = obj_find_first();
     while (obj != NULL) {
@@ -1416,34 +1409,34 @@ static void map_randomize_containers(ProgressCallback progressCallback, int star
         }
         obj = obj_find_next();
     }
-    
+
     if (containers.empty()) {
         return;
     }
-    
+
     int totalContainers = containers.size();
     int processedContainers = 0;
     int progress = 0;
-    
+
     for (Object* container : containers) {
         processedContainers++;
         progress = 50 + (processedContainers * 50 / totalContainers);
         progress = startPercent + (processedContainers * range / totalContainers);
-        if (progress > endPercent) progress = endPercent;        
+        if (progress > endPercent) progress = endPercent;
         if (progressCallback != nullptr) {
             progressCallback(progress);
         }
-        
+
         Inventory* inv = &(container->data.inventory);
-        
+
         std::vector<int> questItemPids;
         std::vector<Object*> allItems;
-        
+
         if (inv != NULL && inv->length > 0 && inv->items != NULL) {
             for (int i = 0; i < inv->length; i++) {
                 if (inv->items[i].item != NULL) {
                     allItems.push_back(inv->items[i].item);
-                    
+
                     Proto* itemProto;
                     if (proto_ptr(inv->items[i].item->pid, &itemProto) == 0) {
                         if (itemProto->item.cost == 0) {
@@ -1456,22 +1449,22 @@ static void map_randomize_containers(ProgressCallback progressCallback, int star
                 }
             }
         }
-        
+
         bool wasEmpty = allItems.empty();
-        
+
         for (Object* item : allItems) {
             if (item != NULL) {
                 obj_destroy(item);
             }
         }
-        
+
         if (inv != NULL) {
             inv->length = 0;
         }
-        
+
         std::sort(questItemPids.begin(), questItemPids.end());
         questItemPids.erase(std::unique(questItemPids.begin(), questItemPids.end()), questItemPids.end());
-        
+
         for (int pid : questItemPids) {
             Object* newItem = NULL;
             if (obj_pid_new(&newItem, pid) == 0 && newItem != NULL) {
@@ -1479,31 +1472,31 @@ static void map_randomize_containers(ProgressCallback progressCallback, int star
                 item_add_force(container, newItem, 1);
             }
         }
-        
+
         if (wasEmpty) {
             int baseChance = gconfig_random_containers_base_chance;
             if (baseChance < 0) baseChance = 50;
-            
+
             int luckFactor = gconfig_random_containers_luck_factor;
             if (luckFactor < 0) luckFactor = 5;
-            
+
             int chance = baseChance - (luck * luckFactor);
-            
+
             if (isEncounterMap) {
                 chance -= outdoorsman;
             }
-            
+
             if (hasExplorer) {
                 chance -= 5;
             }
-            
+
             if (chance < 5) chance = 5;
             if (chance > 95) chance = 95;
-            
+
             if (rand() % 100 < chance) {
                 continue;
             }
-            
+
             int value = 50 + luck * 10 + rand() % 50;
             inv_generate_items_for_value(container, value);
         } else {
@@ -1514,10 +1507,10 @@ static void map_randomize_containers(ProgressCallback progressCallback, int star
                     currentValue += itemProto->item.cost;
                 }
             }
-            
+
             int barterFactor = gconfig_random_containers_barter_factor;
             if (barterFactor < 0) barterFactor = 5;
-            
+
             int value = currentValue + (barter * barterFactor) + rand() % (barter * 2 + 1);
             inv_generate_items_for_value(container, value);
         }

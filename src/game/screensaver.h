@@ -25,7 +25,7 @@ public:
     static void SetTimeout(unsigned int seconds);
     static unsigned int GetTimeout();
     static bool ShouldStart(unsigned int lastActivityTime);
-    
+
 private:
     static bool initialized;
     static unsigned int timeout;

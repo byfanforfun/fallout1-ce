@@ -10,6 +10,7 @@
 #include "game/palette.h"
 #include "game/wordwrap.h"
 
+#include "platform_compat.h"
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
 #include "plib/gnw/gnw.h"
@@ -18,7 +19,6 @@
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
-#include "platform_compat.h"
 
 namespace fallout {
 
@@ -50,7 +50,7 @@ namespace fallout {
 #define SM_OPTIONS_TEXT_X 50
 #define SM_OPTIONS_VALUE_X 420
 #define SM_OPTIONS_AREA_WIDTH 170
-//#define SM_OPTIONS_AREA_WIDTH 170
+// #define SM_OPTIONS_AREA_WIDTH 170
 #define SM_OPTIONS_AREA_HEIGHT ((SM_OPTIONS_PER_PAGE + 1) * SM_LINE_HEIGHT)
 #define SM_OPTIONS_VALUE_FIRST 400
 #define SM_OPTIONS_VALUE_COUNT 10
@@ -149,7 +149,7 @@ int start_message()
 {
     int rc = 0;
 
-    if(start_message_init() != 0)
+    if (start_message_init() != 0)
         return -1;
 
     bool cursorWasHidden = mouse_hidden();
@@ -199,7 +199,7 @@ int start_message()
             }
         }
 
-        if(needsRefresh){
+        if (needsRefresh) {
             print_display_data();
             win_draw(start_message_window_id);
         }
@@ -240,7 +240,7 @@ int start_message_init()
     int backgroundFid;
     unsigned char* backgroundFrmData;
 
-    if(start_message_window_id != -1){
+    if (start_message_window_id != -1) {
         return -1;
     }
 
@@ -254,7 +254,7 @@ int start_message_init()
     int startMessageWindowY = (screenGetHeight() - SM_WINDOW_HEIGHT) / 2;
     start_message_window_id = win_add(startMessageWindowX, startMessageWindowY, SM_WINDOW_WIDTH, SM_WINDOW_HEIGHT, colorTable[0], 0);
 
-    if(start_message_window_id == -1){
+    if (start_message_window_id == -1) {
         return start_message_fatal_error(false);
     }
 
@@ -271,22 +271,22 @@ int start_message_init()
     }
 
     buf_to_buf(backgroundFrmData,
-               SM_WINDOW_WIDTH,
-               SM_WINDOW_HEIGHT,
-               SM_WINDOW_WIDTH,
-               start_message_window_buffer,
-               SM_WINDOW_WIDTH);
+        SM_WINDOW_WIDTH,
+        SM_WINDOW_HEIGHT,
+        SM_WINDOW_WIDTH,
+        start_message_window_buffer,
+        SM_WINDOW_WIDTH);
 
     monitor = (unsigned char*)mem_malloc(SM_WINDOW_BACKGROUND_WIDTH * SM_WINDOW_BACKGROUND_HEIGHT);
     if (monitor == NULL)
         return start_message_fatal_error(false);
 
     buf_to_buf(backgroundFrmData + SM_WINDOW_WIDTH * SM_WINDOW_BACKGROUND_Y + SM_WINDOW_BACKGROUND_X,
-               SM_WINDOW_BACKGROUND_WIDTH,
-               SM_WINDOW_BACKGROUND_HEIGHT,
-               SM_WINDOW_WIDTH,
-               monitor,
-               SM_WINDOW_BACKGROUND_WIDTH);
+        SM_WINDOW_BACKGROUND_WIDTH,
+        SM_WINDOW_BACKGROUND_HEIGHT,
+        SM_WINDOW_WIDTH,
+        monitor,
+        SM_WINDOW_BACKGROUND_WIDTH);
 
     art_ptr_unlock(backgroundFrmHandle);
 
@@ -305,18 +305,18 @@ int start_message_init()
     }
 
     next_button = win_register_button(start_message_window_id,
-                                      SM_WINDOW_NEXT_BUTTON_X,
-                                      SM_WINDOW_NEXT_BUTTON_Y,
-                                      15,
-                                      16,
-                                      -1,
-                                      -1,
-                                      -1,
-                                      KEY_RETURN,
-                                      next_button_up,
-                                      next_button_down,
-                                      NULL,
-                                      BUTTON_FLAG_TRANSPARENT);
+        SM_WINDOW_NEXT_BUTTON_X,
+        SM_WINDOW_NEXT_BUTTON_Y,
+        15,
+        16,
+        -1,
+        -1,
+        -1,
+        KEY_RETURN,
+        next_button_up,
+        next_button_down,
+        NULL,
+        BUTTON_FLAG_TRANSPARENT);
     if (next_button == -1) {
         return start_message_fatal_error(false);
     }
@@ -336,29 +336,29 @@ int start_message_init()
     }
 
     back_button = win_register_button(start_message_window_id,
-                                      SM_WINDOW_BACK_BUTTON_X,
-                                      SM_WINDOW_BACK_BUTTON_Y,
-                                      15,
-                                      16,
-                                      -1,
-                                      -1,
-                                      -1,
-                                      KEY_ESCAPE,
-                                      back_button_up,
-                                      back_button_down,
-                                      NULL,
-                                      BUTTON_FLAG_TRANSPARENT);
+        SM_WINDOW_BACK_BUTTON_X,
+        SM_WINDOW_BACK_BUTTON_Y,
+        15,
+        16,
+        -1,
+        -1,
+        -1,
+        KEY_ESCAPE,
+        back_button_up,
+        back_button_down,
+        NULL,
+        BUTTON_FLAG_TRANSPARENT);
     if (back_button == -1) {
         return start_message_fatal_error(false);
     }
 
     win_register_button_sound_func(back_button, gsound_red_butt_press, gsound_red_butt_release);
 
-    if(start_message_msg_load() != 0)
+    if (start_message_msg_load() != 0)
         return -1;
 
     print_display_data();
-    start_message_knob_init(&difficulty_knob, &difficulty_knob_button, &difficulty_knob_key, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y, 0, t_difficulty, 101, 203+game_difficulty, 205);
+    start_message_knob_init(&difficulty_knob, &difficulty_knob_button, &difficulty_knob_key, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y, 0, t_difficulty, 101, 203 + game_difficulty, 205);
     start_message_knob_init(&language_knob, &language_knob_button, &language_knob_key, SM_KNOB_LFILTER_X, SM_KNOB_LFILTER_Y, 0, t_lfilter, 108, 202, 201);
 
     win_draw(start_message_window_id);
@@ -404,22 +404,21 @@ int start_message_knob_init(unsigned char** knob, int* button, CacheEntry** key,
 
     text_font(fontsave);
 
-    //x = minX = 0, y = knobY - 5, width = maxX(0) - x
+    // x = minX = 0, y = knobY - 5, width = maxX(0) - x
     int b = win_register_button(
-            start_message_window_id,
-            0,
-            ky - 5,
-            0,
-            28,
-            -1,
-            -1,
-            -1,
-            505,
+        start_message_window_id,
+        0,
+        ky - 5,
+        0,
+        28,
+        -1,
+        -1,
+        -1,
+        505,
         NULL,
-            NULL,
-            NULL,
-            32
-        );
+        NULL,
+        NULL,
+        32);
     *button = b;
 
     return 0;
@@ -427,7 +426,7 @@ int start_message_knob_init(unsigned char** knob, int* button, CacheEntry** key,
 
 int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
 {
-    if(knob == NULL)
+    if (knob == NULL)
         return -1;
 
     int* valuePtr = status;
@@ -440,17 +439,19 @@ int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
 
     int x;
     int y;
-    if (!(mouse_get_buttons() & 0x10)) {return -1;}
+    if (!(mouse_get_buttons() & 0x10)) {
+        return -1;
+    }
     mouseGetPositionInWindow(start_message_window_id, &x, &y);
 
     if (sqrt(pow((double)x - (double)v1, 2) + pow((double)y - (double)v2, 2)) > 10.0) {
         int v23 = ky - 5;
         if (y >= v23 && y <= v23 + text_height() + 2) {
-            //minx = 0
+            // minx = 0
             if (x >= minX && x <= kx) {
                 *valuePtr = 0;
                 valueChanged = true;
-            //maxX = 0
+                // maxX = 0
             } else if (x >= kx + 22.0 && x <= maxX) {
                 *valuePtr = 1;
                 valueChanged = true;
@@ -477,7 +478,7 @@ int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
 
 int start_message_msg_load()
 {
-    if(!kiosk_msgfile_initialized())
+    if (!kiosk_msgfile_initialized())
         return -1;
 
     char path[COMPAT_MAX_PATH];
@@ -497,7 +498,7 @@ int start_message_msg_load()
 
 static void start_message_exit()
 {
-    if(start_message_window_id != -1) {
+    if (start_message_window_id != -1) {
 
         if (next_button != -1) {
             win_delete_button(next_button);
@@ -608,10 +609,10 @@ int print_display_data()
 
     // Restore options area from monitor
     buf_to_buf(monitor + (SM_OPTIONS_Y - SM_WINDOW_BACKGROUND_Y) * SM_WINDOW_BACKGROUND_WIDTH,
-               SM_WINDOW_BACKGROUND_WIDTH, SM_OPTIONS_AREA_HEIGHT,
-               SM_WINDOW_BACKGROUND_WIDTH,
-               start_message_window_buffer + SM_WINDOW_WIDTH * SM_OPTIONS_Y + SM_WINDOW_BACKGROUND_X,
-               SM_WINDOW_WIDTH);
+        SM_WINDOW_BACKGROUND_WIDTH, SM_OPTIONS_AREA_HEIGHT,
+        SM_WINDOW_BACKGROUND_WIDTH,
+        start_message_window_buffer + SM_WINDOW_WIDTH * SM_OPTIONS_Y + SM_WINDOW_BACKGROUND_X,
+        SM_WINDOW_WIDTH);
 
     // Calculate word-wrapped line count per option and total lines
     text_font(101);
@@ -671,8 +672,8 @@ int print_display_data()
                     snprintf(lineBuf, sizeof(lineBuf), "  %s", tstr + breakpoints[li]);
                 }
                 text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * yy + SM_OPTIONS_TEXT_X,
-                            lineBuf, SM_OPTIONS_AREA_WIDTH, SM_WINDOW_WIDTH,
-                            colorTable[SM_TEXT_COLOR]);
+                    lineBuf, SM_OPTIONS_AREA_WIDTH, SM_WINDOW_WIDTH,
+                    colorTable[SM_TEXT_COLOR]);
 
                 tstr[breakpoints[li + 1]] = saved;
                 yy += lineHeight;
@@ -685,7 +686,7 @@ int print_display_data()
     for (int i = 0; i < SM_OPTIONS_VALUE_COUNT; i++) {
         str = getmsg(&kiosk_msgfile, &mesg, SM_OPTIONS_VALUE_FIRST + i);
         text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * (SM_OPTIONS_Y + SM_LINE_HEIGHT * i) + SM_OPTIONS_VALUE_X,
-                    str, 640, SM_WINDOW_WIDTH, colorTable[SM_TEXT_COLOR]);
+            str, 640, SM_WINDOW_WIDTH, colorTable[SM_TEXT_COLOR]);
     }
 
     // Pagination buttons
@@ -696,11 +697,11 @@ int print_display_data()
 
         strcpy(tstr, "<");
         text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_PAGINATION_Y + SM_PAGINATION_PREV_X,
-                    tstr, 640, SM_WINDOW_WIDTH, colorTable[prevColor]);
+            tstr, 640, SM_WINDOW_WIDTH, colorTable[prevColor]);
 
         strcpy(tstr, ">");
         text_to_buf(start_message_window_buffer + SM_WINDOW_WIDTH * SM_PAGINATION_Y + SM_PAGINATION_NEXT_X,
-                    tstr, 640, SM_WINDOW_WIDTH, colorTable[nextColor]);
+            tstr, 640, SM_WINDOW_WIDTH, colorTable[nextColor]);
     }
     text_font(fontsave);
 

@@ -6,12 +6,12 @@
 
 namespace fallout {
 
-#define INV_CONFIG_FILE_NAME        "kiosk_inv.cfg"
-#define INV_CONFIG_INVENTORY_KEY    "inventory"
+#define INV_CONFIG_FILE_NAME "kiosk_inv.cfg"
+#define INV_CONFIG_INVENTORY_KEY "inventory"
 #define INV_CONFIG_EXCLUDE_KEY "exclude"
 #define INV_CONFIG_KEEP_KEY "keep"
 #define INV_CONFIG_ONCE_KEY "once"
-#define INV_MAX_PROTO               255
+#define INV_MAX_PROTO 255
 #define INV_MAX_EXCLUDE 256
 
 extern Config gkiosk_inv_config;

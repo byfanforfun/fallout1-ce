@@ -4,8 +4,8 @@
 #include <string.h>
 
 #include "game/actions.h"
-#include "game/art.h"
 #include "game/anim.h"
+#include "game/art.h"
 #include "game/automap.h"
 #include "game/bmpdlog.h"
 #include "game/chardump.h"
@@ -29,8 +29,8 @@
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/kiosk_msgfile.h"
-#include "game/mainmenu.h"
 #include "game/loadsave.h"
+#include "game/mainmenu.h"
 #include "game/map.h"
 #include "game/moviefx.h"
 #include "game/object.h"
@@ -56,12 +56,12 @@
 #include "int/window.h"
 #include "platform_compat.h"
 #include "plib/color/color.h"
+#include "plib/gnw/button.h"
 #include "plib/gnw/debug.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
 #include "plib/gnw/input_rebind.h"
-#include "plib/gnw/button.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -74,7 +74,6 @@ namespace fallout {
 #define SPLASH_COUNT 10
 
 #define MAX_BUTTON_COUNT 5
-
 
 static int game_screendump(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void game_unload_info();
@@ -152,7 +151,7 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
 
     if (game_init_databases() == -1) {
         gconfig_exit(false);
-	gkioskconf_exit(false);
+        gkioskconf_exit(false);
         return -1;
     }
 
@@ -855,23 +854,23 @@ int game_handle_input(int eventCode, bool isInCombatMode)
         break;
     case KEY_CTRL_S:
     case KEY_F4:
-        if(gconfig_saveload_disabled == 0) {
+        if (gconfig_saveload_disabled == 0) {
             gsound_play_sfx_file("ib1p1xx1");
             if (SaveGame(1) == -1) {
                 debug_printf("\n ** Error calling SaveGame()! **\n");
             }
-        }else{
+        } else {
             dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
     case KEY_CTRL_L:
     case KEY_F5:
-        if(gconfig_saveload_disabled == 0) {
+        if (gconfig_saveload_disabled == 0) {
             gsound_play_sfx_file("ib1p1xx1");
             if (LoadGame(LOAD_SAVE_MODE_NORMAL) == -1) {
                 debug_printf("\n ** Error calling LoadGame()! **\n");
             }
-        }else{
+        } else {
             dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
@@ -888,7 +887,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 char* msg = getmsg(&misc_message_file, &messageListItem, 5);
                 display_print(msg);
             }
-        }else{
+        } else {
             dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;
@@ -905,7 +904,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 char* msg = getmsg(&misc_message_file, &messageListItem, 4);
                 display_print(msg);
             }
-        }else{
+        } else {
             dialog_out(err_msg, 0, 0, 169, 117, colorTable[992], NULL, colorTable[992], 0);
         }
         break;

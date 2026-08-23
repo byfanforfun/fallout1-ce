@@ -1795,7 +1795,7 @@ static int gsound_background_find_with_copy(char* dest, const char* src)
     }
 
     char outPath[COMPAT_MAX_PATH];
-    //snprintf(outPath, sizeof(outPath), "%s%s%s", sound_music_path1, src, ".ACM");
+    // snprintf(outPath, sizeof(outPath), "%s%s%s", sound_music_path1, src, ".ACM");
     snprintf(outPath, sizeof(outPath), "%s%s%s", "data/sound/music/", src, ".ACM");
     if (gsound_file_exists_f(outPath)) {
         strncpy(dest, outPath, COMPAT_MAX_PATH);
