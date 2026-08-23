@@ -24,4 +24,4 @@ void gkioskinv_reset();
 
 }
 
-#endif //FALLOUT_GAME_GKIOSKINV_H_
+#endif // FALLOUT_GAME_GKIOSKINV_H_
