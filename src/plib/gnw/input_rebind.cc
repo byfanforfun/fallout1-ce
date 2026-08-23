@@ -1,9 +1,9 @@
 #include "plib/gnw/input_rebind.h"
 
-#include <array>
-#include <string.h>
 #include "game/config.h"
 #include "platform_compat.h"
+#include <array>
+#include <string.h>
 
 namespace fallout {
 
@@ -18,15 +18,14 @@ static int binded_keys[BIND_MAX_BIND][BIND_MAX_KEY];
 
 int current_screen = -1;
 
-constexpr std::array<std::pair<BindSection, const char*>, BindSection(BindSection_max)> BindSectionStrings = {{
-    {BindSection::Main, "main"},
-    {BindSection::Game, "game"},
-    {BindSection::Editor, "editor"},
-    {BindSection::Inv, "inventory"},
-    {BindSection::Pip, "pip"}
-}};
+constexpr std::array<std::pair<BindSection, const char*>, BindSection(BindSection_max)> BindSectionStrings = { { { BindSection::Main, "main" },
+    { BindSection::Game, "game" },
+    { BindSection::Editor, "editor" },
+    { BindSection::Inv, "inventory" },
+    { BindSection::Pip, "pip" } } };
 
-constexpr const char* BindSectionToString(BindSection section) {
+constexpr const char* BindSectionToString(BindSection section)
+{
     for (const auto& [key, value] : BindSectionStrings) {
         if (key == section) return value;
     }
@@ -34,22 +33,22 @@ constexpr const char* BindSectionToString(BindSection section) {
     return BIND_SECTION_NO_SEC;
 }
 
-
 bool bind_config_init();
 bool bind_config_exit();
 
-bool bind_init() {
-    if(!bind_config_init())
+bool bind_init()
+{
+    if (!bind_config_init())
         return false;
 
     char ti[6];
     int key;
-    for(int i = BindScreen(SCREEN_MAIN); BindScreen(SCREEN_MAX) > i; ++i){
-        for(int ii = 1; BIND_MAX_KEY > ii; ++ii){
+    for (int i = BindScreen(SCREEN_MAIN); BindScreen(SCREEN_MAX) > i; ++i) {
+        for (int ii = 1; BIND_MAX_KEY > ii; ++ii) {
             snprintf(ti, 6, "%d", ii);
-            if(config_get_value(&bind_config, BindSectionToString(BindSection(i)), ti, &key)) {
+            if (config_get_value(&bind_config, BindSectionToString(BindSection(i)), ti, &key)) {
                 binded_keys[i][ii] = key;
-            }else{
+            } else {
                 binded_keys[i][ii] = -1;
             }
         }
@@ -60,7 +59,8 @@ bool bind_init() {
     return true;
 }
 
-bool bind_config_init() {
+bool bind_config_init()
+{
     if (bind_config_initialized) {
         return false;
     }
@@ -77,7 +77,8 @@ bool bind_config_init() {
     return true;
 }
 
-bool bind_config_exit() {
+bool bind_config_exit()
+{
     if (!bind_config_initialized) {
         return false;
     }
@@ -89,22 +90,24 @@ bool bind_config_exit() {
     return true;
 }
 
-int get_key(int screen, int key) {
-    if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX) || key >= BIND_MAX_KEY || 0 > key)
+int get_key(int screen, int key)
+{
+    if (screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX) || key >= BIND_MAX_KEY || 0 > key)
         return key;
 
-    if(binded_keys[screen][key] != -1)
+    if (binded_keys[screen][key] != -1)
         return binded_keys[screen][key];
 
     return key;
 }
 
-int get_physical_key(int screen, int logical_key) {
-    if(screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX))
+int get_physical_key(int screen, int logical_key)
+{
+    if (screen < SCREEN_MAIN || screen >= BindScreen(SCREEN_MAX))
         return logical_key;
 
-    for(int i = 1; i < BIND_MAX_KEY; i++) {
-        if(binded_keys[screen][i] == logical_key)
+    for (int i = 1; i < BIND_MAX_KEY; i++) {
+        if (binded_keys[screen][i] == logical_key)
             return i;
     }
 

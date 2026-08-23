@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-#define BIND_SECTION_NO_SEC    "nosec"
+#define BIND_SECTION_NO_SEC "nosec"
 
 typedef enum BindScreen {
     SCREEN_MAIN,

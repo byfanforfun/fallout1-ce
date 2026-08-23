@@ -1,8 +1,8 @@
 #include "platform_compat.h"
 
+#include <cstdlib>
 #include <string.h>
 #include <thread>
-#include <cstdlib>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -232,7 +232,7 @@ int compat_stat(const char* path)
 
     return 0;
 #else
-    struct stat st = {0};
+    struct stat st = { 0 };
     return stat(nativePath, &st);
 #endif
 }
@@ -378,7 +378,8 @@ long getFileSize(FILE* stream)
     return filesize;
 }
 
-void system_execute_cmd(const char* cmd) {
+void system_execute_cmd(const char* cmd)
+{
     std::system(cmd);
 }
 
