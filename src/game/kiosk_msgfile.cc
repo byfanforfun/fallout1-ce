@@ -12,13 +12,13 @@ int kiosk_msgfile_init = 0;
 
 int kiosk_load_msg()
 {
-    if(!message_init(&kiosk_msgfile))
+    if (!message_init(&kiosk_msgfile))
         return -1;
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s%s", msg_path, "kiosk.msg");
 
-    if(!message_load(&kiosk_msgfile, path))
+    if (!message_load(&kiosk_msgfile, path))
         return -1;
 
     kiosk_msgfile_init = 1;

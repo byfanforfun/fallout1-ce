@@ -5,7 +5,7 @@ namespace fallout {
 
 #define TIMERS_MAX 16
 
-typedef int(*timer_call)(int a1, int a2, int a3);
+typedef int (*timer_call)(int a1, int a2, int a3);
 
 struct Timer {
     timer_call func_ptr;
@@ -23,7 +23,6 @@ void timer_stop();
 void timer_reset();
 int timer_create(int timer, timer_call func_ptr, int timeout, int a1, int a2, int a3);
 int timer_delete(int timer);
-
 
 }
 

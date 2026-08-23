@@ -14,6 +14,7 @@
 #include "game/map.h"
 #include "game/message.h"
 #include "game/palette.h"
+#include "platform_compat.h"
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
 #include "plib/gnw/gnw.h"
@@ -25,80 +26,79 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 #include "plib/gnw/timer.h"
-#include "platform_compat.h"
 
 namespace fallout {
 
 // CE: Help screen message IDs (800+)
-#define MSG_HELP_MAIN_TITLE   800
-#define MSG_HELP_GAME_TITLE   801
-#define MSG_HELP_NEW_GAME     802
-#define MSG_HELP_LOAD_GAME    803
-#define MSG_HELP_CREDITS      804
-#define MSG_HELP_EXIT         805
-#define MSG_HELP_INTRO        806
-#define MSG_HELP_GAMMA_UP     807
-#define MSG_HELP_GAMMA_DOWN   808
-#define MSG_HELP_SCREENSAVER  809
-#define MSG_HELP_F2_HELP      810
-#define MSG_HELP_VOL_DOWN     811
-#define MSG_HELP_VOL_UP       812
-#define MSG_HELP_SAVE_GAME    813
-#define MSG_HELP_MAIN_MENU    814
-#define MSG_HELP_AUTOMAP      815
-#define MSG_HELP_COMBAT       816
-#define MSG_HELP_INVENTORY    817
-#define MSG_HELP_CHARACTER    818
-#define MSG_HELP_PIPBOY       819
-#define MSG_HELP_SKILLDEX     820
-#define MSG_HELP_CHANGE_HAND  821
-#define MSG_HELP_CENTER_VIEW  822
-#define MSG_HELP_SCROLL_LEFT  823
+#define MSG_HELP_MAIN_TITLE 800
+#define MSG_HELP_GAME_TITLE 801
+#define MSG_HELP_NEW_GAME 802
+#define MSG_HELP_LOAD_GAME 803
+#define MSG_HELP_CREDITS 804
+#define MSG_HELP_EXIT 805
+#define MSG_HELP_INTRO 806
+#define MSG_HELP_GAMMA_UP 807
+#define MSG_HELP_GAMMA_DOWN 808
+#define MSG_HELP_SCREENSAVER 809
+#define MSG_HELP_F2_HELP 810
+#define MSG_HELP_VOL_DOWN 811
+#define MSG_HELP_VOL_UP 812
+#define MSG_HELP_SAVE_GAME 813
+#define MSG_HELP_MAIN_MENU 814
+#define MSG_HELP_AUTOMAP 815
+#define MSG_HELP_COMBAT 816
+#define MSG_HELP_INVENTORY 817
+#define MSG_HELP_CHARACTER 818
+#define MSG_HELP_PIPBOY 819
+#define MSG_HELP_SKILLDEX 820
+#define MSG_HELP_CHANGE_HAND 821
+#define MSG_HELP_CENTER_VIEW 822
+#define MSG_HELP_SCROLL_LEFT 823
 #define MSG_HELP_SCROLL_RIGHT 824
-#define MSG_HELP_SCROLL_UP    825
-#define MSG_HELP_SCROLL_DOWN  826
-#define MSG_HELP_ROTATE_LEFT  827
+#define MSG_HELP_SCROLL_UP 825
+#define MSG_HELP_SCROLL_DOWN 826
+#define MSG_HELP_ROTATE_LEFT 827
 #define MSG_HELP_ROTATE_RIGHT 828
-#define MSG_HELP_QUICK_SAVE   829
-#define MSG_HELP_QUICK_LOAD   830
-#define MSG_HELP_FOOTER       831
-#define MSG_HELP_NAV_TITLE    833
-#define MSG_HELP_CHAR_TITLE   834
-#define MSG_HELP_SYS_TITLE    835
-#define MSG_HELP_SKILL_BTN1   836
-#define MSG_HELP_SKILL_BTN2   837
-#define MSG_HELP_SKILL_BTN3   838
-#define MSG_HELP_SKILL_BTN4   839
-#define MSG_HELP_SKILL_BTN5   840
-#define MSG_HELP_SKILL_BTN6   841
-#define MSG_HELP_SKILL_BTN7   842
-#define MSG_HELP_SKILL_BTN8   843
-#define MSG_HELP_HEADER       866
-#define MSG_HELP_BOOT_TITLE   860
-#define MSG_HELP_BOOT_COPY    861
-#define MSG_HELP_BOOT_CPU     862
-#define MSG_HELP_BOOT_MEM     863
-#define MSG_HELP_BOOT_CHIP    864
-#define MSG_HELP_BOOT_TERM    865
-#define MSG_HELP_CMD          867
-#define MSG_HELP_END_TURN     868
-#define MSG_HELP_END_COMBAT   869
-#define MSG_HELP_REST         870
-#define MSG_HELP_OPTIONS      871
-#define MSG_HELP_CLOSE        872
+#define MSG_HELP_QUICK_SAVE 829
+#define MSG_HELP_QUICK_LOAD 830
+#define MSG_HELP_FOOTER 831
+#define MSG_HELP_NAV_TITLE 833
+#define MSG_HELP_CHAR_TITLE 834
+#define MSG_HELP_SYS_TITLE 835
+#define MSG_HELP_SKILL_BTN1 836
+#define MSG_HELP_SKILL_BTN2 837
+#define MSG_HELP_SKILL_BTN3 838
+#define MSG_HELP_SKILL_BTN4 839
+#define MSG_HELP_SKILL_BTN5 840
+#define MSG_HELP_SKILL_BTN6 841
+#define MSG_HELP_SKILL_BTN7 842
+#define MSG_HELP_SKILL_BTN8 843
+#define MSG_HELP_HEADER 866
+#define MSG_HELP_BOOT_TITLE 860
+#define MSG_HELP_BOOT_COPY 861
+#define MSG_HELP_BOOT_CPU 862
+#define MSG_HELP_BOOT_MEM 863
+#define MSG_HELP_BOOT_CHIP 864
+#define MSG_HELP_BOOT_TERM 865
+#define MSG_HELP_CMD 867
+#define MSG_HELP_END_TURN 868
+#define MSG_HELP_END_COMBAT 869
+#define MSG_HELP_REST 870
+#define MSG_HELP_OPTIONS 871
+#define MSG_HELP_CLOSE 872
 #define MSG_HELP_TOGGLE_MOUSE 873
-#define MSG_HELP_TOGGLE_MODE  874
-#define MSG_HELP_MOVE_UP      875
-#define MSG_HELP_MOVE_DOWN    876
-#define MSG_HELP_PAGE_UP      877
-#define MSG_HELP_PAGE_DOWN    878
-#define MSG_HELP_MOVE_TOP     879
-#define MSG_HELP_MOVE_BOTTOM  880
-#define MSG_HELP_INV_TITLE    844
-#define MSG_HELP_TAB_NAV      900
-#define MSG_HELP_TAB_CHR      901
-#define MSG_HELP_TAB_INV      902
-#define MSG_HELP_TAB_SYS      903
+#define MSG_HELP_TOGGLE_MODE 874
+#define MSG_HELP_MOVE_UP 875
+#define MSG_HELP_MOVE_DOWN 876
+#define MSG_HELP_PAGE_UP 877
+#define MSG_HELP_PAGE_DOWN 878
+#define MSG_HELP_MOVE_TOP 879
+#define MSG_HELP_MOVE_BOTTOM 880
+#define MSG_HELP_INV_TITLE 844
+#define MSG_HELP_TAB_NAV 900
+#define MSG_HELP_TAB_CHR 901
+#define MSG_HELP_TAB_INV 902
+#define MSG_HELP_TAB_SYS 903
 
 // CE: Help screen message list and item
 static MessageList help_msg;
@@ -108,33 +108,60 @@ static MessageListItem help_msg_item;
 static const char* key_display_name(int key_code)
 {
     switch (key_code) {
-    case KEY_ESCAPE:   return "[ESC]";
-    case KEY_F1:       return "[F1]";
-    case KEY_F2:       return "[F2]";
-    case KEY_F3:       return "[F3]";
-    case KEY_F4:       return "[F4]";
-    case KEY_F5:       return "[F5]";
-    case KEY_F6:       return "[F6]";
-    case KEY_F7:       return "[F7]";
-    case KEY_F8:       return "[F8]";
-    case KEY_F9:       return "[F9]";
-    case KEY_F10:      return "[F10]";
-    case KEY_F11:      return "[F11]";
-    case KEY_F12:      return "[F12]";
-    case KEY_LEFT:     return "[LEFT]";
-    case KEY_RIGHT:    return "[RIGHT]";
-    case KEY_UP:       return "[UP]";
-    case KEY_DOWN:     return "[DOWN]";
-    case KEY_HOME:     return "[HOME]";
-    case KEY_END:      return "[END]";
-    case KEY_PAGE_UP:  return "[PGUP]";
-    case KEY_PAGE_DOWN: return "[PGDN]";
-    case KEY_TAB:      return "[TAB]";
-    case KEY_ENTER:    return "[ENTER]";
-    case KEY_BACKSPACE: return "[BS]";
-    case KEY_DELETE:   return "[DEL]";
-    case KEY_INSERT:   return "[INS]";
-    default:           return NULL;
+    case KEY_ESCAPE:
+        return "[ESC]";
+    case KEY_F1:
+        return "[F1]";
+    case KEY_F2:
+        return "[F2]";
+    case KEY_F3:
+        return "[F3]";
+    case KEY_F4:
+        return "[F4]";
+    case KEY_F5:
+        return "[F5]";
+    case KEY_F6:
+        return "[F6]";
+    case KEY_F7:
+        return "[F7]";
+    case KEY_F8:
+        return "[F8]";
+    case KEY_F9:
+        return "[F9]";
+    case KEY_F10:
+        return "[F10]";
+    case KEY_F11:
+        return "[F11]";
+    case KEY_F12:
+        return "[F12]";
+    case KEY_LEFT:
+        return "[LEFT]";
+    case KEY_RIGHT:
+        return "[RIGHT]";
+    case KEY_UP:
+        return "[UP]";
+    case KEY_DOWN:
+        return "[DOWN]";
+    case KEY_HOME:
+        return "[HOME]";
+    case KEY_END:
+        return "[END]";
+    case KEY_PAGE_UP:
+        return "[PGUP]";
+    case KEY_PAGE_DOWN:
+        return "[PGDN]";
+    case KEY_TAB:
+        return "[TAB]";
+    case KEY_ENTER:
+        return "[ENTER]";
+    case KEY_BACKSPACE:
+        return "[BS]";
+    case KEY_DELETE:
+        return "[DEL]";
+    case KEY_INSERT:
+        return "[INS]";
+    default:
+        return NULL;
     }
 }
 
@@ -234,7 +261,7 @@ int game_help()
             }
 
             // CE: Tab buttons (NAV, CHAR, INV, SYS)
-            int tab_btn_ids[4] = {-1, -1, -1, -1};
+            int tab_btn_ids[4] = { -1, -1, -1, -1 };
             int current_tab = 0;
             if (btnUpData != NULL && btnDownData != NULL) {
                 for (int i = 0; i < 4; i++) {
@@ -294,7 +321,10 @@ int game_help()
                     if (y + rh > bgH) rh = bgH - y;
                     buf_to_buf(bgData + y * bgW, bgW, rh, bgW, windowBuffer + y * HELP_SCREEN_WIDTH, HELP_SCREEN_WIDTH);
                 }
-                struct TabRow { int kc; int msg; };
+                struct TabRow {
+                    int kc;
+                    int msg;
+                };
                 TabRow p[16];
                 int n = 0;
                 const char* title = "";
@@ -302,61 +332,61 @@ int game_help()
                 if (t == 0) {
                     title = getmsg(&help_msg, &help_msg_item, MSG_HELP_NAV_TITLE);
                     n = 10;
-                    p[0] = {KEY_ARROW_LEFT,  MSG_HELP_SCROLL_LEFT};
-                    p[1] = {KEY_ARROW_RIGHT, MSG_HELP_SCROLL_RIGHT};
-                    p[2] = {KEY_ARROW_UP,    MSG_HELP_SCROLL_UP};
-                    p[3] = {KEY_ARROW_DOWN,  MSG_HELP_SCROLL_DOWN};
-                    p[4] = {KEY_COMMA,       MSG_HELP_ROTATE_LEFT};
-                    p[5] = {KEY_DOT,         MSG_HELP_ROTATE_RIGHT};
-                    p[6] = {KEY_HOME,        MSG_HELP_CENTER_VIEW};
-                    p[7] = {KEY_TAB,         MSG_HELP_AUTOMAP};
-                    p[8] = {KEY_SPACE,       MSG_HELP_END_TURN};
-                    p[9] = {KEY_RETURN,      MSG_HELP_END_COMBAT};
+                    p[0] = { KEY_ARROW_LEFT, MSG_HELP_SCROLL_LEFT };
+                    p[1] = { KEY_ARROW_RIGHT, MSG_HELP_SCROLL_RIGHT };
+                    p[2] = { KEY_ARROW_UP, MSG_HELP_SCROLL_UP };
+                    p[3] = { KEY_ARROW_DOWN, MSG_HELP_SCROLL_DOWN };
+                    p[4] = { KEY_COMMA, MSG_HELP_ROTATE_LEFT };
+                    p[5] = { KEY_DOT, MSG_HELP_ROTATE_RIGHT };
+                    p[6] = { KEY_HOME, MSG_HELP_CENTER_VIEW };
+                    p[7] = { KEY_TAB, MSG_HELP_AUTOMAP };
+                    p[8] = { KEY_SPACE, MSG_HELP_END_TURN };
+                    p[9] = { KEY_RETURN, MSG_HELP_END_COMBAT };
                 } else if (t == 1) {
                     title = getmsg(&help_msg, &help_msg_item, MSG_HELP_CHAR_TITLE);
                     n = 15;
-                    p[0]  = {KEY_1,           MSG_HELP_SKILL_BTN1};
-                    p[1]  = {KEY_2,           MSG_HELP_SKILL_BTN2};
-                    p[2]  = {KEY_3,           MSG_HELP_SKILL_BTN3};
-                    p[3]  = {KEY_4,           MSG_HELP_SKILL_BTN4};
-                    p[4]  = {KEY_5,           MSG_HELP_SKILL_BTN5};
-                    p[5]  = {KEY_6,           MSG_HELP_SKILL_BTN6};
-                    p[6]  = {KEY_7,           MSG_HELP_SKILL_BTN7};
-                    p[7]  = {KEY_8,           MSG_HELP_SKILL_BTN8};
-                    p[8]  = {KEY_UPPERCASE_C, MSG_HELP_CHARACTER};
-                    p[9]  = {KEY_UPPERCASE_I, MSG_HELP_INVENTORY};
-                    p[10] = {KEY_UPPERCASE_P, MSG_HELP_PIPBOY};
-                    p[11] = {KEY_UPPERCASE_S, MSG_HELP_SKILLDEX};
-                    p[12] = {KEY_UPPERCASE_B, MSG_HELP_CHANGE_HAND};
-                    p[13] = {KEY_UPPERCASE_M, MSG_HELP_TOGGLE_MOUSE};
-                    p[14] = {KEY_UPPERCASE_N, MSG_HELP_TOGGLE_MODE};
+                    p[0] = { KEY_1, MSG_HELP_SKILL_BTN1 };
+                    p[1] = { KEY_2, MSG_HELP_SKILL_BTN2 };
+                    p[2] = { KEY_3, MSG_HELP_SKILL_BTN3 };
+                    p[3] = { KEY_4, MSG_HELP_SKILL_BTN4 };
+                    p[4] = { KEY_5, MSG_HELP_SKILL_BTN5 };
+                    p[5] = { KEY_6, MSG_HELP_SKILL_BTN6 };
+                    p[6] = { KEY_7, MSG_HELP_SKILL_BTN7 };
+                    p[7] = { KEY_8, MSG_HELP_SKILL_BTN8 };
+                    p[8] = { KEY_UPPERCASE_C, MSG_HELP_CHARACTER };
+                    p[9] = { KEY_UPPERCASE_I, MSG_HELP_INVENTORY };
+                    p[10] = { KEY_UPPERCASE_P, MSG_HELP_PIPBOY };
+                    p[11] = { KEY_UPPERCASE_S, MSG_HELP_SKILLDEX };
+                    p[12] = { KEY_UPPERCASE_B, MSG_HELP_CHANGE_HAND };
+                    p[13] = { KEY_UPPERCASE_M, MSG_HELP_TOGGLE_MOUSE };
+                    p[14] = { KEY_UPPERCASE_N, MSG_HELP_TOGGLE_MODE };
                 } else if (t == 2) {
                     title = getmsg(&help_msg, &help_msg_item, MSG_HELP_INV_TITLE);
                     n = 6;
-                    p[0] = {KEY_UP,      MSG_HELP_MOVE_UP};
-                    p[1] = {KEY_DOWN,    MSG_HELP_MOVE_DOWN};
-                    p[2] = {KEY_PAGE_UP, MSG_HELP_PAGE_UP};
-                    p[3] = {KEY_PAGE_DOWN, MSG_HELP_PAGE_DOWN};
-                    p[4] = {KEY_HOME,    MSG_HELP_MOVE_TOP};
-                    p[5] = {KEY_END,     MSG_HELP_MOVE_BOTTOM};
+                    p[0] = { KEY_UP, MSG_HELP_MOVE_UP };
+                    p[1] = { KEY_DOWN, MSG_HELP_MOVE_DOWN };
+                    p[2] = { KEY_PAGE_UP, MSG_HELP_PAGE_UP };
+                    p[3] = { KEY_PAGE_DOWN, MSG_HELP_PAGE_DOWN };
+                    p[4] = { KEY_HOME, MSG_HELP_MOVE_TOP };
+                    p[5] = { KEY_END, MSG_HELP_MOVE_BOTTOM };
                 } else {
                     title = getmsg(&help_msg, &help_msg_item, MSG_HELP_SYS_TITLE);
                     n = 15;
-                    p[0]  = {KEY_F4,          MSG_HELP_SAVE_GAME};
-                    p[1]  = {KEY_F5,          MSG_HELP_LOAD_GAME};
-                    p[2]  = {KEY_F6,          MSG_HELP_QUICK_SAVE};
-                    p[3]  = {KEY_F7,          MSG_HELP_QUICK_LOAD};
-                    p[4]  = {KEY_F12,         MSG_HELP_MAIN_MENU};
-                    p[5]  = {KEY_UPPERCASE_Z, MSG_HELP_REST};
-                    p[6]  = {KEY_UPPERCASE_O, MSG_HELP_OPTIONS};
-                    p[7]  = {KEY_ESCAPE,      MSG_HELP_CLOSE};
-                    p[8]  = {KEY_UPPERCASE_D, MSG_HELP_SCREENSAVER};
-                    p[9]  = {KEY_F2,          MSG_HELP_F2_HELP};
-                    p[10] = {KEY_UPPERCASE_H, MSG_HELP_F2_HELP};
-                    p[11] = {KEY_PLUS,        MSG_HELP_GAMMA_UP};
-                    p[12] = {KEY_MINUS,       MSG_HELP_GAMMA_DOWN};
-                    p[13] = {KEY_F3,          MSG_HELP_VOL_UP};
-                    p[14] = {KEY_F1,          MSG_HELP_VOL_DOWN};
+                    p[0] = { KEY_F4, MSG_HELP_SAVE_GAME };
+                    p[1] = { KEY_F5, MSG_HELP_LOAD_GAME };
+                    p[2] = { KEY_F6, MSG_HELP_QUICK_SAVE };
+                    p[3] = { KEY_F7, MSG_HELP_QUICK_LOAD };
+                    p[4] = { KEY_F12, MSG_HELP_MAIN_MENU };
+                    p[5] = { KEY_UPPERCASE_Z, MSG_HELP_REST };
+                    p[6] = { KEY_UPPERCASE_O, MSG_HELP_OPTIONS };
+                    p[7] = { KEY_ESCAPE, MSG_HELP_CLOSE };
+                    p[8] = { KEY_UPPERCASE_D, MSG_HELP_SCREENSAVER };
+                    p[9] = { KEY_F2, MSG_HELP_F2_HELP };
+                    p[10] = { KEY_UPPERCASE_H, MSG_HELP_F2_HELP };
+                    p[11] = { KEY_PLUS, MSG_HELP_GAMMA_UP };
+                    p[12] = { KEY_MINUS, MSG_HELP_GAMMA_DOWN };
+                    p[13] = { KEY_F3, MSG_HELP_VOL_UP };
+                    p[14] = { KEY_F1, MSG_HELP_VOL_DOWN };
                 }
 
                 win_print(win, title, 0, C1, y, colorTable[992] | 0x2000000);
@@ -380,7 +410,7 @@ int game_help()
 
                 text_font(101);
                 {
-                    const int msgs[4] = {MSG_HELP_TAB_NAV, MSG_HELP_TAB_CHR, MSG_HELP_TAB_INV, MSG_HELP_TAB_SYS};
+                    const int msgs[4] = { MSG_HELP_TAB_NAV, MSG_HELP_TAB_CHR, MSG_HELP_TAB_INV, MSG_HELP_TAB_SYS };
                     for (int i = 0; i < 4; i++) {
                         int lx = 582 - text_width(getmsg(&help_msg, &help_msg_item, msgs[i]));
                         win_print(win, getmsg(&help_msg, &help_msg_item, msgs[i]), 0, lx, 151 + i * 22, colorTable[21091] | 0x2000000);
