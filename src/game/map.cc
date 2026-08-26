@@ -1062,7 +1062,7 @@ int map_load_file(DB_FILE* stream)
         // where CE expects lastVisitTime (hubdwntn.map = 264644).
         int lastVisitTime = map_data.lastVisitTime;
         if (lastVisitTime > 0 && lastVisitTime < 1000000) {
-            lastVisitTime = 0;
+            lastVisitTime = 1;
         }
 
         if (gconfig_random_containers && lastVisitTime == 0) {
