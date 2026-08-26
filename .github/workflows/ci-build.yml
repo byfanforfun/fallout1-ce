@@ -8,6 +8,16 @@ on:
     types:
       - opened
       - synchronize
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 defaults:
   run:
