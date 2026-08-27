@@ -2786,13 +2786,16 @@ int MapDirErase(const char* relativePath, const char* extension)
 
     char** fileList;
     int fileListLength = db_get_file_list(path, &fileList, NULL, 0);
+    debug_printf("LOADSAVE: MapDirErase('%s') list=%d\n", path, fileListLength);
     if (fileListLength == -1) {
         return -1;
     }
 
     while (--fileListLength >= 0) {
         snprintf(path, sizeof(path), "%s\\%s%s", patches, relativePath, fileList[fileListLength]);
-        if (compat_remove(path) != 0) {
+        int rmRc = compat_remove(path);
+        debug_printf("LOADSAVE: MapDirErase remove('%s') -> %d\n", path, rmRc);
+        if (rmRc != 0) {
             db_free_file_list(&fileList, NULL);
             return -1;
         }
