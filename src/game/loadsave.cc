@@ -1669,23 +1669,30 @@ static int SaveSlot()
 
     char cwd[COMPAT_MAX_PATH];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        debug_printf("\nLOADSAVE: SaveSlot: cwd='%s' patches='%s'\n", cwd, patches);
+        debug_printf("\nLOADSAVE: SaveSlot: cwd='%s'\n", cwd);
     }
 
-    snprintf(gmpath, sizeof(gmpath), "%s", patches);
-    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+    const char* dbPrefix = db_get_patches_path();
+    if (dbPrefix == NULL || dbPrefix[0] == '\0') {
+        dbPrefix = "";
+    }
+    debug_printf("\nLOADSAVE: SaveSlot: dbPatches='%s' mkdir:\n", dbPrefix);
 
-    snprintf(gmpath, sizeof(gmpath), "%s\\%s", patches, "SAVEGAME");
-    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+    const char* bases[2] = { dbPrefix, "" };
+    int baseCount = (dbPrefix[0] != '\0') ? 2 : 1;
+    for (int b = 0; b < baseCount; b++) {
+        const char* base = bases[b];
+        const char* sep = base[0] != '\0' ? "\\" : "";
 
-    snprintf(gmpath, sizeof(gmpath), "%s\\%s\\%s%.2d", patches, "SAVEGAME", "SLOT", slot_cursor + 1);
-    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+        snprintf(gmpath, sizeof(gmpath), "%s", base);
+        debug_printf("\nLOADSAVE:   mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
-    snprintf(gmpath, sizeof(gmpath), "%s", "SAVEGAME");
-    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+        snprintf(gmpath, sizeof(gmpath), "%s%s%s", base, sep, "SAVEGAME");
+        debug_printf("\nLOADSAVE:   mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
-    snprintf(gmpath, sizeof(gmpath), "%s\\%s%.2d", "SAVEGAME", "SLOT", slot_cursor + 1);
-    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+        snprintf(gmpath, sizeof(gmpath), "%s%s%s\\%s%.2d", base, sep, "SAVEGAME", "SLOT", slot_cursor + 1);
+        debug_printf("\nLOADSAVE:   mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
+    }
 
     if (SaveBackup() == -1) {
         debug_printf("\nLOADSAVE: Warning, can't backup save file!\n");

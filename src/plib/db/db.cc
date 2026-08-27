@@ -205,6 +205,17 @@ DB_DATABASE* db_current()
     return INVALID_DATABASE_HANDLE;
 }
 
+// Returns the patches path used by the current database (may be NULL when
+// patching is disabled; writes then resolve relative to the current directory).
+const char* db_get_patches_path()
+{
+    if (current_database != NULL) {
+        return current_database->patches_path;
+    }
+
+    return NULL;
+}
+
 // 0x4AEF6C
 int db_total()
 {
