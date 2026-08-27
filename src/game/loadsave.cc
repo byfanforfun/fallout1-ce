@@ -347,7 +347,7 @@ void kiosk_continues_erase_slot()
 // 0x46D960
 int kiosk_continues_autosave()
 {
-    if (continues_slot < 1) {
+    if (continues_slot < 1 || isLoadingGame()) {
         return 0;
     }
 
