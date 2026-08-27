@@ -370,6 +370,12 @@ int kiosk_continues_autosave()
         rc = SaveSlot();
     }
 
+    if (rc != 0) {
+        debug_printf("\nCONTINUES: autosave failed, erasing bad slot\n");
+        EraseSave();
+        continues_slot = 0;
+    }
+
     if (thumbnail_image[1] != NULL) {
         mem_free(snapshot);
         thumbnail_image[1] = NULL;
