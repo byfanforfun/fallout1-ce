@@ -15,10 +15,10 @@
 
 #include "game/amutex.h"
 #include "game/art.h"
+#include "game/bmpdlog.h"
 #include "game/chardump.h"
 #include "game/credits.h"
 #include "game/cycle.h"
-#include "game/bmpdlog.h"
 #include "game/endgame.h"
 #include "game/game.h"
 #include "game/gconfig.h"
@@ -40,9 +40,9 @@
 #include "game/scripts.h"
 #include "game/select.h"
 #include "game/selfrun.h"
-#include "game/stat.h"
 #include "game/start_inv_v.h"
 #include "game/start_message.h"
+#include "game/stat.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "plib/color/color.h"
@@ -91,7 +91,7 @@ static int main_selfrun_count = 0;
 static int main_selfrun_index = 0;
 
 // 0x505A7C
-//static bool main_show_death_scene = false; //moved to game.cc
+// static bool main_show_death_scene = false; //moved to game.cc
 
 // 0x614838
 static bool main_death_voiceover_done;
@@ -114,9 +114,9 @@ int gnw_main(int argc, char** argv)
     gmovie_play(MOVIE_INTRO, 0);
 
     if (main_menu_create() == 0) {
-	unsigned int tick = get_time();
+        unsigned int tick = get_time();
         int language_filter = 1;
-	int exp_start = 0;
+        int exp_start = 0;
         int msg_start = 0;
         bool done = false;
 
@@ -145,7 +145,7 @@ int gnw_main(int argc, char** argv)
                 config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, &msg_start);
                 config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
 
-                if(msg_start) {
+                if (msg_start) {
                     bool startGame = false;
                     while (true) {
                         if (start_message() != 2) {
@@ -196,7 +196,7 @@ int gnw_main(int argc, char** argv)
 
                 break;
             case MAIN_MENU_LOAD_GAME:
-                //timer_start();
+                // timer_start();
 
                 if (gconfig_saveload_disabled == 0) {
                     int win = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
@@ -233,15 +233,17 @@ int gnw_main(int argc, char** argv)
                         main_show_death_scene = 0;
                     }
                     main_menu_create();
-                }else{
+                } else {
                     main_menu_hide(true);
                     game_handle_hof();
                     mouse_show();
 
-                    //static MessageListItem mesg;
-                    //char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
-                    //dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
+                    // static MessageListItem mesg;
+                    // char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
+                    // dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
+
+                flush_last_char_hash();
 
                 break;
             case MAIN_MENU_TIMEOUT:
@@ -262,7 +264,7 @@ int gnw_main(int argc, char** argv)
                 break;
             case MAIN_MENU_EXIT:
             case -1:
-                if(gconfig_game_exit_allowed > 0) {
+                if (gconfig_game_exit_allowed > 0) {
                     done = true;
                     main_menu_hide(true);
                     main_menu_destroy();
@@ -270,7 +272,7 @@ int gnw_main(int argc, char** argv)
                 } else {
                     bool cursorWasHidden = mouse_hidden();
 
-                    if(cursorWasHidden)
+                    if (cursorWasHidden)
                         mouse_show();
 
                     static MessageListItem mesg;
@@ -343,6 +345,9 @@ static int main_load_new(char* mapFileName)
 
     loadColorTable("color.pal");
     palette_fade_to(cmap);
+
+    KillOldMaps();
+
     map_init();
     gmouse_set_cursor(MOUSE_CURSOR_NONE);
     mouse_show();

@@ -4168,7 +4168,8 @@ static int about_lookup_name(const char* search)
     return 0;
 }
 
-int copy_background(int background_id) {
+int copy_background(int background_id)
+{
     int backgroundFid = art_id(OBJ_TYPE_BACKGROUND, background_id, 0, 0, 0);
 
     CacheEntry* backgroundHandle;
@@ -4191,7 +4192,8 @@ int copy_background(int background_id) {
     return 0;
 }
 
-int gDialogStartInventory(Object* target, int barter_mod, int background) {
+int gDialogStartInventory(Object* target, int barter_mod, int background)
+{
 
     dialog_target = target;
 
@@ -4203,7 +4205,7 @@ int gDialogStartInventory(Object* target, int barter_mod, int background) {
 
     gDialogProcessInit();
 
-    if(gOptionWin != -1) {
+    if (gOptionWin != -1) {
         win_delete(gOptionWin);
         gOptionWin = -1;
     }
@@ -4220,13 +4222,12 @@ int gDialogStartInventory(Object* target, int barter_mod, int background) {
     dialogue_switch_mode = 0;
     dialogue_state = 0;
 
-    if(gReplyWin != -1) {
+    if (gReplyWin != -1) {
         win_delete(gReplyWin);
         gOptionWin = -1;
     }
 
     return 0;
 }
-
 
 } // namespace fallout

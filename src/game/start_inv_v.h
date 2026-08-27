@@ -8,4 +8,4 @@ namespace fallout {
 int start_inventory();
 }
 
-#endif //FALLOUT_GAME_START_INV_H_
+#endif // FALLOUT_GAME_START_INV_H_

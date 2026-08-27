@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "plib/gnw/timer.h"
 #include "platform_compat.h"
+#include "plib/gnw/timer.h"
 
 namespace fallout {
 
@@ -17,19 +17,19 @@ void timer_drop();
 
 void timer_init()
 {
-    for(int i = 0; TIMERS_MAX > i; ++i)
+    for (int i = 0; TIMERS_MAX > i; ++i)
         timers[i] = {};
 }
 
 void timer_refresh_trigger(int timer)
 {
-    if(timers[timer].timeout != 0)
+    if (timers[timer].timeout != 0)
         timers[timer].is_fire = 0;
 }
 
 void timer_drop()
 {
-    for(int i = 0; TIMERS_MAX > i; ++i)
+    for (int i = 0; TIMERS_MAX > i; ++i)
         timer_refresh_trigger(i);
 }
 
@@ -46,13 +46,15 @@ void timer_stop()
 void timer_tick()
 {
     current_time = compat_timeGetTime();
-    
-    if(1 > timer_started){return;}
+
+    if (1 > timer_started) {
+        return;
+    }
 
     timer_call tc;
-    for(int i = 0; TIMERS_MAX > i; ++i){
-        if(timers[i].timeout != 0){
-            if(1 > timers[i].is_fire && current_time >= ingame_timer+(timers[i].timeout*1000)) {
+    for (int i = 0; TIMERS_MAX > i; ++i) {
+        if (timers[i].timeout != 0) {
+            if (1 > timers[i].is_fire && current_time >= ingame_timer + (timers[i].timeout * 1000)) {
                 timers[i].is_fire = 1;
                 (*timers[i].func_ptr)(timers[i].a1, timers[i].a2, timers[i].a3);
             }
@@ -68,7 +70,9 @@ void timer_reset()
 
 int timer_create(int timer, timer_call func_ptr, int timeout, int a1, int a2, int a3)
 {
-    if(timers[timer].timeout != 0){return 1;}
+    if (timers[timer].timeout != 0) {
+        return 1;
+    }
 
     Timer t;
     t.func_ptr = func_ptr;
@@ -85,10 +89,10 @@ int timer_create(int timer, timer_call func_ptr, int timeout, int a1, int a2, in
 
 int timer_delete(int timer)
 {
-    if(timers[timer].timeout != 0){
+    if (timers[timer].timeout != 0) {
         timers[timer] = {};
         return 0;
-    }else{
+    } else {
         return 1;
     }
 }

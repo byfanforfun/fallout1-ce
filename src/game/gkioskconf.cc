@@ -83,11 +83,10 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_COMBAT, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_LFILTER, 0);
 
-
     strcpy(gkioskconf_file_name, KIOSK_CONFIG_FILE_NAME);
     config_load(&kiosk_config, gkioskconf_file_name, false);
 
-    //override fallout.cfg
+    // override fallout.cfg
     config_get_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_GAME, &_game_difficulty);
     config_get_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_COMBAT, &_combat_difficulty);
     config_get_value(&kiosk_config, KIOSK_CONFIG_OVERRIDE_KEY, KIOSK_CONFIG_OVERRIDE_LFILTER, &_language_filter);
@@ -96,7 +95,7 @@ bool gkioskconf_init()
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, _combat_difficulty);
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, _language_filter);
 
-    //set global vars
+    // set global vars
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &gconfig_caps_start);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &gconfig_exp_start);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_DISABLE_SAVELOAD, &gconfig_saveload_disabled);

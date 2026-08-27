@@ -16,6 +16,7 @@
 #include "game/item.h"
 #include "game/item_quality.h"
 #include "game/light.h"
+#include "game/loadsave.h"
 #include "game/map.h"
 #include "game/party.h"
 #include "game/protinst.h"
@@ -33,11 +34,11 @@
 
 namespace fallout {
 
-static int obj_read_obj(Object* obj, DB_FILE* stream);
+static int obj_read_obj(Object* obj, DB_FILE* stream, bool readQuality = false);
 static int obj_load_func(DB_FILE* stream);
 static void obj_fix_combat_cid_for_dude();
 static void object_fix_weapon_ammo(Object* obj);
-static int obj_write_obj(Object* obj, DB_FILE* stream);
+static int obj_write_obj(Object* obj, DB_FILE* stream, bool writeQuality = false);
 static int obj_object_table_init();
 static int obj_offset_table_init();
 static void obj_offset_table_exit();
@@ -393,7 +394,7 @@ void obj_exit()
 }
 
 // 0x47A904
-static int obj_read_obj(Object* obj, DB_FILE* stream)
+static int obj_read_obj(Object* obj, DB_FILE* stream, bool readQuality)
 {
     int field_74;
 
@@ -419,8 +420,12 @@ static int obj_read_obj(Object* obj, DB_FILE* stream)
     obj->outline = 0;
     obj->owner = NULL;
 
-    if (proto_read_protoUpdateData(obj, stream) != 0) {
+    if (proto_read_protoUpdateData(obj, stream, readQuality) != 0) {
         return -1;
+    }
+
+    if (readQuality) {
+        if (db_freadInt(stream, &(obj->quality)) == -1) return -1;
     }
 
     if (obj->pid < 0x5000010 || obj->pid > 0x5000017) {
@@ -501,7 +506,7 @@ static int obj_load_func(DB_FILE* stream)
                 return -1;
             }
 
-            if (obj_read_obj(objectListNode->obj, stream) != 0) {
+            if (obj_read_obj(objectListNode->obj, stream, loadingFromSave) != 0) {
                 // NOTE: Uninline.
                 obj_destroy_object(&(objectListNode->obj));
 
@@ -555,7 +560,7 @@ static int obj_load_func(DB_FILE* stream)
                             return -1;
                         }
 
-                        if (obj_read_obj(inventoryItem->item, stream) != 0) {
+                        if (obj_read_obj(inventoryItem->item, stream, loadingFromSave) != 0) {
                             debug_printf("Error loading inventory\n");
                             return -1;
                         }
@@ -647,7 +652,7 @@ static void object_fix_weapon_ammo(Object* obj)
 }
 
 // 0x47B000
-static int obj_write_obj(Object* obj, DB_FILE* stream)
+static int obj_write_obj(Object* obj, DB_FILE* stream, bool writeQuality)
 {
     if (db_fwriteInt(stream, obj->id) == -1) return -1;
     if (db_fwriteInt(stream, obj->tile) == -1) return -1;
@@ -667,7 +672,10 @@ static int obj_write_obj(Object* obj, DB_FILE* stream)
     if (db_fwriteInt(stream, obj->outline) == -1) return -1;
     if (db_fwriteInt(stream, obj->sid) == -1) return -1;
     if (db_fwriteInt(stream, obj->field_80) == -1) return -1;
-    if (proto_write_protoUpdateData(obj, stream) == -1) return -1;
+    if (proto_write_protoUpdateData(obj, stream, writeQuality) == -1) return -1;
+    if (writeQuality) {
+        if (db_fwriteInt(stream, obj->quality) == -1) return -1;
+    }
 
     return 0;
 }
@@ -721,7 +729,7 @@ int obj_save(DB_FILE* stream)
                     }
                 }
 
-                if (obj_write_obj(object, stream) == -1) {
+                if (obj_write_obj(object, stream, true) == -1) {
                     return -1;
                 }
 
@@ -3283,7 +3291,7 @@ int obj_save_obj(DB_FILE* stream, Object* object)
         }
     }
 
-    if (obj_write_obj(object, stream) == -1) {
+    if (obj_write_obj(object, stream, true) == -1) {
         return -1;
     }
 
@@ -3321,7 +3329,7 @@ int obj_load_obj(DB_FILE* stream, Object** objectPtr, int elevation, Object* own
         return -1;
     }
 
-    if (obj_read_obj(obj, stream) != 0) {
+    if (obj_read_obj(obj, stream, loadingFromSave) != 0) {
         *objectPtr = NULL;
         return -1;
     }
@@ -3501,7 +3509,7 @@ static int obj_create_object(Object** objectPtr)
     object->field_80 = -1;
 
     int quality = ITEM_QUALITY_DEFAULT;
-    if(gconfig_quality_default_index != ITEM_QUALITY_DEFAULT) quality = gconfig_quality_default_index;
+    if (gconfig_quality_default_index != ITEM_QUALITY_DEFAULT) quality = gconfig_quality_default_index;
 
     object->quality = quality;
 
@@ -3774,7 +3782,7 @@ static int obj_adjust_light(Object* obj, int a2, Rect* rect)
         obj->lightIntensity = 65536;
     }
 
-    int(*v70)[36] = light_offsets[obj->tile & 1];
+    auto v70 = light_offsets[obj->tile & 1];
     int v7 = (obj->lightIntensity - 655) / (obj->lightDistance + 1);
     int v28[36];
     v28[0] = obj->lightIntensity - v7;

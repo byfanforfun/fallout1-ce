@@ -28,7 +28,7 @@ bool exec_config_init()
     if (!config_init(&exec_config)) {
         return false;
     }
-    
+
     strcpy(exec_config_file_name, EXEC_CONFIG_FILE_NAME);
     config_load(&exec_config, exec_config_file_name, false);
 
@@ -42,7 +42,7 @@ bool exec_config_exit(bool shouldSave)
     if (!exec_config_initialized) {
         return false;
     }
-    
+
     bool result = true;
 
     if (shouldSave) {
@@ -58,18 +58,18 @@ bool exec_config_exit(bool shouldSave)
     return result;
 }
 
-bool system_exec(int line_nums[]) {
+bool system_exec(int line_nums[])
+{
     exec_config_init();
 
     static char* cmd = NULL;
     char ti[4];
-    for(int i = 0; EXEC_MAX_LINES > i; ++i){
+    for (int i = 0; EXEC_MAX_LINES > i; ++i) {
         snprintf(ti, 4, "%d", i);
-        if(config_get_string(&exec_config, EXEC_CONFIG_EXEC_SECTION, ti, &cmd))
-        {
-            for(int ii = 0; EXEC_MAX_LINES > ii; ++ii){
-                if(line_nums[ii] == i)
-                    if(compat_exec(cmd) != 0) {
+        if (config_get_string(&exec_config, EXEC_CONFIG_EXEC_SECTION, ti, &cmd)) {
+            for (int ii = 0; EXEC_MAX_LINES > ii; ++ii) {
+                if (line_nums[ii] == i)
+                    if (compat_exec(cmd) != 0) {
                         printf("executed abnormally: %s\n", cmd);
                     }
             }

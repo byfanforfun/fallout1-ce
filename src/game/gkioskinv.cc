@@ -1,14 +1,14 @@
 #include "game/gkioskinv.h"
 
-#include <cstring>
-#include <vector>
-#include <random>
 #include <algorithm>
+#include <cstring>
 #include <functional>
+#include <random>
+#include <vector>
 
 #include "game/item.h"
-#include "game/proto.h"
 #include "game/object.h"
+#include "game/proto.h"
 
 #include "plib/gnw/debug.h"
 
@@ -34,7 +34,6 @@ static int rndex_keep_pids[INV_MAX_EXCLUDE];
 static int rndex_keep_count = 0;
 static int rndex_once_pids[INV_MAX_EXCLUDE];
 static int rndex_once_count = 0;
-
 
 Config gkiosk_inv_config;
 
@@ -67,7 +66,6 @@ bool inv_conf_exit()
 
     return true;
 }
-
 
 void inv_generate_items_for_value(Object* container, int targetValue)
 {
@@ -190,7 +188,7 @@ static bool is_pid_once(int pid)
     }
 
     std::vector<int>::iterator it = std::find(cachedItemPids.begin(), cachedItemPids.end(), pid);
-    cachedItemPids.erase(cachedItemPids.begin()+index);
+    cachedItemPids.erase(cachedItemPids.begin() + index);
 
     rndex_once_pids[index] = 0;
 
