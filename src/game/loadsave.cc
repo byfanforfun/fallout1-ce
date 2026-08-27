@@ -2501,10 +2501,12 @@ static int EndLoad(DB_FILE* stream)
 static int GameMap2Slot(DB_FILE* stream)
 {
     if (partyMemberPrepSave() == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 1\n");
         return -1;
     }
 
     if (map_save_in_game(false) == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 2\n");
         return -1;
     }
 
@@ -2513,11 +2515,13 @@ static int GameMap2Slot(DB_FILE* stream)
     char** fileNameList;
     int fileNameListLength = db_get_file_list(str0, &fileNameList, NULL, 0);
     if (fileNameListLength == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 3\n");
         return -1;
     }
 
     if (db_fwriteInt(stream, fileNameListLength) == -1) {
         db_free_file_list(&fileNameList, NULL);
+        debug_printf("LOADSAVE: GameMap2Slot returning 4\n");
         return -1;
     }
 
@@ -2532,6 +2536,7 @@ static int GameMap2Slot(DB_FILE* stream)
 
     if (MapDirErase(gmpath, "SAV") == -1) {
         db_free_file_list(&fileNameList, NULL);
+        debug_printf("LOADSAVE: GameMap2Slot returning 5\n");
         return -1;
     }
 
@@ -2544,6 +2549,7 @@ static int GameMap2Slot(DB_FILE* stream)
         char* string = fileNameList[index];
         if (db_fwrite(string, strlen(string) + 1, 1, stream) == -1) {
             db_free_file_list(&fileNameList, NULL);
+            debug_printf("LOADSAVE: GameMap2Slot returning 6\n");
             return -1;
         }
 
@@ -2551,6 +2557,7 @@ static int GameMap2Slot(DB_FILE* stream)
         snprintf(str1, sizeof(str1), "%s\\%s%.2d\\%s", "SAVEGAME", "SLOT", slot_cursor + 1, string);
         if (copy_file(str0, str1) == -1) {
             db_free_file_list(&fileNameList, NULL);
+            debug_printf("LOADSAVE: GameMap2Slot returning 7 (copy %s -> %s)\n", str0, str1);
             return -1;
         }
     }
@@ -2562,12 +2569,14 @@ static int GameMap2Slot(DB_FILE* stream)
     snprintf(str0, sizeof(str0), "%s\\%s", "MAPS", "AUTOMAP.DB");
 
     if (copy_file(str0, str1) == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 8 (copy %s -> %s)\n", str0, str1);
         return -1;
     }
 
     snprintf(str0, sizeof(str0), "%s\\%s", "MAPS", "AUTOMAP.DB");
     DB_FILE* automap_stream = db_fopen(str0, "rb");
     if (automap_stream == NULL) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 9\n");
         return -1;
     }
 
@@ -2580,10 +2589,12 @@ static int GameMap2Slot(DB_FILE* stream)
     db_fclose(automap_stream);
 
     if (db_fwriteInt(stream, automap_size) == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 10\n");
         return -1;
     }
 
     if (partyMemberUnPrepSave() == -1) {
+        debug_printf("LOADSAVE: GameMap2Slot returning 11\n");
         return -1;
     }
 
