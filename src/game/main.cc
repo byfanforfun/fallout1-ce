@@ -148,6 +148,9 @@ int gnw_main(int argc, char** argv)
                 main_menu_destroy();
 
                 if (gconfig_continues_play > 0) {
+                    loadColorTable("color.pal");
+                    palette_fade_to(cmap);
+
                     int pickSlotRc = SaveGame(LOAD_SAVE_MODE_PICK_SLOT);
                     if (pickSlotRc <= 0) {
                         main_menu_create();
