@@ -188,6 +188,30 @@ static int automap_db_flag = 0;
 // 0x505970
 static char* patches = NULL;
 
+// Returns the DB patches base dir without a trailing separator, usable for
+// the native path composition in the save pipeline. Falls back to an empty
+// string when patching is disabled. The config-backed "patches" global is
+// unreliable because its buffer can be corrupted elsewhere.
+static const char* db_patches(void)
+{
+    static char buffer[COMPAT_MAX_PATH];
+
+    const char* p = db_get_patches_path();
+    if (p == NULL || p[0] == '\0') {
+        buffer[0] = '\0';
+        return buffer;
+    }
+
+    size_t length = strlen(p);
+    while (length > 0 && (p[length - 1] == '/' || p[length - 1] == '\\')) {
+        length -= 1;
+    }
+
+    snprintf(buffer, sizeof(buffer), "%.*s", (int)length, p);
+    return buffer;
+}
+
+// 0x505974
 // 0x505974
 static char emgpath[] = "\\FALLOUT\\CD\\DATA\\SAVEGAME";
 
@@ -458,10 +482,7 @@ void InitLoadSave()
     quick_done = false;
     slot_cursor = 0;
 
-    if (!config_get_string(&game_config, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, &patches)) {
-        debug_printf("\nLOADSAVE: Error reading patches config variable! Using default.\n");
-        patches = emgpath;
-    }
+    patches = (char*)db_patches();
 
     MapDirErase("MAPS\\", "SAV");
 }
@@ -483,10 +504,7 @@ int SaveGame(int mode)
 
     ls_error_code = 0;
 
-    if (!config_get_string(&game_config, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, &patches)) {
-        debug_printf("\nLOADSAVE: Error reading patches config variable! Using default.\n");
-        patches = emgpath;
-    }
+    patches = (char*)db_patches();
 
     if (mode == LOAD_SAVE_MODE_QUICK && quick_done) {
         snprintf(gmpath, sizeof(gmpath), "%s\\%s%.2d\\", "SAVEGAME", "SLOT", slot_cursor + 1);
@@ -1008,10 +1026,7 @@ int LoadGame(int mode)
 
     ls_error_code = 0;
 
-    if (!config_get_string(&game_config, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, &patches)) {
-        debug_printf("\nLOADSAVE: Error reading patches config variable! Using default.\n");
-        patches = emgpath;
-    }
+    patches = (char*)db_patches();
 
     if (mode == LOAD_SAVE_MODE_QUICK && quick_done) {
         int quickSaveWindowX = (screenGetWidth() - LS_WINDOW_WIDTH) / 2;
