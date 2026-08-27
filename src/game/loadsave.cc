@@ -3,7 +3,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <algorithm>
 
@@ -1619,23 +1621,25 @@ static int SaveSlot()
 
     gsound_background_pause();
 
-    snprintf(gmpath, sizeof(gmpath), "%s\\%s", patches, "SAVEGAME");
-    compat_mkdir(gmpath);
+    char cwd[COMPAT_MAX_PATH];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        debug_printf("\nLOADSAVE: SaveSlot: cwd='%s' patches='%s'\n", cwd, patches);
+    }
 
     snprintf(gmpath, sizeof(gmpath), "%s", patches);
-    compat_mkdir(gmpath);
+    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
     snprintf(gmpath, sizeof(gmpath), "%s\\%s", patches, "SAVEGAME");
-    compat_mkdir(gmpath);
+    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
     snprintf(gmpath, sizeof(gmpath), "%s\\%s\\%s%.2d", patches, "SAVEGAME", "SLOT", slot_cursor + 1);
-    compat_mkdir(gmpath);
+    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
     snprintf(gmpath, sizeof(gmpath), "%s", "SAVEGAME");
-    compat_mkdir(gmpath);
+    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
     snprintf(gmpath, sizeof(gmpath), "%s\\%s%.2d", "SAVEGAME", "SLOT", slot_cursor + 1);
-    compat_mkdir(gmpath);
+    debug_printf("\nLOADSAVE: SaveSlot mkdir('%s') -> %d\n", gmpath, compat_mkdir(gmpath));
 
     if (SaveBackup() == -1) {
         debug_printf("\nLOADSAVE: Warning, can't backup save file!\n");
