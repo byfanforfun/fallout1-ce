@@ -154,6 +154,8 @@ int win_init(VideoOptions* video_options, int flags)
 
     GNW_debug_init();
 
+    debug_register_env();
+
     if (GNW_input_init(flags) == -1) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
     }
