@@ -244,7 +244,6 @@ int gnw_main(int argc, char** argv)
                     } else if (loadGameRc > 1 && gconfig_continues_play > 0) {
                         // An empty slot was picked in the continue load window:
                         // start a new game in that slot.
-                        palette_fade_to(white_palette);
                         if (win != -1) {
                             win_delete(win);
                             win = -1;
