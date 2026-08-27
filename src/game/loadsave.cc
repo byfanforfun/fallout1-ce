@@ -355,6 +355,26 @@ int kiosk_continues_autosave()
 
     slot_cursor = continues_slot - 1;
 
+    if (map_data.name[0] != '\0') {
+        char** savList = NULL;
+        int savCount = db_get_file_list("MAPS\\*.SAV", &savList, NULL, 0);
+        debug_printf("\nCONTINUES: autosave: map=%s, MAPS\\*.SAV=%d\n", map_data.name, savCount);
+        if (savCount <= 0) {
+            debug_printf("\nCONTINUES: no .SAV maps in MAPS, pre-saving current map\n");
+            map_save_in_game(false);
+            savCount = db_get_file_list("MAPS\\*.SAV", &savList, NULL, 0);
+            debug_printf("\nCONTINUES: after pre-save: MAPS\\*.SAV=%d\n", savCount);
+        }
+        if (savList != NULL) {
+            db_free_file_list(&savList, NULL);
+        }
+        if (savCount <= 0) {
+            debug_printf("\nCONTINUES: cannot autosave yet (no map .SAV files), skipping\n");
+            continues_slot = 0;
+            return 0;
+        }
+    }
+
     dir_entry de;
     snprintf(str, sizeof(str), "%s\\%s%.2d\\%s", "SAVEGAME", "SLOT", continues_slot, "SAVE.DAT");
     bool isNewSlot = db_dir_entry(str, &de) != 0;
@@ -2431,6 +2451,8 @@ static int GameMap2Slot(DB_FILE* stream)
         db_free_file_list(&fileNameList, NULL);
         return -1;
     }
+
+    debug_printf("LOADSAVE: GameMap2Slot: writing %d map .SAV files\n", fileNameListLength);
 
     if (fileNameListLength == 0) {
         db_free_file_list(&fileNameList, NULL);
