@@ -10,6 +10,7 @@ namespace fallout {
 #define KIOSK_CONFIG_GAME_KEY "game"
 #define KIOSK_CONFIG_EXP_START_KEY "exp_start"
 #define KIOSK_CONFIG_DISABLE_SAVELOAD "disable_saveload"
+#define KIOSK_CONFIG_CONTINUES_PLAY "continues_play"
 #define KIOSK_CONFIG_DISABLE_OPTIONS "disable_options"
 #define KIOSK_CONFIG_ENABLE_DIALOG_EXIT_0 "dialog_exit_0"
 #define KIOSK_CONFIG_ENABLE_GAME_EXIT "game_exit"
@@ -43,6 +44,7 @@ extern Config kiosk_config;
 extern int gconfig_exp_start;
 extern int gconfig_caps_start;
 extern int gconfig_saveload_disabled;
+extern int gconfig_continues_play;
 extern int gconfig_options_disabled;
 extern int gconfig_dialog_exit_0_allowed;
 extern int gconfig_game_exit_allowed;

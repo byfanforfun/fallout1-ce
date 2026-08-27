@@ -869,8 +869,13 @@ void map_new_map()
 }
 
 // 0x474614
+static int map_load_depth = 0;
+
 int map_load(char* file_name)
 {
+    bool isOuterLoad = map_load_depth == 0;
+    map_load_depth += 1;
+
     int rc;
     DB_FILE* stream;
     char* extension;
@@ -908,6 +913,12 @@ int map_load(char* file_name)
             strcpy(map_data.name, file_name);
             obj_dude->data.critter.combat.whoHitMe = NULL;
         }
+    }
+
+    map_load_depth -= 1;
+
+    if (rc == 0 && isOuterLoad && gconfig_continues_play > 0) {
+        kiosk_continues_autosave();
     }
 
     return rc;
