@@ -96,6 +96,88 @@ static int main_selfrun_index = 0;
 // 0x614838
 static bool main_death_voiceover_done;
 
+// Starts a new continues-play game. Pass a non-zero `continuesSlot` when the
+// slot was already picked (e.g. an empty slot chosen in the continue load
+// window); otherwise the slot is picked inside when continues-play is enabled.
+static void main_new_game(int continuesSlot)
+{
+    timer_start();
+
+    main_menu_hide(true);
+    main_menu_destroy();
+
+    if (gconfig_continues_play > 0) {
+        loadColorTable("color.pal");
+        palette_fade_to(cmap);
+
+        if (continuesSlot <= 0) {
+            int pickSlotRc = SaveGame(LOAD_SAVE_MODE_PICK_SLOT);
+            if (pickSlotRc <= 0) {
+                main_menu_create();
+                return;
+            }
+            continuesSlot = pickSlotRc;
+        }
+        kiosk_continues_set_slot(continuesSlot);
+    }
+
+    int exp_start = 0;
+    int msg_start = 0;
+
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, &msg_start);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
+
+    if (msg_start) {
+        bool startGame = false;
+        while (true) {
+            if (start_message() != 2) {
+                main_menu_create();
+                return;
+            }
+
+            int selectRc = select_character();
+            if (selectRc == 2) {
+                startGame = true;
+                break;
+            }
+
+            // Back from character select → loop to start_message again
+        }
+
+        if (!startGame) {
+            main_menu_create();
+            return;
+        }
+    } else if (select_character() != 2) {
+        main_menu_create();
+        return;
+    }
+
+    start_inventory();
+
+    gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
+    roll_set_seed(-1);
+    main_load_new(mainMap);
+
+    stat_pc_add_experience(exp_start);
+
+    main_game_loop();
+    palette_fade_to(white_palette);
+
+    // NOTE: Uninline.
+    main_unload_new();
+
+    // NOTE: Uninline.
+    main_reset_system();
+
+    if (main_show_death_scene != 0) {
+        main_death_scene();
+        main_show_death_scene = 0;
+    }
+
+    main_menu_create();
+}
+
 // 0x4725E8
 int gnw_main(int argc, char** argv)
 {
@@ -116,8 +198,6 @@ int gnw_main(int argc, char** argv)
     if (main_menu_create() == 0) {
         unsigned int tick = get_time();
         int language_filter = 1;
-        int exp_start = 0;
-        int msg_start = 0;
         bool done = false;
 
         config_get_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, &language_filter);
@@ -142,75 +222,7 @@ int gnw_main(int argc, char** argv)
                 }
                 break;
             case MAIN_MENU_NEW_GAME:
-                timer_start();
-
-                main_menu_hide(true);
-                main_menu_destroy();
-
-                if (gconfig_continues_play > 0) {
-                    loadColorTable("color.pal");
-                    palette_fade_to(cmap);
-
-                    int pickSlotRc = SaveGame(LOAD_SAVE_MODE_PICK_SLOT);
-                    if (pickSlotRc <= 0) {
-                        main_menu_create();
-                        break;
-                    }
-                    kiosk_continues_set_slot(pickSlotRc);
-                }
-
-                config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, &msg_start);
-                config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
-
-                if (msg_start) {
-                    bool startGame = false;
-                    while (true) {
-                        if (start_message() != 2) {
-                            main_menu_create();
-                            break;
-                        }
-
-                        int selectRc = select_character();
-                        if (selectRc == 2) {
-                            startGame = true;
-                            break;
-                        }
-
-                        // Back from character select → loop to start_message again
-                    }
-
-                    if (!startGame) {
-                        break;
-                    }
-                } else if (select_character() != 2) {
-                    main_menu_create();
-                    break;
-                }
-
-                start_inventory();
-
-                gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
-                roll_set_seed(-1);
-                main_load_new(mainMap);
-
-                stat_pc_add_experience(exp_start);
-
-                main_game_loop();
-                palette_fade_to(white_palette);
-
-                // NOTE: Uninline.
-                main_unload_new();
-
-                // NOTE: Uninline.
-                main_reset_system();
-
-                if (main_show_death_scene != 0) {
-                    main_death_scene();
-                    main_show_death_scene = 0;
-                }
-
-                main_menu_create();
-
+                main_new_game(0);
                 break;
             case MAIN_MENU_LOAD_GAME:
                 // timer_start();
@@ -229,6 +241,23 @@ int gnw_main(int argc, char** argv)
                     int loadGameRc = LoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
                     if (loadGameRc == -1) {
                         debug_printf("\n ** Error running LoadGame()! **\n");
+                    } else if (loadGameRc > 1 && gconfig_continues_play > 0) {
+                        // An empty slot was picked in the continue load window:
+                        // start a new game in that slot.
+                        palette_fade_to(white_palette);
+                        if (win != -1) {
+                            win_delete(win);
+                            win = -1;
+                        }
+
+                        // NOTE: Uninline.
+                        main_unload_new();
+
+                        // NOTE: Uninline.
+                        main_reset_system();
+
+                        main_new_game(loadGameRc);
+                        break;
                     } else if (loadGameRc != 0) {
                         win_delete(win);
                         win = -1;

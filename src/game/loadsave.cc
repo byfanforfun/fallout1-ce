@@ -1308,7 +1308,11 @@ int LoadGame(int mode)
             while (elapsed_time(time) < 1000 / 24) { }
         }
 
-        if (rc == 1) {
+        if (rc == 1 && LSstatus[slot_cursor] == SLOT_STATE_EMPTY
+            && gconfig_continues_play > 0
+            && mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+            rc = slot_cursor + 1;
+        } else if (rc == 1) {
             switch (LSstatus[slot_cursor]) {
             case SLOT_STATE_UNSUPPORTED_VERSION:
                 gsound_play_sfx_file("iisxxxx1");
