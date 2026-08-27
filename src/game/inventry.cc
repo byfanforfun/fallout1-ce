@@ -2424,6 +2424,10 @@ void use_inventory_on(Object* a1)
             }
         }
 
+        if (keyCode == KEY_ESCAPE) {
+            break;
+        }
+
         renderPresent();
         sharedFpsLimiter.throttle();
     }

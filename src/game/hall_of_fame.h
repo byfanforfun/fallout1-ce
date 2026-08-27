@@ -6,7 +6,7 @@ namespace fallout {
 #define HOF_STAR_SIGN "★"
 #define HOF_MAX_PAGES 99
 #define HOF_ENTRIES_PER_PAGE 13
-#define HOF_MAX_ENTRIES HOF_MAX_PAGES * HOF_ENTRIES_PER_PAGE
+#define HOF_MAX_ENTRIES HOF_MAX_PAGES* HOF_ENTRIES_PER_PAGE
 #define HOF_MAX_RAWS 9
 #define HOF_LINE_OFFSET 25
 
@@ -77,4 +77,4 @@ int game_handle_hof();
 
 }
 
-#endif //FALLOUT_GAME_HALL_OF_FAME_H_
+#endif // FALLOUT_GAME_HALL_OF_FAME_H_

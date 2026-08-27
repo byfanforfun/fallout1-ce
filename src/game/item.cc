@@ -1052,13 +1052,13 @@ int item_w_damage_min_max(Object* weapon, int* min_damage, int* max_damage)
 
     int weaponQuality = get_quality_for_object(weapon);
     double qualityMod = get_quality_modifier(weaponQuality);
-    
+
     double ammoMod = 1.0;
     if (item_w_curr_ammo(weapon) > 0) {
         int ammoQuality = get_ammo_quality(weapon);
         ammoMod = get_quality_modifier(ammoQuality);
     }
-    
+
     double totalMod = qualityMod * ammoMod;
 
     if (min_damage != NULL) {
@@ -1711,10 +1711,10 @@ int item_ar_ac(Object* armor)
     }
 
     proto_ptr(armor->pid, &proto);
-    
+
     int armorQuality = get_quality_for_object(armor);
     double qualityMod = get_quality_modifier(armorQuality);
-    
+
     return (int)(proto->item.data.armor.armorClass * qualityMod);
 }
 
@@ -1728,10 +1728,10 @@ int item_ar_dr(Object* armor, int damageType)
     }
 
     proto_ptr(armor->pid, &proto);
-    
+
     int armorQuality = get_quality_for_object(armor);
     double qualityMod = get_quality_modifier(armorQuality);
-    
+
     return (int)(proto->item.data.armor.damageResistance[damageType] * qualityMod);
 }
 
@@ -1745,10 +1745,10 @@ int item_ar_dt(Object* armor, int damageType)
     }
 
     proto_ptr(armor->pid, &proto);
-    
+
     int armorQuality = get_quality_for_object(armor);
     double qualityMod = get_quality_modifier(armorQuality);
-    
+
     return (int)(proto->item.data.armor.damageThreshold[damageType] * qualityMod);
 }
 

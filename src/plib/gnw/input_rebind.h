@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-#define BIND_SECTION_NO_SEC    "nosec"
+#define BIND_SECTION_NO_SEC "nosec"
 
 typedef enum BindScreen {
     SCREEN_MAIN,
@@ -45,4 +45,4 @@ int get_physical_key(int screen, int logical_key);
 
 }
 
-#endif //FALLOUT_PLIB_GNW_INPUT_REBIND_H_
+#endif // FALLOUT_PLIB_GNW_INPUT_REBIND_H_

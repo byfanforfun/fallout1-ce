@@ -7,4 +7,4 @@ bool system_exec(int line_nums[]);
 
 }
 
-#endif //FALLOUT_PLIB_GNW_SYSTEM_EXEC_H_
+#endif // FALLOUT_PLIB_GNW_SYSTEM_EXEC_H_

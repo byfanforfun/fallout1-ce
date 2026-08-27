@@ -434,7 +434,7 @@ static int proto_write_CombatData(CritterCombatData* data, DB_FILE* stream)
 }
 
 // 0x48D608
-int proto_read_protoUpdateData(Object* obj, DB_FILE* stream)
+int proto_read_protoUpdateData(Object* obj, DB_FILE* stream, bool readQuality)
 {
     Proto* proto;
     int temp;
@@ -467,9 +467,11 @@ int proto_read_protoUpdateData(Object* obj, DB_FILE* stream)
             case ITEM_TYPE_WEAPON:
                 if (db_freadInt32(stream, &(obj->data.item.weapon.ammoQuantity)) == -1) return -1;
                 if (db_freadInt32(stream, &(obj->data.item.weapon.ammoTypePid)) == -1) return -1;
+                if (readQuality && db_freadInt32(stream, &(obj->data.item.weapon.ammoQuality)) == -1) return -1;
                 break;
             case ITEM_TYPE_AMMO:
                 if (db_freadInt32(stream, &(obj->data.item.ammo.quantity)) == -1) return -1;
+                if (readQuality && db_freadInt32(stream, &(obj->data.item.ammo.quality)) == -1) return -1;
                 break;
             case ITEM_TYPE_MISC:
                 if (db_freadInt32(stream, &(obj->data.item.misc.charges)) == -1) return -1;
@@ -521,7 +523,7 @@ int proto_read_protoUpdateData(Object* obj, DB_FILE* stream)
 }
 
 // 0x48D9B4
-int proto_write_protoUpdateData(Object* obj, DB_FILE* stream)
+int proto_write_protoUpdateData(Object* obj, DB_FILE* stream, bool writeQuality)
 {
     Proto* proto;
 
@@ -548,9 +550,11 @@ int proto_write_protoUpdateData(Object* obj, DB_FILE* stream)
             case ITEM_TYPE_WEAPON:
                 if (db_fwriteInt32(stream, data->item.weapon.ammoQuantity) == -1) return -1;
                 if (db_fwriteInt32(stream, data->item.weapon.ammoTypePid) == -1) return -1;
+                if (writeQuality && db_fwriteInt32(stream, data->item.weapon.ammoQuality) == -1) return -1;
                 break;
             case ITEM_TYPE_AMMO:
                 if (db_fwriteInt32(stream, data->item.ammo.quantity) == -1) return -1;
+                if (writeQuality && db_fwriteInt32(stream, data->item.ammo.quality) == -1) return -1;
                 break;
             case ITEM_TYPE_MISC:
                 if (db_fwriteInt32(stream, data->item.misc.charges) == -1) return -1;

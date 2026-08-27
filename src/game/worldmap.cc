@@ -2,8 +2,8 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "game/anim.h"
@@ -24,6 +24,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/loadsave.h"
 #include "game/map_defs.h"
 #include "game/message.h"
 #include "game/object.h"
@@ -916,14 +917,14 @@ static bool is_within_bounds(int col, int row)
 
 static void find_connected_region(unsigned char value, bool visited[30][28], std::vector<RegionCell>& region)
 {
-    static const int dr[4] = {-1, 0, 1, 0};
-    static const int dc[4] = {0, 1, 0, -1};
+    static const int dr[4] = { -1, 0, 1, 0 };
+    static const int dc[4] = { 0, 1, 0, -1 };
 
     for (int r = 0; r < 30; r++) {
         for (int c = 0; c < 28; c++) {
             if (!visited[r][c] && original_WorldEcounTable[r][c] == value) {
                 std::vector<RegionCell> stack;
-                stack.push_back({c, r});
+                stack.push_back({ c, r });
                 visited[r][c] = true;
 
                 while (!stack.empty()) {
@@ -936,7 +937,7 @@ static void find_connected_region(unsigned char value, bool visited[30][28], std
                         int nc = cell.col + dc[i];
                         if (is_within_bounds(nc, nr) && !visited[nr][nc] && original_WorldEcounTable[nr][nc] == value) {
                             visited[nr][nc] = true;
-                            stack.push_back({nc, nr});
+                            stack.push_back({ nc, nr });
                         }
                     }
                 }
@@ -948,7 +949,7 @@ static void find_connected_region(unsigned char value, bool visited[30][28], std
 static std::vector<ConnectedRegion> find_all_connected_regions()
 {
     std::vector<ConnectedRegion> regions;
-    bool visited[30][28] = {false};
+    bool visited[30][28] = { false };
 
     for (int r = 0; r < 30; r++) {
         for (int c = 0; c < 28; c++) {
@@ -984,12 +985,16 @@ static std::vector<ConnectedRegion> find_all_connected_regions()
 static std::pair<int, int> rotate_offset(int dx, int dy, int rotation)
 {
     switch (rotation) {
-    case 0: return {dx, dy};
-    case 1: return {-dy, dx};
-    case 2: return {-dx, -dy};
-    case 3: return {dy, -dx};
+    case 0:
+        return { dx, dy };
+    case 1:
+        return { -dy, dx };
+    case 2:
+        return { -dx, -dy };
+    case 3:
+        return { dy, -dx };
     }
-    return {dx, dy};
+    return { dx, dy };
 }
 
 static bool can_place_region(const ConnectedRegion& region, int new_col, int new_row, int rotation)
@@ -1058,8 +1063,8 @@ static void randomize_world_map()
 
     std::vector<ConnectedRegion> regions = find_all_connected_regions();
 
-    unsigned char newEcountChance[30][28] = {0};
-    unsigned char newEcoun[30][28] = {0};
+    unsigned char newEcountChance[30][28] = { 0 };
+    unsigned char newEcoun[30][28] = { 0 };
 
     for (auto& region : regions) {
         if (region.town_idx == -1) continue;
@@ -1085,11 +1090,11 @@ static void randomize_world_map()
     }
 
     for (int t = 0; t < TOWN_COUNT; t++) {
-            if (t == TOWN_MILITARY_BASE) {
-                    mb_new_col = city_location[t].column;
-                    mb_new_row = city_location[t].row;
-                    break;
-            }
+        if (t == TOWN_MILITARY_BASE) {
+            mb_new_col = city_location[t].column;
+            mb_new_row = city_location[t].row;
+            break;
+        }
     }
 
     if (mb_new_col != -1) {
@@ -1109,8 +1114,8 @@ static void randomize_world_map()
                     if (newEcoun[r][c] != 0 && newEcoun[r][c] != 11) {
                         int dist = abs(c - mb_new_col) + abs(r - mb_new_row);
                         if (dist > max_radius) {
-                                newEcoun[r][c] = 0;
-                                newEcountChance[r][c] = 0;
+                            newEcoun[r][c] = 0;
+                            newEcountChance[r][c] = 0;
                         } else if (dist > 0) {
                             float falloff = 1.0f - ((float)dist / (float)(max_radius + 1));
                             if (falloff < 0.2f) falloff = 0.2f;
@@ -1143,7 +1148,7 @@ int init_world_map()
     int column;
     int row;
 
-    if (gconfig_random_locations) {
+    if (gconfig_random_locations && !loadingFromSave) {
         srand(time(NULL));
         randomize_world_map();
     }
@@ -1174,6 +1179,9 @@ int save_world_map(DB_FILE* stream)
 {
     if (db_fwrite(WorldGrid, sizeof(WorldGrid), 1, stream) != 1) return -1;
     if (db_fwrite(TwnSelKnwFlag, sizeof(TwnSelKnwFlag), 1, stream) != 1) return -1;
+    if (db_fwrite(city_location, sizeof(city_location), 1, stream) != 1) return -1;
+    if (db_fwrite(WorldEcounTable, sizeof(WorldEcounTable), 1, stream) != 1) return -1;
+    if (db_fwrite(WorldEcountChanceTable, sizeof(WorldEcountChanceTable), 1, stream) != 1) return -1;
     if (db_fwriteInt32(stream, first_visit_flag) == -1) return -1;
     if (db_fwriteInt32(stream, encounter_specials) == -1) return -1;
     if (db_fwriteInt32(stream, our_town) == -1) return -1;
@@ -1189,6 +1197,9 @@ int load_world_map(DB_FILE* stream)
 {
     if (db_fread(WorldGrid, sizeof(WorldGrid), 1, stream) != 1) return -1;
     if (db_fread(TwnSelKnwFlag, sizeof(TwnSelKnwFlag), 1, stream) != 1) return -1;
+    if (db_fread(city_location, sizeof(city_location), 1, stream) != 1) return -1;
+    if (db_fread(WorldEcounTable, sizeof(WorldEcounTable), 1, stream) != 1) return -1;
+    if (db_fread(WorldEcountChanceTable, sizeof(WorldEcountChanceTable), 1, stream) != 1) return -1;
     if (db_freadInt32(stream, &first_visit_flag) == -1) return -1;
     if (db_freadInt32(stream, &encounter_specials) == -1) return -1;
     if (db_freadInt32(stream, &our_town) == -1) return -1;
@@ -2406,8 +2417,11 @@ int world_map(WorldMapContext ctx)
                 int ty = world_ypos / 50;
                 int twenc = WorldEcounTable[ty][tx];
 
-                //do not encounter mutant before found chip
-                if (abs(tx - mb_new_row) < 10 && abs(ty - mb_new_col) < 10 && game_get_global_var(GVAR_FIND_WATER_CHIP) < 1){
+                // do not encounter mutant before found chip
+                if (gconfig_random_locations
+                    && abs(tx - mb_new_col) < 10
+                    && abs(ty - mb_new_row) < 10
+                    && game_get_global_var(GVAR_FIND_WATER_CHIP) < 1) {
                     twenc = rand() % 10;
                 }
                 game_global_vars[GVAR_WORLD_TERRAIN] = twenc;

@@ -413,22 +413,22 @@ int do_options()
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
             case 500:
-                if(gconfig_saveload_disabled == 0) {
+                if (gconfig_saveload_disabled == 0) {
                     if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
-                }else{
+                } else {
                     dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
             case 501:
-                if(gconfig_saveload_disabled == 0) {
+                if (gconfig_saveload_disabled == 0) {
                     if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                         rc = 1;
                     }
-                }else{
+                } else {
                     dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
                 }
                 break;
@@ -438,9 +438,9 @@ int do_options()
                 // FALLTHROUGH
             case 502:
                 // PREFERENCES
-                if(gconfig_options_disabled == 0){
+                if (gconfig_options_disabled == 0) {
                     showPreferences = true;
-                }else{
+                } else {
                     static MessageListItem mesg;
                     char* err_msg = getmsg(&kiosk_msgfile, &mesg, 1215);
                     dialog_out(err_msg, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);

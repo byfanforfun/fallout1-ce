@@ -6,9 +6,9 @@
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/item_quality.h"
+#include "game/object.h"
 #include "game/palette.h"
 #include "game/proto.h"
-#include "game/object.h"
 
 #include "plib/color/color.h"
 #include "plib/gnw/input.h"
@@ -20,10 +20,10 @@
 
 namespace fallout {
 
-static Object* inventory_objs[INV_MAX_PROTO] = {0};
+static Object* inventory_objs[INV_MAX_PROTO] = { 0 };
 static Object* inventory_holder = NULL;
 
-static int inventory_proto[INV_MAX_PROTO] = {0};
+static int inventory_proto[INV_MAX_PROTO] = { 0 };
 static int caps_start = 0;
 static int barter_mod = 0;
 
@@ -37,17 +37,18 @@ static int inv_destroy();
 static int clear_window(int window);
 static int load_proto();
 
-int start_inventory() {
+int start_inventory()
+{
 
-if (!config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &caps_start)) {
-    caps_start = 1;
-}    
+    if (!config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_START, &caps_start)) {
+        caps_start = 1;
+    }
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_BARTER_MOD, &barter_mod);
 
-    if(1 > caps_start)
+    if (1 > caps_start)
         return -1;
 
-    if(start_init() != 0) {
+    if (start_init() != 0) {
         debug_printf("Failed to init start inventory.\n");
         return -1;
     }
@@ -59,7 +60,8 @@ if (!config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_CAPS_ST
     return 0;
 };
 
-static int start_init() {
+static int start_init()
+{
     item_caps_adjust(obj_dude, caps_start);
 
     loadColorTable("color.pal");
@@ -70,10 +72,10 @@ static int start_init() {
         mouse_show();
     }
 
-    if(create_holder() != 0)
+    if (create_holder() != 0)
         return -1;
 
-    if(!inv_conf_init())
+    if (!inv_conf_init())
         return -1;
 
     load_proto();
@@ -83,13 +85,15 @@ static int start_init() {
     return 0;
 }
 
-static int start_process() {
+static int start_process()
+{
     gDialogStartInventory(inventory_holder, barter_mod, DIALOG_BACKGROUND_HEIST);
 
     return 0;
 }
 
-static int start_exit() {
+static int start_exit()
+{
     int caps_total = item_caps_total(obj_dude);
     item_caps_adjust(obj_dude, -(caps_total));
 
@@ -107,7 +111,7 @@ static int start_exit() {
 
 static int create_holder()
 {
-    if(obj_pid_new(&inventory_holder, 100) == -1) {
+    if (obj_pid_new(&inventory_holder, 100) == -1) {
         debug_printf("Failed to create inventory holder\n");
         return -1;
     }
@@ -119,26 +123,25 @@ static int load_proto()
 {
     int proto_count = 0;
     char ti[4];
-    for(int i = 0; INV_MAX_PROTO > i; ++i){
+    for (int i = 0; INV_MAX_PROTO > i; ++i) {
         snprintf(ti, 4, "%d", i);
-        if(config_get_value(&gkiosk_inv_config, INV_CONFIG_INVENTORY_KEY, ti, &proto_count))
-        {
+        if (config_get_value(&gkiosk_inv_config, INV_CONFIG_INVENTORY_KEY, ti, &proto_count)) {
             inventory_proto[i] = proto_count;
         }
     }
 
-    Object *to;
-    Proto *proto;
+    Object* to;
+    Proto* proto;
     int item_type = -1;
-    for(int i = 0; INV_MAX_PROTO > i; ++i){
-        if(inventory_proto[i] != 0)
-            if(obj_pid_new(&to, i) == 0){
-                if (proto_ptr(to->pid, &proto) == 0){
+    for (int i = 0; INV_MAX_PROTO > i; ++i) {
+        if (inventory_proto[i] != 0)
+            if (obj_pid_new(&to, i) == 0) {
+                if (proto_ptr(to->pid, &proto) == 0) {
                     item_type = proto->item.type;
                     if (item_type == ITEM_TYPE_WEAPON) {
                         apply_quality_to_item_normal(to);
                         apply_quality_to_ammo_normal(to);
-                    }else if(item_type == ITEM_TYPE_AMMO || item_type == ITEM_TYPE_ARMOR || item_type == ITEM_TYPE_DRUG){
+                    } else if (item_type == ITEM_TYPE_AMMO || item_type == ITEM_TYPE_ARMOR || item_type == ITEM_TYPE_DRUG) {
                         apply_quality_to_item_normal(to);
                     }
 
@@ -148,7 +151,7 @@ static int load_proto()
                 inventory_objs[i] = to;
                 obj_disconnect(to, NULL);
 
-                if(item_add_force(inventory_holder, to, inventory_proto[i]) != 0) {
+                if (item_add_force(inventory_holder, to, inventory_proto[i]) != 0) {
                     obj_erase_object(to, NULL);
                     debug_printf("failed to add proto %d count %d.\n", i, inventory_proto[i]);
                 }
@@ -160,21 +163,19 @@ static int load_proto()
     return 0;
 }
 
-
 static int inv_destroy()
 {
-    for(int i = 0; INV_MAX_PROTO > i; ++i){
-        if(inventory_proto[i] != 0)
+    for (int i = 0; INV_MAX_PROTO > i; ++i) {
+        if (inventory_proto[i] != 0)
             item_remove_mult(inventory_holder, inventory_objs[i], inventory_proto[i]);
     }
 
-    if(inventory_holder != NULL) {
+    if (inventory_holder != NULL) {
         obj_disconnect(inventory_holder, NULL);
         mem_free(inventory_holder);
     }
 
     return 0;
 }
-
 
 }

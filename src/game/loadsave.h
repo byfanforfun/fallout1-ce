@@ -28,6 +28,8 @@ void KillOldMaps();
 int MapDirErase(const char* path, const char* a2);
 int MapDirEraseFile(const char* a1, const char* a2);
 
+extern bool loadingFromSave;
+
 } // namespace fallout
 
 #endif /* FALLOUT_GAME_LOADSAVE_H_ */

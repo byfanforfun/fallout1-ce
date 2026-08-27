@@ -253,6 +253,7 @@ static LoadGameHandler* master_load_list[LOAD_SAVE_HANDLER_COUNT] = {
 
 // 0x505A68
 static int loadingGame = 0;
+bool loadingFromSave = false;
 
 // 0x612260
 static Size ginfo[LOAD_SAVE_FRM_COUNT];
@@ -339,7 +340,9 @@ void ResetLoadSave()
 // 0x46D9C4
 int SaveGame(int mode)
 {
-    if(gconfig_saveload_disabled > 0) {return 0;}
+    if (gconfig_saveload_disabled > 0) {
+        return 0;
+    }
 
     MessageListItem messageListItem;
 
@@ -849,7 +852,9 @@ static int QuickSnapShot()
 // 0x46E754
 int LoadGame(int mode)
 {
-    if(gconfig_saveload_disabled > 0) {return 0;}
+    if (gconfig_saveload_disabled > 0) {
+        return 0;
+    }
 
     MessageListItem messageListItem;
 
@@ -1633,6 +1638,7 @@ static int LoadSlot(int slot)
 
     debug_printf("LOADSAVE: Load file header size read: %d bytes.\n", db_ftell(flptr) - pos);
 
+    loadingFromSave = true;
     for (int index = 0; index < LOAD_SAVE_HANDLER_COUNT; index += 1) {
         long pos = db_ftell(flptr);
         LoadGameHandler* handler = master_load_list[index];
@@ -1642,6 +1648,7 @@ static int LoadSlot(int slot)
             debug_printf("LOADSAVE: Load function #%d data size read: %d bytes.\n", index, db_ftell(flptr) - pos);
             db_fclose(flptr);
             game_reset();
+            loadingFromSave = false;
             loadingGame = 0;
             return -1;
         }
@@ -1664,6 +1671,7 @@ static int LoadSlot(int slot)
         debug_printf("\nError: Couldn't find LoadSave Message!");
     }
 
+    loadingFromSave = false;
     loadingGame = 0;
 
     return 0;

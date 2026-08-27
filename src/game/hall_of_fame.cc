@@ -19,11 +19,11 @@
 #include "plib/gnw/gnw_types.h"
 
 #include "plib/gnw/button.h"
-#include "plib/gnw/input.h"
-#include "plib/gnw/hash_fnv-1a.h"
 #include "plib/gnw/grbuf.h"
-#include "plib/gnw/text.h"
+#include "plib/gnw/hash_fnv-1a.h"
+#include "plib/gnw/input.h"
 #include "plib/gnw/svga.h"
+#include "plib/gnw/text.h"
 
 #include "plib/db/db.h"
 
@@ -39,7 +39,7 @@ void hof_create_window();
 void hof_redraw();
 void hof_destroy_window();
 void hof_process_file(const char* path, int index);
-void hof_increase_vic_point(HallOfFameEntry *entry);
+void hof_increase_vic_point(HallOfFameEntry* entry);
 static void hof_sort_entries();
 static int hof_compare_entries(const void* a, const void* b);
 void hof_draw_victory_icon(int x, int y, unsigned char* buf, int pitch);
@@ -97,8 +97,9 @@ static unsigned int frame_time;
 
 static bool initial_sort = false;
 
-int game_handle_hof() {
-    if(hof_msg_load() != 0)
+int game_handle_hof()
+{
+    if (hof_msg_load() != 0)
         return -1;
 
     hof_create_window();
@@ -112,7 +113,7 @@ int game_handle_hof() {
         sharedFpsLimiter.mark();
 
         key = get_input();
-        if(hof_handle_input(key) != 0)
+        if (hof_handle_input(key) != 0)
             return -1;
 
         if (gconfig_screensaver_enabled && hofTimeout > 0) {
@@ -134,7 +135,8 @@ int game_handle_hof() {
     return 0;
 }
 
-int hof_init() {
+int hof_init()
+{
     memset(&hof_window, 0, sizeof(HallOfFameWindow));
     hof_window.window_id = -1;
     for (int i = 0; i < 9; i++) {
@@ -143,7 +145,7 @@ int hof_init() {
     hof_window.sort_column = HOF_SORT_RANK;
     hof_window.sort_ascending = false;
 
-    //170 - BIG NUMS
+    // 170 - BIG NUMS
     int fid = art_id(OBJ_TYPE_INTERFACE, 170, 0, 0, 0);
     bignum = art_lock(fid, &bignum_key, &(GInfoBigNum.width), &(GInfoBigNum.height));
     if (bignum == NULL) {
@@ -155,8 +157,9 @@ int hof_init() {
     return 1;
 }
 
-int button_init() {
-    if(hof_window.window_id == -1)
+int button_init()
+{
+    if (hof_window.window_id == -1)
         return -1;
 
     int fid;
@@ -178,7 +181,7 @@ int button_init() {
 
     next_button = win_register_button(hof_window.window_id,
         146,
-        HOF_WINDOW_HEIGHT-34,
+        HOF_WINDOW_HEIGHT - 34,
         15,
         16,
         -1,
@@ -209,7 +212,7 @@ int button_init() {
 
     prev_button = win_register_button(hof_window.window_id,
         239,
-        HOF_WINDOW_HEIGHT-34,
+        HOF_WINDOW_HEIGHT - 34,
         15,
         16,
         -1,
@@ -240,7 +243,7 @@ int button_init() {
 
     back_button = win_register_button(hof_window.window_id,
         530,
-        HOF_WINDOW_HEIGHT-34,
+        HOF_WINDOW_HEIGHT - 34,
         15,
         16,
         -1,
@@ -256,7 +259,6 @@ int button_init() {
     }
 
     win_register_button_sound_func(back_button, gsound_red_butt_press, gsound_red_butt_release);
-
 
     return 0;
 }
@@ -288,7 +290,8 @@ int hof_msg_load()
 #include <dirent.h>
 #endif
 
-void hof_load_entries() {
+void hof_load_entries()
+{
     char pattern[COMPAT_MAX_PATH];
     snprintf(pattern, sizeof(pattern), "chars/*.char");
     int ii = 0;
@@ -307,10 +310,10 @@ void hof_load_entries() {
 
     _findclose(handle);
 #else
-    DIR *dir = opendir("chars");
+    DIR* dir = opendir("chars");
     if (!dir) return;
 
-    struct dirent *ent;
+    struct dirent* ent;
     while ((ent = readdir(dir)) != NULL) {
         if (strstr(ent->d_name, ".char")) {
             char filepath[COMPAT_MAX_PATH];
@@ -334,32 +337,34 @@ void hof_load_entries() {
     // Фиксируем ранги после первоначальной сортировки
     for (int i = 0; i < hof_window.num_entries; i++) {
         hof_window.entries[i].permanent_rank = i + 1;
-        if(last_char_hash == hof_window.entries[i].hash)
-            last_char_page = (i+1) / HOF_ENTRIES_PER_PAGE;
+        if (last_char_hash == hof_window.entries[i].hash)
+            last_char_page = (i + 1) / HOF_ENTRIES_PER_PAGE;
     }
 
-    if(last_char_page != 0)
+    if (last_char_page != 0)
         hof_window.current_page = last_char_page;
 }
 
-unsigned int hof_hash_path(const char* path) {
+unsigned int hof_hash_path(const char* path)
+{
     return fnv1a_hash(path, strlen(path));
 }
 
-void hof_process_file(const char* path, int index) {
+void hof_process_file(const char* path, int index)
+{
     Config hof_config;
     if (config_init(&hof_config)) {
         if (config_load(&hof_config, path, false)) {
             HallOfFameEntry* entry = &hof_window.entries[index];
-            char *str;
+            char* str;
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_NAME_KEY, &str);
-            memcpy(&entry->name, str, strlen(str)*sizeof(char));
+            memcpy(&entry->name, str, strlen(str) * sizeof(char));
 
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_SEX_KEY, &str);
-            memcpy(&entry->sex, str, strlen(str)*sizeof(char));
+            memcpy(&entry->sex, str, strlen(str) * sizeof(char));
 
             config_get_string(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_KILLER_KEY, &str);
-            memcpy(&entry->death_cause, str, strlen(str)*sizeof(char));
+            memcpy(&entry->death_cause, str, strlen(str) * sizeof(char));
 
             config_get_value(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_LVL_KEY, &entry->level);
             config_get_value(&hof_config, CHAR_CONFIG_CHAR_KEY, CHAR_CONFIG_CHAR_EXP_KEY, &entry->exp);
@@ -381,8 +386,9 @@ void hof_process_file(const char* path, int index) {
     }
 }
 
-//only first sorting
-static void hof_perform_sort() {
+// only first sorting
+static void hof_perform_sort()
+{
     if (hof_window.num_entries <= 1) return;
 
     bool swapped;
@@ -391,25 +397,25 @@ static void hof_perform_sort() {
     do {
         swapped = false;
         for (int i = 1; i < n; i++) {
-            HallOfFameEntry* a = &hof_window.entries[i-1];
+            HallOfFameEntry* a = &hof_window.entries[i - 1];
             HallOfFameEntry* b = &hof_window.entries[i];
             bool need_swap = false;
 
-            //if (hof_window.sort_column == HOF_SORT_RANK) {
-                // Специальная логика для ранжирования
-                int cmp = b->victory_score - a->victory_score;
-                if (cmp == 0) {
-                    if (b->master_destroyed != a->master_destroyed) {
-                        cmp = b->master_destroyed ? 1 : -1;
-                    } else if (b->cathedral_destroyed != a->cathedral_destroyed) {
-                        cmp = b->cathedral_destroyed ? 1 : -1;
-                    } else if (b->water_chip_found != a->water_chip_found) {
-                        cmp = b->water_chip_found ? 1 : -1;
-                    } else {
-                        cmp = b->exp - a->exp;
-                    }
+            // if (hof_window.sort_column == HOF_SORT_RANK) {
+            //  Специальная логика для ранжирования
+            int cmp = b->victory_score - a->victory_score;
+            if (cmp == 0) {
+                if (b->master_destroyed != a->master_destroyed) {
+                    cmp = b->master_destroyed ? 1 : -1;
+                } else if (b->cathedral_destroyed != a->cathedral_destroyed) {
+                    cmp = b->cathedral_destroyed ? 1 : -1;
+                } else if (b->water_chip_found != a->water_chip_found) {
+                    cmp = b->water_chip_found ? 1 : -1;
+                } else {
+                    cmp = b->exp - a->exp;
                 }
-                need_swap = hof_window.sort_ascending ? (cmp < 0) : (cmp > 0);
+            }
+            need_swap = hof_window.sort_ascending ? (cmp < 0) : (cmp > 0);
 
             if (need_swap) {
                 HallOfFameEntry tmp = *a;
@@ -422,7 +428,8 @@ static void hof_perform_sort() {
     } while (swapped);
 }
 
-void hof_increase_vic_point(HallOfFameEntry *entry) {
+void hof_increase_vic_point(HallOfFameEntry* entry)
+{
 
     entry->victory_score = 0;
     if (entry->master_destroyed) entry->victory_score += 100000;
@@ -434,7 +441,8 @@ void hof_increase_vic_point(HallOfFameEntry *entry) {
     return;
 }
 
-static int hof_compare_entries(const void* a, const void* b) {
+static int hof_compare_entries(const void* a, const void* b)
+{
     const HallOfFameEntry* entry_a = (const HallOfFameEntry*)a;
     const HallOfFameEntry* entry_b = (const HallOfFameEntry*)b;
     int result = 0;
@@ -445,14 +453,11 @@ static int hof_compare_entries(const void* a, const void* b) {
         if (result == 0) {
             if (entry_a->master_destroyed != entry_b->master_destroyed) {
                 result = entry_a->master_destroyed ? 1 : -1;
-            }
-            else if (entry_a->cathedral_destroyed != entry_b->cathedral_destroyed) {
+            } else if (entry_a->cathedral_destroyed != entry_b->cathedral_destroyed) {
                 result = entry_a->cathedral_destroyed ? 1 : -1;
-            }
-            else if (entry_a->water_chip_found != entry_b->water_chip_found) {
+            } else if (entry_a->water_chip_found != entry_b->water_chip_found) {
                 result = entry_a->water_chip_found ? 1 : -1;
-            }
-            else {
+            } else {
                 result = entry_a->exp - entry_b->exp;
             }
         }
@@ -491,15 +496,15 @@ static int hof_compare_entries(const void* a, const void* b) {
         break;
 
     case HOF_SORT_TIME:
-        result = (entry_a->days * 1440 + entry_a->hours * 60 + entry_a->minutes) -
-            (entry_b->days * 1440 + entry_b->hours * 60 + entry_b->minutes);
+        result = (entry_a->days * 1440 + entry_a->hours * 60 + entry_a->minutes) - (entry_b->days * 1440 + entry_b->hours * 60 + entry_b->minutes);
         break;
     }
 
     return hof_window.sort_ascending ? result : -result;
 }
 
-static void hof_sort_entries() {
+static void hof_sort_entries()
+{
     if (hof_window.num_entries > 1) {
         qsort(hof_window.entries, hof_window.num_entries, sizeof(HallOfFameEntry), hof_compare_entries);
     }
@@ -530,7 +535,8 @@ void hof_draw_victory_icon(int x, int y, unsigned char* buf, int pitch) {
 }
 */
 // ================== ОТОБРАЖЕНИЕ ==================
-void hof_redraw() {
+void hof_redraw()
+{
     if (hof_window.window_id == -1) return;
 
     unsigned char* buf = win_get_buf(hof_window.window_id);
@@ -540,14 +546,14 @@ void hof_redraw() {
     int base_offset = HOF_LINE_OFFSET;
 
     // Очистка фона
-    //buf_fill(buf, width, height, width, colorTable[0x323232]);
+    // buf_fill(buf, width, height, width, colorTable[0x323232]);
 
     hof_draw_back();
 
     // Заголовки столбцов
-    const char* headers[] = {messageItemNum, messageItemName, messageItemSex,messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC};
-    int columns[] = {20, 50, 155, 195, 225, 275, 325, 375, 430};
-    int column_widths[] = {15, 45, 30, 30, 50, 30, 30, 30, 120};
+    const char* headers[] = { messageItemNum, messageItemName, messageItemSex, messageItemLevel, messageItemExp, messageItemChip, messageItemCath, messageItemMaster, messageItemDC };
+    int columns[] = { 20, 50, 155, 195, 225, 275, 325, 375, 430 };
+    int column_widths[] = { 15, 45, 30, 30, 50, 30, 30, 30, 120 };
 
     for (int i = 0; i < HOF_MAX_RAWS; i++) {
         // Текст заголовка
@@ -556,20 +562,18 @@ void hof_redraw() {
             headers[i],
             width,
             width,
-            (hof_window.sort_column == i) ? colorTable[15855] : colorTable[17969]
-        );
+            (hof_window.sort_column == i) ? colorTable[15855] : colorTable[17969]);
 
         // Индикатор сортировки
         if (hof_window.sort_column == i) {
-            //const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
+            // const char* arrow = hof_window.sort_ascending ? "↑" : "↓";
             const char* arrow = "";
             text_to_buf(
                 buf + width * 50 + columns[i] + column_widths[i] - 15 + base_offset,
                 arrow,
                 width,
                 width,
-                colorTable[15855]
-            );
+                colorTable[15855]);
         }
 
         // Кнопки для сортировки
@@ -578,13 +582,11 @@ void hof_redraw() {
                 hof_window.window_id,
                 columns[i] + base_offset, 50, column_widths[i], 20,
                 -1, -1, -1, -1,
-                NULL, NULL, NULL, 0
-            );
+                NULL, NULL, NULL, 0);
             win_register_button_func(
                 hof_window.column_buttons[i],
                 NULL, NULL, NULL,
-                hof_column_click
-            );
+                hof_column_click);
         }
     }
 
@@ -605,21 +607,20 @@ void hof_redraw() {
         bool is_hero = entry->water_chip_found && entry->cathedral_destroyed && entry->master_destroyed;
         int y = 80 + i * 25;
 
-        //star
-        //if(is_hero)
-        //    hof_draw_victory_icon(base_offset, 0, buf, y);
+        // star
+        // if(is_hero)
+        //     hof_draw_victory_icon(base_offset, 0, buf, y);
 
         // Порядковый номер
         char num_buf[8];
-        //snprintf(num_buf, sizeof(num_buf), "%d", entry_idx + 1);
+        // snprintf(num_buf, sizeof(num_buf), "%d", entry_idx + 1);
         snprintf(num_buf, sizeof(num_buf), "%d", entry->permanent_rank);
         text_to_buf(
             buf + width * y + columns[0] + base_offset,
             num_buf,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Имя
         text_to_buf(
@@ -627,8 +628,7 @@ void hof_redraw() {
             entry->name,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Пол
         text_to_buf(
@@ -636,8 +636,7 @@ void hof_redraw() {
             entry->sex,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Уровень
         text_to_buf(
@@ -645,8 +644,7 @@ void hof_redraw() {
             lvl,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Опыт
         text_to_buf(
@@ -654,8 +652,7 @@ void hof_redraw() {
             exp,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Водный чип
         text_to_buf(
@@ -663,8 +660,7 @@ void hof_redraw() {
             entry->water_chip_found ? messageItemYes : messageItemNo,
             width,
             width,
-            entry->water_chip_found ? colorTable[16191] : colorTable[15855]
-        );
+            entry->water_chip_found ? colorTable[16191] : colorTable[15855]);
 
         // Собор
         text_to_buf(
@@ -672,8 +668,7 @@ void hof_redraw() {
             entry->cathedral_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
-            entry->cathedral_destroyed ? colorTable[16191] : colorTable[15855]
-        );
+            entry->cathedral_destroyed ? colorTable[16191] : colorTable[15855]);
 
         // Мастер
         text_to_buf(
@@ -681,8 +676,7 @@ void hof_redraw() {
             entry->master_destroyed ? messageItemYes : messageItemNo,
             width,
             width,
-            entry->master_destroyed ? colorTable[16191] : colorTable[15855]
-        );
+            entry->master_destroyed ? colorTable[16191] : colorTable[15855]);
 
         // Причина смерти
         text_to_buf(
@@ -690,8 +684,7 @@ void hof_redraw() {
             entry->death_cause,
             width,
             width,
-            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723])
-        );
+            (last_char_hash == entry->hash ? colorTable[32747] : colorTable[14723]));
 
         // Звезда для победителей
         if (entry->master_destroyed && entry->cathedral_destroyed && entry->water_chip_found) {
@@ -701,8 +694,7 @@ void hof_redraw() {
                 "*",
                 width,
                 width,
-                colorTable[32747]
-            );
+                colorTable[32747]);
         }
     }
 
@@ -711,20 +703,21 @@ void hof_redraw() {
     // Пагинация
     char page_str[32];
 
-    PrintBigNum(185, height-38, ANIMATE, hof_window.current_page+1, old_page+1, hof_window.window_id);
+    PrintBigNum(185, height - 38, ANIMATE, hof_window.current_page + 1, old_page + 1, hof_window.window_id);
 
     win_draw(hof_window.window_id);
 }
 
 // ================== ОБРАБОТКА ВВОДА ==================
-void hof_column_click(int btn_id, int key_code) {
+void hof_column_click(int btn_id, int key_code)
+{
     for (int i = 0; i < HOF_MAX_RAWS; i++) {
         if (hof_window.column_buttons[i] == btn_id) {
             if (hof_window.sort_column == i) {
                 hof_window.sort_ascending = !hof_window.sort_ascending;
             } else {
                 hof_window.sort_column = HofSortColumn(i);
-                if(hof_window.sort_column == HOF_SORT_NAME)
+                if (hof_window.sort_column == HOF_SORT_NAME)
                     hof_window.sort_ascending = true;
                 else
                     hof_window.sort_ascending = false;
@@ -736,7 +729,8 @@ void hof_column_click(int btn_id, int key_code) {
     }
 }
 
-int hof_handle_input(int key) {
+int hof_handle_input(int key)
+{
     if (hof_window.window_id == -1) return -1;
 
     old_page = hof_window.current_page;
@@ -764,7 +758,8 @@ int hof_handle_input(int key) {
 }
 
 // ================== СОЗДАНИЕ/ЗАКРЫТИЕ ОКНА ==================
-void hof_create_window() {
+void hof_create_window()
+{
     loadColorTable("color.pal");
     palette_fade_to(cmap);
 
@@ -777,8 +772,7 @@ void hof_create_window() {
         HOF_WINDOW_WIDTH,
         HOF_WINDOW_HEIGHT,
         256,
-        WINDOW_DONT_MOVE_TOP
-    );
+        WINDOW_DONT_MOVE_TOP);
 
     if (hof_window.window_id == -1) return;
 
@@ -787,8 +781,7 @@ void hof_create_window() {
         hof_window.window_id,
         580, 360, 50, 30,
         -1, -1, -1, KEY_ESCAPE,
-        NULL, NULL, NULL, 0
-    );
+        NULL, NULL, NULL, 0);
 
     bool cursorWasHidden = mouse_hidden();
     if (cursorWasHidden) {
@@ -798,7 +791,8 @@ void hof_create_window() {
     hof_redraw();
 }
 
-int hof_draw_back() {
+int hof_draw_back()
+{
     CacheEntry* backgroundFrmHandle;
 
     // hof.frm - hall of fame screen background
@@ -808,7 +802,7 @@ int hof_draw_back() {
         return -1;
     }
 
-    //int windowWidth = HOF_WINDOW_WIDTH;
+    // int windowWidth = HOF_WINDOW_WIDTH;
     unsigned char* windowBuffer = win_get_buf(hof_window.window_id);
     buf_to_buf(backgroundFrmData, HOF_WINDOW_WIDTH, HOF_WINDOW_HEIGHT, HOF_WINDOW_WIDTH, windowBuffer, HOF_WINDOW_WIDTH);
     art_ptr_unlock(backgroundFrmHandle);
@@ -816,7 +810,7 @@ int hof_draw_back() {
     return 0;
 }
 
-//copied from editor.cc
+// copied from editor.cc
 void PrintBigNum(int x, int y, int flags, int value, int previousValue, int windowHandle)
 {
     Rect rect;
@@ -927,7 +921,8 @@ void PrintBigNum(int x, int y, int flags, int value, int previousValue, int wind
     }
 }
 
-void hof_destroy_window() {
+void hof_destroy_window()
+{
     palette_fade_to(black_palette);
 
     if (hof_window.window_id != -1) {
@@ -998,6 +993,5 @@ void hof_destroy_window() {
         hof_window.window_id = -1;
     }
 }
-
 
 }

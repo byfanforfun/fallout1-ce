@@ -83,13 +83,12 @@ void GNW95_ShowRect(unsigned char* src, unsigned int srcPitch, unsigned int a3, 
 
 bool svga_init(VideoOptions* video_options)
 {
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "svga: SDL_InitSubSystem(SDL_INIT_VIDEO) failed: %s\n", SDL_GetError());
         return false;
     }
 
-    Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 windowFlags = SDL_WINDOW_ALLOW_HIGHDPI;
 
     if (video_options->fullscreen) {
         if (video_options->exclusive)
@@ -103,10 +102,12 @@ bool svga_init(VideoOptions* video_options)
         video_options->height * video_options->scale,
         windowFlags);
     if (gSdlWindow == NULL) {
+        fprintf(stderr, "svga: SDL_CreateWindow failed: %s\n", SDL_GetError());
         return false;
     }
 
     if (!createRenderer(video_options->width, video_options->height)) {
+        fprintf(stderr, "svga: createRenderer failed: %s\n", SDL_GetError());
         destroyRenderer();
 
         SDL_DestroyWindow(gSdlWindow);
@@ -178,7 +179,16 @@ int screenGetHeight()
 
 static bool createRenderer(int width, int height)
 {
-    gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
+    static const char* const drivers[] = { "gpu", "opengl", "software" };
+    for (int i = 0; i < 3; i++) {
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, drivers[i]);
+        gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
+        if (gSdlRenderer != NULL) {
+            fprintf(stderr, "svga: renderer=%s\n", drivers[i]);
+            break;
+        }
+        fprintf(stderr, "svga: renderer %s unavailable: %s\n", drivers[i], SDL_GetError());
+    }
     if (gSdlRenderer == NULL) {
         return false;
     }
