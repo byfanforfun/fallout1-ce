@@ -24,6 +24,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/loadsave.h"
 #include "game/map_defs.h"
 #include "game/message.h"
 #include "game/object.h"
@@ -1147,7 +1148,7 @@ int init_world_map()
     int column;
     int row;
 
-    if (gconfig_random_locations) {
+    if (gconfig_random_locations && !loadingFromSave) {
         srand(time(NULL));
         randomize_world_map();
     }
@@ -1178,6 +1179,9 @@ int save_world_map(DB_FILE* stream)
 {
     if (db_fwrite(WorldGrid, sizeof(WorldGrid), 1, stream) != 1) return -1;
     if (db_fwrite(TwnSelKnwFlag, sizeof(TwnSelKnwFlag), 1, stream) != 1) return -1;
+    if (db_fwrite(city_location, sizeof(city_location), 1, stream) != 1) return -1;
+    if (db_fwrite(WorldEcounTable, sizeof(WorldEcounTable), 1, stream) != 1) return -1;
+    if (db_fwrite(WorldEcountChanceTable, sizeof(WorldEcountChanceTable), 1, stream) != 1) return -1;
     if (db_fwriteInt32(stream, first_visit_flag) == -1) return -1;
     if (db_fwriteInt32(stream, encounter_specials) == -1) return -1;
     if (db_fwriteInt32(stream, our_town) == -1) return -1;
@@ -1193,6 +1197,9 @@ int load_world_map(DB_FILE* stream)
 {
     if (db_fread(WorldGrid, sizeof(WorldGrid), 1, stream) != 1) return -1;
     if (db_fread(TwnSelKnwFlag, sizeof(TwnSelKnwFlag), 1, stream) != 1) return -1;
+    if (db_fread(city_location, sizeof(city_location), 1, stream) != 1) return -1;
+    if (db_fread(WorldEcounTable, sizeof(WorldEcounTable), 1, stream) != 1) return -1;
+    if (db_fread(WorldEcountChanceTable, sizeof(WorldEcountChanceTable), 1, stream) != 1) return -1;
     if (db_freadInt32(stream, &first_visit_flag) == -1) return -1;
     if (db_freadInt32(stream, &encounter_specials) == -1) return -1;
     if (db_freadInt32(stream, &our_town) == -1) return -1;
