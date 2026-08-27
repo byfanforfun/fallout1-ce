@@ -55,7 +55,7 @@
 namespace fallout {
 
 #define LOAD_SAVE_SIGNATURE "FALLOUT SAVE FILE"
-#define LOAD_SAVE_DESCRIPTION_LENGTH 30
+#define LOAD_SAVE_DESCRIPTION_LENGTH 255
 #define LOAD_SAVE_HANDLER_COUNT 27
 
 #define LSGAME_MSG_NAME "LSGAME.MSG"
@@ -328,6 +328,49 @@ void kiosk_continues_set_slot(int slot)
     continues_slot = (slot >= 1 && slot <= 10) ? slot : 0;
 }
 
+// Copies the first `count` characters (multibyte-aware) of `src` into `dst`.
+static void kiosk_copy_short_text(const char* src, char* dst, int count)
+{
+    const char* p = src;
+    int written = 0;
+    int chars = 0;
+    while (*p != '\0' && chars < count) {
+        int len = 1;
+        unsigned char c = (unsigned char)*p;
+        if (c >= 0xF0) {
+            len = 4;
+        } else if (c >= 0xE0) {
+            len = 3;
+        } else if (c >= 0xC0) {
+            len = 2;
+        }
+        for (int i = 0; i < len && *p != '\0'; i++) {
+            dst[written++] = *p++;
+        }
+        chars++;
+    }
+    dst[written] = '\0';
+}
+
+// Formats the save name as "name, N ур., T1 NNN%, T2 NNN%, T3 NNN%".
+static void kiosk_build_save_description(char* buf, size_t size)
+{
+    int tags[DEFAULT_TAGGED_SKILLS];
+    skill_get_tags(tags, DEFAULT_TAGGED_SKILLS);
+
+    char tagNames[DEFAULT_TAGGED_SKILLS][4];
+    for (int i = 0; i < DEFAULT_TAGGED_SKILLS; i++) {
+        kiosk_copy_short_text(skill_name(tags[i]), tagNames[i], 3);
+    }
+
+    snprintf(buf, size, "%s, %d ур., %s %d%%, %s %d%%, %s %d%%",
+        critter_name(obj_dude),
+        stat_pc_get(PC_STAT_LEVEL),
+        tagNames[0], skill_level(obj_dude, tags[0]),
+        tagNames[1], skill_level(obj_dude, tags[1]),
+        tagNames[2], skill_level(obj_dude, tags[2]));
+}
+
 // 0x46D958
 int kiosk_continues_get_slot()
 {
@@ -382,8 +425,7 @@ int kiosk_continues_autosave()
     bool isNewSlot = db_dir_entry(str, &de) != 0;
     if (isNewSlot) {
         memset(&LSData[slot_cursor], 0, sizeof(LoadSaveSlotData));
-        const char* mapShortName = map_get_short_name(map_get_index_number());
-        snprintf(LSData[slot_cursor].description, sizeof(LSData[slot_cursor].description), "%s", mapShortName ? mapShortName : "Autosave");
+        kiosk_build_save_description(LSData[slot_cursor].description, sizeof(LSData[slot_cursor].description));
     }
 
     int rc = 1;
@@ -1850,7 +1892,7 @@ static int SaveHeader(int slot)
         return -1;
     }
 
-    if (db_fwrite(ptr->description, 30, 1, flptr) != 1) {
+    if (db_fwrite(ptr->description, LOAD_SAVE_DESCRIPTION_LENGTH, 1, flptr) != 1) {
         return -1;
     }
 
@@ -1955,7 +1997,7 @@ static int LoadHeader(int slot)
         return -1;
     }
 
-    if (db_fread(ptr->description, 30, 1, flptr) != 1) {
+    if (db_fread(ptr->description, LOAD_SAVE_DESCRIPTION_LENGTH, 1, flptr) != 1) {
         return -1;
     }
 
@@ -2294,7 +2336,7 @@ static int GetComment(int a1)
     if (LSstatus[slot_cursor] == SLOT_STATE_OCCUPIED) {
         strncpy(description, LSData[a1].description, LOAD_SAVE_DESCRIPTION_LENGTH);
     } else {
-        memset(description, '\0', LOAD_SAVE_DESCRIPTION_LENGTH);
+        kiosk_build_save_description(description, sizeof(description));
     }
 
     int rc;
