@@ -25,6 +25,7 @@ typedef void(db_free_func)(void* ptr);
 DB_DATABASE* db_init(const char* datafile, const char* datafile_path, const char* patches_path, int show_cursor);
 int db_select(DB_DATABASE* db_handle);
 DB_DATABASE* db_current();
+const char* db_get_patches_path();
 int db_total();
 int db_close(DB_DATABASE* db_handle);
 void db_exit();
