@@ -134,13 +134,27 @@ int gnw_main(int argc, char** argv)
             switch (mainMenuRc) {
             case MAIN_MENU_INTRO:
                 main_menu_hide(true);
-                gmovie_play(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
+                if (gconfig_continues_play > 0) {
+                    game_handle_hof();
+                    mouse_show();
+                } else {
+                    gmovie_play(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
+                }
                 break;
             case MAIN_MENU_NEW_GAME:
                 timer_start();
 
                 main_menu_hide(true);
                 main_menu_destroy();
+
+                if (gconfig_continues_play > 0) {
+                    int pickSlotRc = SaveGame(LOAD_SAVE_MODE_PICK_SLOT);
+                    if (pickSlotRc <= 0) {
+                        main_menu_create();
+                        break;
+                    }
+                    kiosk_continues_set_slot(pickSlotRc);
+                }
 
                 config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, &msg_start);
                 config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_EXP_START_KEY, &exp_start);
@@ -198,7 +212,7 @@ int gnw_main(int argc, char** argv)
             case MAIN_MENU_LOAD_GAME:
                 // timer_start();
 
-                if (gconfig_saveload_disabled == 0) {
+                if (gconfig_saveload_disabled == 0 || gconfig_continues_play > 0) {
                     int win = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                     main_menu_hide(true);
                     main_menu_destroy();
@@ -564,6 +578,10 @@ static void main_selfrun_play()
 // 0x472D90
 static void main_death_scene()
 {
+    if (gconfig_continues_play > 0) {
+        kiosk_continues_erase_slot();
+    }
+
     // 0x4725B0
     static const char* deathFileNameList[] = {
         "narrator\\nar_3",

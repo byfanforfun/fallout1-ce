@@ -9,6 +9,7 @@
 #include "game/game.h"
 #include "game/gkioskconf.h"
 #include "game/gsound.h"
+#include "game/kiosk_msgfile.h"
 #include "game/options.h"
 #include "game/palette.h"
 #include "game/screensaver.h"
@@ -199,8 +200,33 @@ int main_menu_create()
     text_font(104);
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        msg.num = 9 + index;
-        if (message_search(&misc_message_file, &msg)) {
+        bool found = false;
+
+        if (gconfig_continues_play > 0 && kiosk_msgfile_initialized()) {
+            int kioskMsgNum = 0;
+            switch (index) {
+            case MAIN_MENU_BUTTON_INTRO:
+                kioskMsgNum = KIOSK_MSG_MENU_BEST;
+                break;
+            case MAIN_MENU_BUTTON_LOAD_GAME:
+                kioskMsgNum = KIOSK_MSG_MENU_CONTINUE;
+                break;
+            }
+
+            if (kioskMsgNum != 0) {
+                msg.num = kioskMsgNum;
+                if (message_search(&kiosk_msgfile, &msg)) {
+                    found = true;
+                }
+            }
+        }
+
+        if (!found) {
+            msg.num = 9 + index;
+            found = message_search(&misc_message_file, &msg);
+        }
+
+        if (found) {
             len = text_width(msg.text);
             text_to_buf(main_window_buf + MAIN_MENU_WINDOW_WIDTH * (42 * index - index + 46) + 520 - (len / 2),
                 msg.text,

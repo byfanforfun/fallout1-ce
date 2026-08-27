@@ -95,6 +95,10 @@ int inactive_attention(int a1, int a2, int a3)
 
 int timer_inactive_init()
 {
+    if (gconfig_continues_play > 0) {
+        return 0;
+    }
+
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_F, &timer_death);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_1, &timer_att_1);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_TIMER_INACTIVE_2, &timer_att_2);

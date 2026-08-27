@@ -17,6 +17,9 @@ typedef enum LoadSaveMode {
 
     // Quick load/save.
     LOAD_SAVE_MODE_QUICK,
+
+    // Pick a slot for a new continues-play game (returns 1-based slot).
+    LOAD_SAVE_MODE_PICK_SLOT,
 } LoadSaveMode;
 
 void InitLoadSave();
@@ -27,6 +30,12 @@ int isLoadingGame();
 void KillOldMaps();
 int MapDirErase(const char* path, const char* a2);
 int MapDirEraseFile(const char* a1, const char* a2);
+
+// Continues-play (one life, one slot) support.
+void kiosk_continues_set_slot(int slot);
+int kiosk_continues_get_slot();
+void kiosk_continues_erase_slot();
+int kiosk_continues_autosave();
 
 extern bool loadingFromSave;
 

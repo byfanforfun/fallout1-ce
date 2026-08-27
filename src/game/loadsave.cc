@@ -255,6 +255,9 @@ static LoadGameHandler* master_load_list[LOAD_SAVE_HANDLER_COUNT] = {
 static int loadingGame = 0;
 bool loadingFromSave = false;
 
+// Continues-play: 1-based slot of the current "one life" game, 0 when inactive.
+static int continues_slot = 0;
+
 // 0x612260
 static Size ginfo[LOAD_SAVE_FRM_COUNT];
 
@@ -318,6 +321,68 @@ static int fontsave;
 static CacheEntry* grphkey[LOAD_SAVE_FRM_COUNT];
 
 // 0x46D954
+void kiosk_continues_set_slot(int slot)
+{
+    continues_slot = (slot >= 1 && slot <= 10) ? slot : 0;
+}
+
+// 0x46D958
+int kiosk_continues_get_slot()
+{
+    return continues_slot;
+}
+
+// 0x46D95C
+void kiosk_continues_erase_slot()
+{
+    if (continues_slot < 1) {
+        return;
+    }
+
+    slot_cursor = continues_slot - 1;
+    EraseSave();
+    continues_slot = 0;
+}
+
+// 0x46D960
+int kiosk_continues_autosave()
+{
+    if (continues_slot < 1) {
+        return 0;
+    }
+
+    int prevSlotCursor = slot_cursor;
+
+    slot_cursor = continues_slot - 1;
+
+    dir_entry de;
+    snprintf(str, sizeof(str), "%s\\%s%.2d\\%s", "SAVEGAME", "SLOT", continues_slot, "SAVE.DAT");
+    bool isNewSlot = db_dir_entry(str, &de) != 0;
+    if (isNewSlot) {
+        memset(&LSData[slot_cursor], 0, sizeof(LoadSaveSlotData));
+        const char* mapShortName = map_get_short_name(map_get_index_number());
+        snprintf(LSData[slot_cursor].description, sizeof(LSData[slot_cursor].description), "%s", mapShortName ? mapShortName : "Autosave");
+    }
+
+    int rc = 1;
+    int v6 = QuickSnapShot();
+    if (v6 == 1) {
+        rc = SaveSlot();
+    }
+
+    if (thumbnail_image[1] != NULL) {
+        mem_free(snapshot);
+        thumbnail_image[1] = NULL;
+    }
+
+    gmouse_set_cursor(MOUSE_CURSOR_ARROW);
+
+    slot_cursor = prevSlotCursor;
+
+    return rc != -1 ? 0 : -1;
+}
+
+// 0x46D954
 void InitLoadSave()
 {
     quick_done = false;
@@ -340,7 +405,7 @@ void ResetLoadSave()
 // 0x46D9C4
 int SaveGame(int mode)
 {
-    if (gconfig_saveload_disabled > 0) {
+    if (mode != LOAD_SAVE_MODE_PICK_SLOT && gconfig_saveload_disabled > 0) {
         return 0;
     }
 
@@ -698,6 +763,10 @@ int SaveGame(int mode)
         }
 
         if (rc == 1) {
+            if (mode == LOAD_SAVE_MODE_PICK_SLOT) {
+                break;
+            }
+
             int v50 = GetComment(slot_cursor);
             if (v50 == -1) {
                 gmouse_set_cursor(MOUSE_CURSOR_ARROW);
@@ -806,6 +875,10 @@ int SaveGame(int mode)
         }
     }
 
+    if (mode == LOAD_SAVE_MODE_PICK_SLOT) {
+        return rc == 1 ? slot_cursor + 1 : 0;
+    }
+
     return rc;
 }
 
@@ -852,7 +925,7 @@ static int QuickSnapShot()
 // 0x46E754
 int LoadGame(int mode)
 {
-    if (gconfig_saveload_disabled > 0) {
+    if (gconfig_saveload_disabled > 0 && !(gconfig_continues_play > 0 && mode == LOAD_SAVE_MODE_FROM_MAIN_MENU)) {
         return 0;
     }
 
@@ -1662,6 +1735,10 @@ static int LoadSlot(int slot)
     snprintf(str, sizeof(str), "%s\\", "MAPS");
     MapDirErase(str, "BAK");
     proto_dude_update_gender();
+
+    if (gconfig_continues_play > 0) {
+        continues_slot = slot_cursor + 1;
+    }
 
     // Game Loaded.
     lsgmesg.num = 141;
