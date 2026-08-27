@@ -162,7 +162,7 @@ static void main_new_game(int continuesSlot)
     stat_pc_add_experience(exp_start);
 
     main_game_loop();
-    palette_fade_to(white_palette);
+    palette_fade_to(black_palette);
 
     // NOTE: Uninline.
     main_unload_new();
@@ -262,7 +262,7 @@ int gnw_main(int argc, char** argv)
                         win = -1;
                         main_game_loop();
                     }
-                    palette_fade_to(white_palette);
+                    palette_fade_to(black_palette);
                     if (win != -1) {
                         win_delete(win);
                     }
