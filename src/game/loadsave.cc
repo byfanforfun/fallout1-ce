@@ -1625,6 +1625,12 @@ static int SaveSlot()
     snprintf(gmpath, sizeof(gmpath), "%s\\%s\\%s%.2d", patches, "SAVEGAME", "SLOT", slot_cursor + 1);
     compat_mkdir(gmpath);
 
+    snprintf(gmpath, sizeof(gmpath), "%s", "SAVEGAME");
+    compat_mkdir(gmpath);
+
+    snprintf(gmpath, sizeof(gmpath), "%s\\%s%.2d", "SAVEGAME", "SLOT", slot_cursor + 1);
+    compat_mkdir(gmpath);
+
     if (SaveBackup() == -1) {
         debug_printf("\nLOADSAVE: Warning, can't backup save file!\n");
     }
