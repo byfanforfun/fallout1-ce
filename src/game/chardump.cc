@@ -255,4 +255,20 @@ int char_dump()
     return 0;
 }
 
+// Writes the character to file only in the kiosk modes where it is allowed.
+// On explicit game exit (isDeath == false) the dump is skipped when saving and
+// loading is enabled or the continues-play mode is on; only the demo HOF mode
+// keeps it. On character death (isDeath == true) the dump is written only in
+// the continues-play mode.
+void char_dump_kiosk(bool isDeath)
+{
+    if (isDeath) {
+        if (gconfig_continues_play > 0) {
+            char_dump();
+        }
+    } else if (gconfig_saveload_disabled != 0 && gconfig_continues_play <= 0) {
+        char_dump();
+    }
+}
+
 } // namespace fallout
