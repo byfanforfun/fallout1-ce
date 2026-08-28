@@ -2373,8 +2373,10 @@ static int GetComment(int a1)
     char description[LOAD_SAVE_DESCRIPTION_LENGTH];
     if (LSstatus[slot_cursor] == SLOT_STATE_OCCUPIED) {
         strncpy(description, LSData[a1].description, LOAD_SAVE_DESCRIPTION_LENGTH);
-    } else {
+    } else if (gconfig_continues_play > 0 || gconfig_saveload_disabled != 0) {
         kiosk_build_save_description(description, sizeof(description));
+    } else {
+        description[0] = '\0';
     }
 
     int rc;
