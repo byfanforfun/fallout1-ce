@@ -459,7 +459,7 @@ static void main_game_loop()
         }
 
         if ((obj_dude->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
-            char_dump();
+            char_dump_kiosk(true);
             main_show_death_scene = 1;
             game_user_wants_to_quit = 2;
         }

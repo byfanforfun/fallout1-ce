@@ -1169,7 +1169,7 @@ int game_quit_with_confirm()
         if (rc != 0) {
             static MessageListItem mesg;
             death_cause = getmsg(&kiosk_msgfile, &mesg, 1223);
-            char_dump();
+            char_dump_kiosk(false);
             kiosk_continues_autosave();
             game_user_wants_to_quit = 2;
         }

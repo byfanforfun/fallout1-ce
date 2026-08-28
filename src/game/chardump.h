@@ -76,6 +76,7 @@ namespace fallout {
 
 int char_dir_create();
 int char_dump();
+void char_dump_kiosk(bool isDeath);
 unsigned int get_last_char_hash();
 unsigned int set_last_char_hash(unsigned int hash);
 unsigned int flush_last_char_hash();

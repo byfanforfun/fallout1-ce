@@ -350,7 +350,7 @@ int main_menu_loop()
 {
     timer_stop();
 
-    if (get_last_char_hash() != 0)
+    if (get_last_char_hash() != 0 && gconfig_saveload_disabled != 0 && gconfig_continues_play <= 0)
         return MAIN_MENU_LOAD_GAME;
 
     current_screen = SCREEN_MAIN;
