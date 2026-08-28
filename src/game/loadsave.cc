@@ -377,6 +377,19 @@ static void kiosk_copy_short_text(const char* src, char* dst, int count)
     dst[written] = '\0';
 }
 
+// Returns the text of a KIOSK.MSG message, or fallback when unavailable.
+static const char* kiosk_short_msg(int msgNum, const char* fallback)
+{
+    if (kiosk_msgfile_initialized()) {
+        MessageListItem mesg;
+        mesg.num = msgNum;
+        if (message_search(&kiosk_msgfile, &mesg)) {
+            return mesg.text;
+        }
+    }
+    return fallback;
+}
+
 // Formats the save name as "name, N ур., T1 NNN%, T2 NNN%, T3 NNN%".
 static void kiosk_build_save_description(char* buf, size_t size)
 {
@@ -385,23 +398,14 @@ static void kiosk_build_save_description(char* buf, size_t size)
 
     char tagNames[DEFAULT_TAGGED_SKILLS][4];
     for (int i = 0; i < DEFAULT_TAGGED_SKILLS; i++) {
-        const char* shortName = NULL;
-        if (kiosk_msgfile_initialized()) {
-            MessageListItem mesg;
-            mesg.num = KIOSK_MSG_SAVE_SKILL_FIRST + tags[i];
-            if (message_search(&kiosk_msgfile, &mesg)) {
-                shortName = mesg.text;
-            }
-        }
-        if (shortName == NULL || shortName[0] == '\0') {
-            shortName = skill_name(tags[i]);
-        }
+        const char* shortName = kiosk_short_msg(KIOSK_MSG_SAVE_SKILL_FIRST + tags[i], skill_name(tags[i]));
         kiosk_copy_short_text(shortName, tagNames[i], 3);
     }
 
-    snprintf(buf, size, "%s, %d ур., %s %d%%, %s %d%%, %s %d%%",
+    snprintf(buf, size, "%s, %d %s, %s %d%%, %s %d%%, %s %d%%",
         critter_name(obj_dude),
         stat_pc_get(PC_STAT_LEVEL),
+        kiosk_short_msg(KIOSK_MSG_SAVE_LEVEL_WORD, "ур."),
         tagNames[0], skill_level(obj_dude, tags[0]),
         tagNames[1], skill_level(obj_dude, tags[1]),
         tagNames[2], skill_level(obj_dude, tags[2]));
@@ -461,8 +465,8 @@ int kiosk_continues_autosave()
     bool isNewSlot = db_dir_entry(str, &de) != 0;
     if (isNewSlot) {
         memset(&LSData[slot_cursor], 0, sizeof(LoadSaveSlotData));
-        kiosk_build_save_description(LSData[slot_cursor].description, sizeof(LSData[slot_cursor].description));
     }
+    kiosk_build_save_description(LSData[slot_cursor].description, sizeof(LSData[slot_cursor].description));
 
     int rc = 1;
     int v6 = QuickSnapShot();
