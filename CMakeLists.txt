@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+# SDL2 2.26.1 declares cmake_minimum_required < 3.5, which newer CMake (>= 4.0)
+# rejects unless the minimum policy version is lowered explicitly.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 set(EXECUTABLE_NAME fallout-ce)
