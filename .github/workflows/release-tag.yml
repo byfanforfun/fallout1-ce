@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Create release
         if: startsWith(github.ref, 'refs/tags/')
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes || true
+        run: gh release create -R "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" --generate-notes || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
-        run: gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-game.zip
+        run: gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-game.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -94,10 +94,14 @@ jobs:
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd os/android/app/build/outputs/apk/release
-          apk=$(ls app-release.apk app-release-unsigned.apk 2>/dev/null | head -n1)
+          apk=$(find os/android/app/build/outputs/apk -maxdepth 2 -name 'app-*.apk' | head -n1)
+          if [ -z "$apk" ]; then
+            echo "no release apk found"
+            ls -R os/android/app/build/outputs/apk || true
+            exit 1
+          fi
           cp "$apk" fallout1-ce-kiosk-android.apk
-          gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-android.apk
+          gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-android.apk
           rm fallout1-ce-kiosk-android.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +156,7 @@ jobs:
         run: |
           cd build
           cp fallout-ce.ipa fallout1-ce-kiosk-ios.ipa
-          gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-ios.ipa
+          gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-ios.ipa
           rm fallout1-ce-kiosk-ios.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,7 +230,7 @@ jobs:
         run: |
           cd build
           tar -czvf fallout1-ce-kiosk-linux-${{ matrix.arch }}.tar.gz fallout-ce
-          gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-linux-${{ matrix.arch }}.tar.gz
+          gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-linux-${{ matrix.arch }}.tar.gz
           rm fallout1-ce-kiosk-linux-${{ matrix.arch }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -302,7 +306,7 @@ jobs:
         run: |
           cd build
           cp "Fallout Community Edition.dmg" fallout1-ce-kiosk-macos.dmg
-          gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-macos.dmg
+          gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-macos.dmg
           rm fallout1-ce-kiosk-macos.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -355,7 +359,7 @@ jobs:
         run: |
           cd build/RelWithDebInfo
           7z a fallout1-ce-kiosk-windows-${{ matrix.arch }}.zip fallout-ce.exe
-          gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-windows-${{ matrix.arch }}.zip
+          gh release upload -R "$GITHUB_REPOSITORY" --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-windows-${{ matrix.arch }}.zip
           rm fallout1-ce-kiosk-windows-${{ matrix.arch }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
