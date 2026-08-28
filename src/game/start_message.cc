@@ -75,6 +75,7 @@ static KioskOptionDef kioskOptions[] = {
     { 200, NULL },
     { 201, NULL },
     { 202, &gconfig_saveload_disabled },
+    { 212, &gconfig_continues_play },
     { 203, &gconfig_options_disabled },
     { 204, &gconfig_exp_start },
     { 205, &gconfig_caps_start },
@@ -90,7 +91,7 @@ static KioskOptionDef kioskOptions[] = {
 
 #define NUM_KIOSK_OPTIONS (sizeof(kioskOptions) / sizeof(kioskOptions[0]))
 #define SM_LEFT_MSG_FIRST 200
-#define SM_LEFT_MSG_LAST 211
+#define SM_LEFT_MSG_LAST 212
 #define SM_LEFT_MSG_COUNT (SM_LEFT_MSG_LAST - SM_LEFT_MSG_FIRST + 1)
 
 static int fontsave = 0;
