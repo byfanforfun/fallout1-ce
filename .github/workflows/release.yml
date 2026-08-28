@@ -1,9 +1,10 @@
 name: Release
 
-on:
-  release:
-    types:
-      - published
+# Disabled: tag-triggered release-tag.yml is used instead.
+# on:
+#   release:
+#     types:
+#       - published
 
 defaults:
   run:

@@ -37,10 +37,12 @@ jobs:
         with:
           repository: byfanforfun/fallout1-kiosk-assets
           token: ${{ secrets.ASSETS_TOKEN || github.token }}
-          path: game
+          path: assets
 
       - name: Pack
-        run: zip -r fallout1-ce-kiosk-game.zip game
+        run: |
+          cd assets/game
+          zip -r ../../fallout1-ce-kiosk-game.zip .
 
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
@@ -93,7 +95,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd os/android/app/build/outputs/apk/release
-          cp app-release.apk fallout1-ce-kiosk-android.apk
+          apk=$(ls app-release.apk app-release-unsigned.apk 2>/dev/null | head -n1)
+          cp "$apk" fallout1-ce-kiosk-android.apk
           gh release upload --clobber "$GITHUB_REF_NAME" fallout1-ce-kiosk-android.apk
           rm fallout1-ce-kiosk-android.apk
         env:
@@ -123,11 +126,13 @@ jobs:
           cmake \
             -B build \
             -D CMAKE_TOOLCHAIN_FILE=cmake/toolchain/ios.toolchain.cmake \
+            -D DEPLOYMENT_TARGET=12.0 \
             -D ENABLE_BITCODE=0 \
             -D PLATFORM=OS64 \
             -G Xcode \
             -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY='' \
             # EOL
+
 
       - name: Build
         run: |
