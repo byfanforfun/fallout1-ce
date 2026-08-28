@@ -75,19 +75,19 @@ static KioskOptionDef kioskOptions[] = {
     { 200, NULL },
     { 201, NULL },
     { 202, &gconfig_saveload_disabled },
-    { 212, &gconfig_continues_play },
-    { 203, &gconfig_options_disabled },
-    { 204, &gconfig_exp_start },
-    { 205, &gconfig_caps_start },
-    { 206, &gconfig_dialog_exit_0_allowed },
-    { 207, &gconfig_game_exit_allowed },
-    { 208, &gconfig_screensaver_enabled },
-    { 209, &gconfig_random_locations },
-    { 210, &gconfig_random_containers },
-    { 211, &gconfig_quality_levels },
+    { 203, &gconfig_continues_play },
+    { 204, &gconfig_options_disabled },
+    { 205, &gconfig_exp_start },
+    { 206, &gconfig_caps_start },
+    { 207, &gconfig_dialog_exit_0_allowed },
+    { 208, &gconfig_game_exit_allowed },
+    { 209, &gconfig_screensaver_enabled },
+    { 210, &gconfig_random_locations },
+    { 211, &gconfig_random_containers },
+    { 212, &gconfig_quality_levels },
 };
 
-#define MSGID_START_LEVEL 204
+#define MSGID_START_LEVEL 205
 
 #define NUM_KIOSK_OPTIONS (sizeof(kioskOptions) / sizeof(kioskOptions[0]))
 #define SM_LEFT_MSG_FIRST 200
