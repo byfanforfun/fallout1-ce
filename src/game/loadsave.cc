@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 
 #include <algorithm>
 
@@ -1698,7 +1702,11 @@ static int SaveSlot()
     gsound_background_pause();
 
     char cwd[COMPAT_MAX_PATH];
+#ifdef _WIN32
+    if (_getcwd(cwd, sizeof(cwd)) != NULL) {
+#else
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
+#endif
         debug_printf("\nLOADSAVE: SaveSlot: cwd='%s'\n", cwd);
     }
 
