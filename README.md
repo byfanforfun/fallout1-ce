@@ -136,6 +136,8 @@ inact3=20
 options=0
 ;allow player to save/load game
 saveload=0
+;"one live - one save" gamemode
+continues_play=1
 ;show kiosk screen message
 start_message=1
 ;enable bomb screensaver
