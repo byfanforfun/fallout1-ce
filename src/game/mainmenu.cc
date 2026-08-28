@@ -202,15 +202,23 @@ int main_menu_create()
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         bool found = false;
 
-        if (gconfig_continues_play > 0 && kiosk_msgfile_initialized()) {
+        if (kiosk_msgfile_initialized()) {
             int kioskMsgNum = 0;
-            switch (index) {
-            case MAIN_MENU_BUTTON_INTRO:
-                kioskMsgNum = KIOSK_MSG_MENU_BEST;
-                break;
-            case MAIN_MENU_BUTTON_LOAD_GAME:
-                kioskMsgNum = KIOSK_MSG_MENU_CONTINUE;
-                break;
+            if (gconfig_continues_play > 0) {
+                switch (index) {
+                case MAIN_MENU_BUTTON_INTRO:
+                    kioskMsgNum = KIOSK_MSG_MENU_BEST;
+                    break;
+                case MAIN_MENU_BUTTON_LOAD_GAME:
+                    kioskMsgNum = KIOSK_MSG_MENU_CONTINUE;
+                    break;
+                }
+            } else if (gconfig_saveload_disabled > 0) {
+                switch (index) {
+                case MAIN_MENU_BUTTON_LOAD_GAME:
+                    kioskMsgNum = KIOSK_MSG_MENU_BEST;
+                    break;
+                }
             }
 
             if (kioskMsgNum != 0) {
