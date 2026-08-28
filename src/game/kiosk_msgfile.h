@@ -8,6 +8,8 @@ namespace fallout {
 
 // save name short skill names (kiosk.msg), one per skill, SKILL_0..SKILL_17.
 #define KIOSK_MSG_SAVE_SKILL_FIRST 310
+// save name level word (kiosk.msg).
+#define KIOSK_MSG_SAVE_LEVEL_WORD 318
 
 extern MessageList kiosk_msgfile;
 
