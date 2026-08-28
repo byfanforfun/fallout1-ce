@@ -133,9 +133,9 @@ inact2=30
 ;last
 inact3=20
 ;allow player interact with options menu
-options=0
+disable_options=0
 ;allow player to save/load game
-saveload=0
+disable_saveload=0
 ;"one live - one save" gamemode
 continues_play=1
 ;show kiosk screen message
