@@ -25,6 +25,7 @@
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
+#include "game/kiosk_msgfile.h"
 #include "game/map.h"
 #include "game/object.h"
 #include "game/options.h"
@@ -384,7 +385,18 @@ static void kiosk_build_save_description(char* buf, size_t size)
 
     char tagNames[DEFAULT_TAGGED_SKILLS][4];
     for (int i = 0; i < DEFAULT_TAGGED_SKILLS; i++) {
-        kiosk_copy_short_text(skill_name(tags[i]), tagNames[i], 3);
+        const char* shortName = NULL;
+        if (kiosk_msgfile_initialized()) {
+            MessageListItem mesg;
+            mesg.num = KIOSK_MSG_SAVE_SKILL_FIRST + tags[i];
+            if (message_search(&kiosk_msgfile, &mesg)) {
+                shortName = mesg.text;
+            }
+        }
+        if (shortName == NULL || shortName[0] == '\0') {
+            shortName = skill_name(tags[i]);
+        }
+        kiosk_copy_short_text(shortName, tagNames[i], 3);
     }
 
     snprintf(buf, size, "%s, %d ур., %s %d%%, %s %d%%, %s %d%%",

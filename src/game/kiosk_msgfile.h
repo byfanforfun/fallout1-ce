@@ -6,6 +6,9 @@ namespace fallout {
 #define KIOSK_MSG_MENU_BEST 300
 #define KIOSK_MSG_MENU_CONTINUE 301
 
+// save name short skill names (kiosk.msg), one per skill, SKILL_0..SKILL_17.
+#define KIOSK_MSG_SAVE_SKILL_FIRST 310
+
 extern MessageList kiosk_msgfile;
 
 bool kiosk_msgfile_initialized();
