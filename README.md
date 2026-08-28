@@ -132,6 +132,8 @@ inact1=100
 inact2=30
 ;last
 inact3=20
+;allow exit from game :)
+game_exit=1
 ;allow player interact with options menu
 disable_options=0
 ;allow player to save/load game
