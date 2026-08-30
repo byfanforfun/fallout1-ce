@@ -95,6 +95,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/gdebug.h"
     "src/game/gdialog.cc"
     "src/game/gdialog.h"
+    "src/game/gamconf.cc"
+    "src/game/gamconf.h"
     "src/game/gkioskconf.cc"
     "src/game/gkioskconf.h"
     "src/game/gkioskinv.cc"
