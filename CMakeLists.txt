@@ -101,6 +101,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/gkioskconf.h"
     "src/game/gkioskinv.cc"
     "src/game/gkioskinv.h"
+    "src/game/hud.cc"
+    "src/game/hud.h"
     "src/game/gmemory.cc"
     "src/game/gmemory.h"
     "src/game/gmouse.cc"

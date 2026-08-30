@@ -22,6 +22,7 @@
 #include "game/gmouse.h"
 #include "game/gmovie.h"
 #include "game/gsound.h"
+#include "game/hud.h"
 #include "game/intface.h"
 #include "game/item.h"
 #include "game/item_quality.h"
@@ -347,6 +348,15 @@ int iso_init()
 
     debug_printf(">intface_init\t\t");
 
+    if (hud_init() != 0) {
+        debug_printf("hud_init failed in iso_init\n");
+        return -1;
+    }
+
+    debug_printf(">hud_init\t\t");
+
+    add_bk_process(hud_process);
+
     map_setup_paths();
 
     return 0;
@@ -366,12 +376,15 @@ void iso_reset()
     obj_reset();
     cycle_reset();
     intface_reset();
+    hud_reset();
 }
 
 // 0x473B64
 void iso_exit()
 {
+    remove_bk_process(hud_process);
     intface_exit();
+    hud_exit();
     cycle_exit();
     obj_exit();
     tile_exit();

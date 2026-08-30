@@ -12,7 +12,7 @@ Config gam_config;
 static bool gamconf_initialized = false;
 static char gamconf_file_name[COMPAT_MAX_PATH];
 
-int gconfig_hud_enabled;
+int gconfig_hud_type;
 double gconfig_hud_scale;
 int gconfig_hud_opacity;
 
@@ -38,7 +38,7 @@ bool gamconf_init()
         return false;
     }
 
-    config_set_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_ENABLED_KEY, 1);
+    config_set_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_TYPE_KEY, 2);
     config_set_double(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_SCALE_KEY, 1.0);
     config_set_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_OPACITY_KEY, 128);
 
@@ -73,9 +73,17 @@ bool gamconf_init()
     }
 
     strcpy(gamconf_file_name, GAM_CONFIG_FILE_NAME);
-    config_load(&gam_config, gamconf_file_name, false);
 
-    config_get_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_ENABLED_KEY, &gconfig_hud_enabled);
+    // Create a default config file if it does not exist yet.
+    FILE* stream = compat_fopen(gamconf_file_name, "rb");
+    if (stream == NULL) {
+        config_save(&gam_config, gamconf_file_name, false);
+    } else {
+        fclose(stream);
+        config_load(&gam_config, gamconf_file_name, false);
+    }
+
+    config_get_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_TYPE_KEY, &gconfig_hud_type);
     config_get_double(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_SCALE_KEY, &gconfig_hud_scale);
     config_get_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_OPACITY_KEY, &gconfig_hud_opacity);
 

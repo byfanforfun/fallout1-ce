@@ -11,7 +11,7 @@ namespace fallout {
 
 // Keys of the `[hud]` section.
 #define GAM_CONFIG_HUD_KEY "hud"
-#define GAM_CONFIG_HUD_ENABLED_KEY "enabled"
+#define GAM_CONFIG_HUD_TYPE_KEY "type"
 #define GAM_CONFIG_HUD_SCALE_KEY "scale"
 #define GAM_CONFIG_HUD_OPACITY_KEY "opacity"
 
@@ -43,7 +43,9 @@ namespace fallout {
 
 extern Config gam_config;
 
-extern int gconfig_hud_enabled;
+// HUD visibility mode: 0 - disabled, 1 - always visible, 2 - smart
+// (overlay fades out when untouched).
+extern int gconfig_hud_type;
 extern double gconfig_hud_scale;
 extern int gconfig_hud_opacity;
 
