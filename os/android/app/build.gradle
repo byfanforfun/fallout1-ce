@@ -61,6 +61,14 @@ android {
             // Prevents signing keys clashes between debug and release versions
             // for painless development.
             applicationIdSuffix '.debug'
+
+            // Force a non-optimized native build so crash backtraces and
+            // symbol names stay readable in the debug APK.
+            externalNativeBuild {
+                cmake {
+                    arguments '-DCMAKE_BUILD_TYPE=Debug'
+                }
+            }
         }
         release {
             minifyEnabled false

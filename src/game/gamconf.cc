@@ -1,6 +1,5 @@
 #include "game/gamconf.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "platform_compat.h"
@@ -74,14 +73,10 @@ bool gamconf_init()
 
     strcpy(gamconf_file_name, GAM_CONFIG_FILE_NAME);
 
-    // Create a default config file if it does not exist yet.
-    FILE* stream = compat_fopen(gamconf_file_name, "rb");
-    if (stream == NULL) {
-        config_save(&gam_config, gamconf_file_name, false);
-    } else {
-        fclose(stream);
-        config_load(&gam_config, gamconf_file_name, false);
-    }
+    // Load existing settings, if any. Unlike the original game config, the
+    // file is only written out on explicit save, never created implicitly at
+    // startup: the startup directory is not always writable.
+    config_load(&gam_config, gamconf_file_name, false);
 
     config_get_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_TYPE_KEY, &gconfig_hud_type);
     config_get_double(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_SCALE_KEY, &gconfig_hud_scale);

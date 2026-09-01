@@ -1,5 +1,6 @@
 #include "game/hud.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -65,6 +66,8 @@ static int hudActionButtons[GAM_CONFIG_ACTION_SLOTS];
 static unsigned char* hudActionUp[GAM_CONFIG_ACTION_SLOTS];
 static unsigned char* hudActionDown[GAM_CONFIG_ACTION_SLOTS];
 
+static bool hudDebugMode = false;
+
 static void hud_scroll_on_down(int btnId, int keyCode)
 {
     for (int index = 0; index < HUD_SCROLL_BUTTON_COUNT; index++) {
@@ -84,7 +87,15 @@ static unsigned char* hud_make_button_image(int frameNum, int size)
     int frameWidth;
     int frameHeight;
     unsigned char* frameData = art_lock(art_id(OBJ_TYPE_INTERFACE, frameNum, 0, 0, 0), &cacheEntry, &frameWidth, &frameHeight);
+    FILE* dbg = fopen("hud_dbg.txt", "a");
+    if (dbg != NULL) {
+        fprintf(dbg, "  art %d -> %p w=%d h=%d\n", frameNum, (void*)frameData, frameWidth, frameHeight);
+        fflush(dbg);
+    }
     if (frameData == NULL || cacheEntry == NULL) {
+        if (dbg != NULL) {
+            fclose(dbg);
+        }
         return NULL;
     }
 
@@ -109,6 +120,10 @@ static unsigned char* hud_make_button_image(int frameNum, int size)
 
     unsigned char* scaled = (unsigned char*)malloc(scaledWidth * scaledHeight);
     if (scaled != NULL) {
+        if (dbg != NULL) {
+            fprintf(dbg, "    cscale %d -> %d x %d (src %d x %d)\n", frameNum, scaledWidth, scaledHeight, frameWidth, frameHeight);
+            fflush(dbg);
+        }
         trans_cscale(frameData, frameWidth, frameHeight, frameWidth, scaled, scaledWidth, scaledHeight, scaledWidth);
 
         int offsetX = (size - scaledWidth) / 2;
@@ -119,6 +134,9 @@ static unsigned char* hud_make_button_image(int frameNum, int size)
     }
 
     art_ptr_unlock(cacheEntry);
+    if (dbg != NULL) {
+        fclose(dbg);
+    }
 
     return upBuf;
 }
@@ -189,12 +207,31 @@ static void hud_apply_opacity(unsigned char* buf, int size, int opacityPercent)
 
 int hud_init()
 {
+    static const char* dbgPath = "hud_dbg.txt";
+    FILE* dbg = fopen(dbgPath, "a");
+    if (dbg != NULL) {
+        fprintf(dbg, "hud_init: type=%d scroll=%d actions=%d\n", gconfig_hud_type, gconfig_scroll_enabled, gconfig_actions_enabled);
+        fflush(dbg);
+    }
+
     if (hudScrollWindow != -1 || hudActionsWindow != -1) {
+        if (dbg != NULL) {
+            fclose(dbg);
+        }
         return -1;
     }
 
+    hudDebugMode = getenv("FALLOUT_HUD_DEBUG") != NULL;
+    if (hudDebugMode) {
+        gconfig_hud_type = 1;
+    }
+
     // Skip both windows entirely when the HUD is disabled.
-    if (gconfig_hud_type == 0) {
+    if (gconfig_hud_type == 0 && !hudDebugMode) {
+        if (dbg != NULL) {
+            fprintf(dbg, "hud_init: disabled\n");
+            fclose(dbg);
+        }
         return 0;
     }
 
@@ -203,6 +240,9 @@ int hud_init()
         scale = 1.0;
     }
     int opacity = gconfig_hud_opacity;
+    if (hudDebugMode) {
+        opacity = 100;
+    }
 
     int size = (int)(gconfig_scroll_size * scale);
     if (size <= 0) {
@@ -221,7 +261,12 @@ int hud_init()
             offsetY = screenGetHeight() + offsetY - grid;
         }
 
-        hudScrollWindow = win_add(offsetX, offsetY, grid, grid, 0, WINDOW_TRANSPARENT | WINDOW_HIDDEN);
+        int windowFlags = WINDOW_HIDDEN;
+        if (!hudDebugMode) {
+            windowFlags |= WINDOW_TRANSPARENT;
+        }
+
+        hudScrollWindow = win_add(offsetX, offsetY, grid, grid, 0, windowFlags);
         if (hudScrollWindow == -1) {
             return -1;
         }
@@ -249,6 +294,11 @@ int hud_init()
                 hud_apply_opacity(up, size, opacity);
                 hud_apply_opacity(down, size, opacity);
 
+                int btnFlags = BUTTON_FLAG_GRAPHIC;
+                if (!hudDebugMode) {
+                    btnFlags |= BUTTON_FLAG_TRANSPARENT;
+                }
+
                 int btnId = win_register_button(hudScrollWindow,
                     x * size,
                     y * size,
@@ -261,7 +311,7 @@ int hud_init()
                     up,
                     down,
                     NULL,
-                    BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_GRAPHIC);
+                    btnFlags);
                 if (btnId == -1) {
                     free(up);
                     free(down);
@@ -297,7 +347,12 @@ int hud_init()
             actionOffsetY = screenGetHeight() + actionOffsetY - columnHeight;
         }
 
-        hudActionsWindow = win_add(actionOffsetX, actionOffsetY, actionSize, columnHeight, 0, WINDOW_TRANSPARENT | WINDOW_HIDDEN);
+        int windowFlags = WINDOW_HIDDEN;
+        if (!hudDebugMode) {
+            windowFlags |= WINDOW_TRANSPARENT;
+        }
+
+        hudActionsWindow = win_add(actionOffsetX, actionOffsetY, actionSize, columnHeight, 0, windowFlags);
         if (hudActionsWindow == -1) {
             win_delete(hudScrollWindow);
             hudScrollWindow = -1;
@@ -305,6 +360,13 @@ int hud_init()
         }
 
         for (int slot = 0; slot < GAM_CONFIG_ACTION_SLOTS; slot++) {
+            FILE* dbg = fopen("hud_dbg.txt", "a");
+            if (dbg != NULL) {
+                fprintf(dbg, "actions slot %d key=%d\n", slot, gconfig_action_slots[slot]);
+                fflush(dbg);
+                fclose(dbg);
+            }
+
             int frameUp;
             int frameDown;
             hud_resolve_action_frames(gconfig_action_slots[slot], &frameUp, &frameDown);
@@ -326,6 +388,11 @@ int hud_init()
 
             int slotKey = gconfig_action_slots[slot];
 
+            int btnFlags = BUTTON_FLAG_GRAPHIC;
+            if (!hudDebugMode) {
+                btnFlags |= BUTTON_FLAG_TRANSPARENT;
+            }
+
             int btnId = win_register_button(hudActionsWindow,
                 0,
                 slot * (actionSize + gap),
@@ -338,7 +405,7 @@ int hud_init()
                 up,
                 down,
                 NULL,
-                BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_GRAPHIC);
+                btnFlags);
             if (btnId == -1) {
                 free(up);
                 free(down);
@@ -349,6 +416,20 @@ int hud_init()
             hudActionUp[slot] = up;
             hudActionDown[slot] = down;
         }
+    }
+
+    if (hudDebugMode && current_screen == SCREEN_GAME) {
+        if (hudScrollWindow != -1) {
+            win_show(hudScrollWindow);
+        }
+        if (hudActionsWindow != -1) {
+            win_show(hudActionsWindow);
+        }
+    }
+
+    if (dbg != NULL) {
+        fprintf(dbg, "hud_init: done\n");
+        fclose(dbg);
     }
 
     return 0;
