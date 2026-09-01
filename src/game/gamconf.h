@@ -65,6 +65,10 @@ bool gamconf_init();
 bool gamconf_save();
 bool gamconf_exit(bool shouldSave);
 
+// Computes layout values from the current screen resolution and writes them to
+// f1_am.ini. Called once on the first run, when the file did not exist yet, so
+// the on-screen buttons fit the device without manual tuning.
+bool gamconf_apply_defaults_once();
 } // namespace fallout
 
 #endif /* FALLOUT_GAME_GAMCONF_H_ */

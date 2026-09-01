@@ -3,12 +3,14 @@
 #include <string.h>
 
 #include "platform_compat.h"
+#include "plib/gnw/svga.h"
 
 namespace fallout {
 
 Config gam_config;
 
 static bool gamconf_initialized = false;
+static bool gamconf_needs_defaults = false;
 static char gamconf_file_name[COMPAT_MAX_PATH];
 
 int gconfig_hud_type;
@@ -73,10 +75,15 @@ bool gamconf_init()
 
     strcpy(gamconf_file_name, GAM_CONFIG_FILE_NAME);
 
-    // Load existing settings, if any. Unlike the original game config, the
-    // file is only written out on explicit save, never created implicitly at
-    // startup: the startup directory is not always writable.
-    config_load(&gam_config, gamconf_file_name, false);
+    // Remember whether f1_am.ini already exists. If it does not, the layout
+    // defaults are derived from the screen resolution on first launch.
+    FILE* stream = compat_fopen(gamconf_file_name, "rb");
+    if (stream == NULL) {
+        gamconf_needs_defaults = true;
+    } else {
+        fclose(stream);
+        config_load(&gam_config, gamconf_file_name, false);
+    }
 
     config_get_value(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_TYPE_KEY, &gconfig_hud_type);
     config_get_double(&gam_config, GAM_CONFIG_HUD_KEY, GAM_CONFIG_HUD_SCALE_KEY, &gconfig_hud_scale);
@@ -111,6 +118,53 @@ bool gamconf_save()
         return false;
     }
 
+    return true;
+}
+
+bool gamconf_apply_defaults_once()
+{
+    if (!gamconf_initialized || !gamconf_needs_defaults) {
+        return false;
+    }
+
+    int screenWidth = screenGetWidth();
+    int screenHeight = screenGetHeight();
+    if (screenWidth <= 0 || screenHeight <= 0) {
+        return false;
+    }
+
+    // Scroll D-pad: 3x3 grid anchored to the bottom-left corner.
+    int scrollSize = 64;
+    config_set_value(&gam_config, GAM_CONFIG_SCROLL_KEY, GAM_CONFIG_SCROLL_SIZE_KEY, scrollSize);
+    config_set_value(&gam_config, GAM_CONFIG_SCROLL_KEY, GAM_CONFIG_SCROLL_OFFSET_X_KEY, 8);
+    config_set_value(&gam_config, GAM_CONFIG_SCROLL_KEY, GAM_CONFIG_SCROLL_OFFSET_Y_KEY, -8);
+
+    // Actions column: 12 buttons anchored to the bottom-right corner. Shrink
+    // the buttons so the whole column fits the screen height.
+    int actionSize = 48;
+    int gap = 8;
+    int columnHeight = GAM_CONFIG_ACTION_SLOTS * actionSize + (GAM_CONFIG_ACTION_SLOTS - 1) * gap;
+    if (columnHeight > screenHeight) {
+        if (gap >= screenHeight) {
+            gap = 0;
+        }
+        actionSize = (screenHeight - (GAM_CONFIG_ACTION_SLOTS - 1) * gap) / GAM_CONFIG_ACTION_SLOTS;
+        if (actionSize < 16) {
+            actionSize = 16;
+        }
+        columnHeight = GAM_CONFIG_ACTION_SLOTS * actionSize + (GAM_CONFIG_ACTION_SLOTS - 1) * gap;
+    }
+
+    config_set_value(&gam_config, GAM_CONFIG_ACTIONS_KEY, GAM_CONFIG_ACTIONS_SIZE_KEY, actionSize);
+    config_set_value(&gam_config, GAM_CONFIG_ACTIONS_KEY, GAM_CONFIG_ACTIONS_GAP_KEY, gap);
+    config_set_value(&gam_config, GAM_CONFIG_ACTIONS_KEY, GAM_CONFIG_ACTIONS_OFFSET_X_KEY, -8);
+    config_set_value(&gam_config, GAM_CONFIG_ACTIONS_KEY, GAM_CONFIG_ACTIONS_OFFSET_Y_KEY, -8);
+
+    if (!config_save(&gam_config, gamconf_file_name, false)) {
+        return false;
+    }
+
+    gamconf_needs_defaults = false;
     return true;
 }
 

@@ -17,8 +17,8 @@
 #include "game/editor.h"
 #include "game/endgame.h"
 #include "game/fontmgr.h"
-#include "game/gconfig.h"
 #include "game/gamconf.h"
+#include "game/gconfig.h"
 #include "game/gdialog.h"
 #include "game/gkioskconf.h"
 #include "game/gkioskinv.h"
@@ -202,6 +202,8 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
 
     initWindow(&video_options, flags);
     palette_init();
+
+    gamconf_apply_defaults_once();
 
     if (!game_in_mapper) {
         game_splash_screen();

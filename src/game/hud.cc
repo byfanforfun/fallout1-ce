@@ -250,15 +250,28 @@ int hud_init()
     }
 
     if (gconfig_scroll_enabled) {
+        int screenWidth = screenGetWidth();
+        int screenHeight = screenGetHeight();
+
+        // Keep the D-pad within the screen on small displays, otherwise
+        // win_add fails for windows larger than the screen.
+        int maxGrid = screenWidth < screenHeight ? screenWidth : screenHeight;
         int grid = HUD_SCROLL_GRID * size;
+        if (grid > maxGrid) {
+            size = maxGrid / HUD_SCROLL_GRID;
+            if (size < 16) {
+                size = 16;
+            }
+            grid = HUD_SCROLL_GRID * size;
+        }
 
         int offsetX = gconfig_scroll_offset_x;
         if (offsetX < 0) {
-            offsetX = screenGetWidth() + offsetX - grid;
+            offsetX = screenWidth + offsetX - grid;
         }
         int offsetY = gconfig_scroll_offset_y;
         if (offsetY < 0) {
-            offsetY = screenGetHeight() + offsetY - grid;
+            offsetY = screenHeight + offsetY - grid;
         }
 
         int windowFlags = WINDOW_HIDDEN;
@@ -268,60 +281,65 @@ int hud_init()
 
         hudScrollWindow = win_add(offsetX, offsetY, grid, grid, 0, windowFlags);
         if (hudScrollWindow == -1) {
-            return -1;
-        }
+            FILE* dbg = fopen("hud_dbg.txt", "a");
+            if (dbg != NULL) {
+                fprintf(dbg, "scroll window creation failed (%d x %d)\n", grid, grid);
+                fclose(dbg);
+            }
+        } else {
 
-        int buttonIndex = 0;
-        for (int y = 0; y < HUD_SCROLL_GRID; y++) {
-            for (int x = 0; x < HUD_SCROLL_GRID; x++) {
-                int frameNum = hudScrollFrameNums[y * HUD_SCROLL_GRID + x];
-                if (frameNum == 0) {
-                    continue;
-                }
+            int buttonIndex = 0;
+            for (int y = 0; y < HUD_SCROLL_GRID; y++) {
+                for (int x = 0; x < HUD_SCROLL_GRID; x++) {
+                    int frameNum = hudScrollFrameNums[y * HUD_SCROLL_GRID + x];
+                    if (frameNum == 0) {
+                        continue;
+                    }
 
-                unsigned char* up = hud_make_button_image(frameNum, size);
-                unsigned char* down = hud_make_button_image(frameNum, size);
-                if (up == NULL || down == NULL) {
-                    if (up != NULL) {
+                    unsigned char* up = hud_make_button_image(frameNum, size);
+                    unsigned char* down = hud_make_button_image(frameNum, size);
+                    if (up == NULL || down == NULL) {
+                        if (up != NULL) {
+                            free(up);
+                        }
+                        if (down != NULL) {
+                            free(down);
+                        }
+                        continue;
+                    }
+
+                    hud_apply_opacity(up, size, opacity);
+                    hud_apply_opacity(down, size, opacity);
+
+                    int btnFlags = BUTTON_FLAG_GRAPHIC;
+                    if (!hudDebugMode) {
+                        btnFlags |= BUTTON_FLAG_TRANSPARENT;
+                    }
+
+                    int btnId = win_register_button(hudScrollWindow,
+                        x * size,
+                        y * size,
+                        size,
+                        size,
+                        -1,
+                        -1,
+                        -1,
+                        -1,
+                        up,
+                        down,
+                        NULL,
+                        btnFlags);
+                    if (btnId == -1) {
                         free(up);
-                    }
-                    if (down != NULL) {
                         free(down);
+                        continue;
                     }
-                    continue;
+
+                    win_register_button_func(btnId, NULL, NULL, hud_scroll_on_down, NULL);
+
+                    hudScrollButtons[buttonIndex] = btnId;
+                    buttonIndex++;
                 }
-
-                hud_apply_opacity(up, size, opacity);
-                hud_apply_opacity(down, size, opacity);
-
-                int btnFlags = BUTTON_FLAG_GRAPHIC;
-                if (!hudDebugMode) {
-                    btnFlags |= BUTTON_FLAG_TRANSPARENT;
-                }
-
-                int btnId = win_register_button(hudScrollWindow,
-                    x * size,
-                    y * size,
-                    size,
-                    size,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    up,
-                    down,
-                    NULL,
-                    btnFlags);
-                if (btnId == -1) {
-                    free(up);
-                    free(down);
-                    continue;
-                }
-
-                win_register_button_func(btnId, NULL, NULL, hud_scroll_on_down, NULL);
-
-                hudScrollButtons[buttonIndex] = btnId;
-                buttonIndex++;
             }
         }
     }
@@ -337,6 +355,20 @@ int hud_init()
 
     if (gconfig_actions_enabled) {
         int columnHeight = GAM_CONFIG_ACTION_SLOTS * actionSize + (GAM_CONFIG_ACTION_SLOTS - 1) * gap;
+        int screenHeight = screenGetHeight();
+
+        // Shrink the action buttons so the column always fits the screen
+        // height (windows taller than the screen cause win_add to fail).
+        if (columnHeight > screenHeight) {
+            if (gap >= screenHeight) {
+                gap = 0;
+            }
+            actionSize = (screenHeight - (GAM_CONFIG_ACTION_SLOTS - 1) * gap) / GAM_CONFIG_ACTION_SLOTS;
+            if (actionSize < 16) {
+                actionSize = 16;
+            }
+            columnHeight = GAM_CONFIG_ACTION_SLOTS * actionSize + (GAM_CONFIG_ACTION_SLOTS - 1) * gap;
+        }
 
         int actionOffsetX = gconfig_actions_offset_x;
         if (actionOffsetX < 0) {
@@ -354,9 +386,11 @@ int hud_init()
 
         hudActionsWindow = win_add(actionOffsetX, actionOffsetY, actionSize, columnHeight, 0, windowFlags);
         if (hudActionsWindow == -1) {
-            win_delete(hudScrollWindow);
-            hudScrollWindow = -1;
-            return -1;
+            FILE* dbg = fopen("hud_dbg.txt", "a");
+            if (dbg != NULL) {
+                fprintf(dbg, "actions window creation failed (%d x %d)\n", actionSize, columnHeight);
+                fclose(dbg);
+            }
         }
 
         for (int slot = 0; slot < GAM_CONFIG_ACTION_SLOTS; slot++) {
