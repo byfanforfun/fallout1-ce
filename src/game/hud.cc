@@ -24,7 +24,17 @@ namespace fallout {
 // the game world fall through to the display window.
 
 #define HUD_SCROLL_GRID 3
+// Arrows only: the D-pad center button is handled separately.
 #define HUD_SCROLL_BUTTON_COUNT 8
+
+// Unique event codes assigned to the HUD buttons. They are never handled by
+// the game, so a button click is simply swallowed instead of falling through
+// to the game world as a mouse click.
+#define HUD_BUTTON_EVENT_BASE 0x4000
+#define HUD_BUTTON_EVENT_CENTER (HUD_BUTTON_EVENT_BASE + 8)
+#define HUD_BUTTON_EVENT_HOVER_BASE (HUD_BUTTON_EVENT_BASE + 0x10)
+#define HUD_TOGGLE_EVENT_HOVER (HUD_BUTTON_EVENT_BASE + 0x20)
+#define HUD_TOGGLE_EVENT (HUD_BUTTON_EVENT_BASE + 0x21)
 
 // Map-scroll directions, one entry per scroll button.
 typedef struct ScrollDir {
@@ -34,6 +44,7 @@ typedef struct ScrollDir {
 
 static int hudScrollWindow = -1;
 static int hudActionsWindow = -1;
+static int hudToggleWindow = -1;
 
 static int hudScrollButtons[HUD_SCROLL_BUTTON_COUNT];
 static const ScrollDir hudScrollDirs[HUD_SCROLL_BUTTON_COUNT] = {
@@ -47,15 +58,15 @@ static const ScrollDir hudScrollDirs[HUD_SCROLL_BUTTON_COUNT] = {
     { 1, 1 }, // SE
 };
 
-// Interface frame numbers for the 3x3 grid. The center cell is empty; the
-// entries are NW, N, NE, W, (empty), E, SW, S, SE in scan order. Values map
-// to `intrface.list` rows minus one.
+// Interface frame numbers for the 3x3 grid. The center cell is the "center on
+// player" button (ACTPICK frame); the entries are NW, N, NE, W, (center), E,
+// SW, S, SE in scan order. Values map to `intrface.list` rows minus one.
 static const int hudScrollFrameNums[9] = {
     270,
     271,
     272,
     277,
-    0,
+    283,
     273,
     276,
     275,
@@ -65,6 +76,13 @@ static const int hudScrollFrameNums[9] = {
 static int hudActionButtons[GAM_CONFIG_ACTION_SLOTS];
 static unsigned char* hudActionUp[GAM_CONFIG_ACTION_SLOTS];
 static unsigned char* hudActionDown[GAM_CONFIG_ACTION_SLOTS];
+
+static int hudToggleButton = -1;
+static unsigned char* hudToggleUp = NULL;
+static unsigned char* hudToggleDown = NULL;
+
+// When the always-visible HUD (type 1) is collapsed, this flag is active.
+static bool hudHidden = false;
 
 static bool hudDebugMode = false;
 
@@ -80,7 +98,9 @@ static void hud_scroll_on_down(int btnId, int keyCode)
 
 // Builds a (size x size) transparent button image from the scaled interface
 // frame `frameNum`. The frame is scaled to fit, keeping proportions, and
-// centered. The caller owns the returned buffer, or receives NULL on failure.
+// centered. `trans_cscale` only writes opaque pixels, so the transparent
+// background stays transparent as long as the destination buffer is zero
+// filled. The caller owns the returned buffer, or receives NULL on failure.
 static unsigned char* hud_make_button_image(int frameNum, int size)
 {
     CacheEntry* cacheEntry = NULL;
@@ -112,26 +132,26 @@ static unsigned char* hud_make_button_image(int frameNum, int size)
         }
     }
 
+    // The destination is zero filled so that every pixel the source leaves
+    // untouched stays fully transparent.
     unsigned char* upBuf = (unsigned char*)calloc(1, size * size);
     if (upBuf == NULL) {
         art_ptr_unlock(cacheEntry);
         return NULL;
     }
 
-    unsigned char* scaled = (unsigned char*)malloc(scaledWidth * scaledHeight);
-    if (scaled != NULL) {
-        if (dbg != NULL) {
-            fprintf(dbg, "    cscale %d -> %d x %d (src %d x %d)\n", frameNum, scaledWidth, scaledHeight, frameWidth, frameHeight);
-            fflush(dbg);
-        }
-        trans_cscale(frameData, frameWidth, frameHeight, frameWidth, scaled, scaledWidth, scaledHeight, scaledWidth);
-
-        int offsetX = (size - scaledWidth) / 2;
-        int offsetY = (size - scaledHeight) / 2;
-        trans_buf_to_buf(scaled, scaledWidth, scaledHeight, scaledWidth, upBuf + offsetY * size + offsetX, size);
-
-        free(scaled);
+    if (dbg != NULL) {
+        fprintf(dbg, "    cscale %d -> %d x %d (src %d x %d)\n", frameNum, scaledWidth, scaledHeight, frameWidth, frameHeight);
+        fflush(dbg);
     }
+    trans_cscale(frameData,
+        frameWidth,
+        frameHeight,
+        frameWidth,
+        upBuf + ((size - scaledHeight) / 2) * size + (size - scaledWidth) / 2,
+        scaledWidth,
+        scaledHeight,
+        size);
 
     art_ptr_unlock(cacheEntry);
     if (dbg != NULL) {
@@ -203,6 +223,13 @@ static void hud_apply_opacity(unsigned char* buf, int size, int opacityPercent)
             buf[index] = (unsigned char)((value * opacityPercent) / 100);
         }
     }
+}
+
+// Toggles the visibility of the scroll D-pad and the actions column. Called
+// when the always-visible HUD button (type 1) is pressed.
+static void hud_toggle_on_down(int btnId, int keyCode)
+{
+    hudHidden = !hudHidden;
 }
 
 int hud_init()
@@ -311,20 +338,29 @@ int hud_init()
                     hud_apply_opacity(up, size, opacity);
                     hud_apply_opacity(down, size, opacity);
 
-                    int btnFlags = BUTTON_FLAG_GRAPHIC;
+                    int btnFlags = BUTTON_FLAG_GRAPHIC | BUTTON_FLAG_0x40;
                     if (!hudDebugMode) {
                         btnFlags |= BUTTON_FLAG_TRANSPARENT;
                     }
+
+                    // Only the sprite pixels are clickable: the mask points at
+                    // the up image, whose zero pixels are transparent, so taps
+                    // on the transparent parts of a button fall through to the
+                    // game world.
+                    bool isCenter = (y == 1 && x == 1);
+                    int mouseDownCode = isCenter ? KEY_HOME : (HUD_BUTTON_EVENT_BASE + buttonIndex);
+                    int mouseUpCode = isCenter ? HUD_BUTTON_EVENT_CENTER : (HUD_BUTTON_EVENT_BASE + buttonIndex);
+                    int mouseEnterCode = isCenter ? HUD_BUTTON_EVENT_CENTER : (HUD_BUTTON_EVENT_HOVER_BASE + buttonIndex);
 
                     int btnId = win_register_button(hudScrollWindow,
                         x * size,
                         y * size,
                         size,
                         size,
+                        mouseEnterCode,
                         -1,
-                        -1,
-                        -1,
-                        -1,
+                        mouseDownCode,
+                        mouseUpCode,
                         up,
                         down,
                         NULL,
@@ -335,10 +371,88 @@ int hud_init()
                         continue;
                     }
 
+                    win_register_button_mask(btnId, up);
+
+                    if (isCenter) {
+                        // The HOME-analog button: no scroll callback, the
+                        // engine handles the KEY_HOME event it produces.
+                        continue;
+                    }
+
                     win_register_button_func(btnId, NULL, NULL, hud_scroll_on_down, NULL);
 
                     hudScrollButtons[buttonIndex] = btnId;
                     buttonIndex++;
+                }
+            }
+        }
+    }
+
+    // In the always-visible mode (type 1) a persistent toggle button floats at
+    // the top center of the screen. It survives the collapse of the rest of
+    // the HUD so that the user can restore it.
+    if (gconfig_hud_type == 1) {
+        int toggleSize = (int)(40 * scale);
+        if (toggleSize < 32) {
+            toggleSize = 32;
+        }
+
+        int screenWidth = screenGetWidth();
+
+        int toggleOffsetX = (screenWidth - toggleSize) / 2;
+        // Always keep the toggle at the top center of the screen, no matter
+        // where the D-pad itself is positioned.
+        int toggleOffsetY = 8;
+
+        int windowFlags = WINDOW_HIDDEN;
+        if (!hudDebugMode) {
+            windowFlags |= WINDOW_TRANSPARENT;
+        }
+
+        hudToggleWindow = win_add(toggleOffsetX, toggleOffsetY, toggleSize, toggleSize, 0, windowFlags);
+        if (hudToggleWindow != -1) {
+            int frameNum = 6;
+            hudToggleUp = hud_make_button_image(frameNum, toggleSize);
+            hudToggleDown = hud_make_button_image(7, toggleSize);
+            if (hudToggleUp != NULL && hudToggleDown != NULL) {
+                hud_apply_opacity(hudToggleUp, toggleSize, opacity);
+                hud_apply_opacity(hudToggleDown, toggleSize, opacity);
+
+                int btnFlags = BUTTON_FLAG_GRAPHIC | BUTTON_FLAG_0x40;
+                if (!hudDebugMode) {
+                    btnFlags |= BUTTON_FLAG_TRANSPARENT;
+                }
+
+                hudToggleButton = win_register_button(hudToggleWindow,
+                    0,
+                    0,
+                    toggleSize,
+                    toggleSize,
+                    HUD_TOGGLE_EVENT_HOVER,
+                    -1,
+                    HUD_TOGGLE_EVENT,
+                    HUD_TOGGLE_EVENT,
+                    hudToggleUp,
+                    hudToggleDown,
+                    NULL,
+                    btnFlags);
+                if (hudToggleButton == -1) {
+                    free(hudToggleUp);
+                    hudToggleUp = NULL;
+                    free(hudToggleDown);
+                    hudToggleDown = NULL;
+                } else {
+                    win_register_button_mask(hudToggleButton, hudToggleUp);
+                    win_register_button_func(hudToggleButton, NULL, NULL, hud_toggle_on_down, NULL);
+                }
+            } else {
+                if (hudToggleUp != NULL) {
+                    free(hudToggleUp);
+                    hudToggleUp = NULL;
+                }
+                if (hudToggleDown != NULL) {
+                    free(hudToggleDown);
+                    hudToggleDown = NULL;
                 }
             }
         }
@@ -427,15 +541,18 @@ int hud_init()
                 btnFlags |= BUTTON_FLAG_TRANSPARENT;
             }
 
+            // The down code is the real game key, which performs the action.
+            // The enter/up codes are unique HUD codes that swallow the click
+            // so it does not fall through to the game world.
             int btnId = win_register_button(hudActionsWindow,
                 0,
                 slot * (actionSize + gap),
                 actionSize,
                 actionSize,
-                -1,
+                HUD_BUTTON_EVENT_HOVER_BASE + 0x20 + slot,
                 -1,
                 slotKey,
-                -1,
+                HUD_BUTTON_EVENT_BASE + 0x30 + slot,
                 up,
                 down,
                 NULL,
@@ -445,6 +562,8 @@ int hud_init()
                 free(down);
                 continue;
             }
+
+            win_register_button_mask(btnId, up);
 
             hudActionButtons[slot] = btnId;
             hudActionUp[slot] = up;
@@ -477,13 +596,16 @@ void hud_reset()
     if (hudActionsWindow != -1) {
         win_hide(hudActionsWindow);
     }
+    if (hudToggleWindow != -1) {
+        win_hide(hudToggleWindow);
+    }
 }
 
 // Shows or hides the HUD windows according to the configured type and the
 // current screen. Called once per frame from a background process.
 void hud_process()
 {
-    if (hudScrollWindow == -1 && hudActionsWindow == -1) {
+    if (hudScrollWindow == -1 && hudActionsWindow == -1 && hudToggleWindow == -1) {
         return;
     }
 
@@ -500,6 +622,25 @@ void hud_process()
             visible = mouse_get_buttons() != 0;
             break;
         }
+    }
+
+    // The toggle button always stays on top of the always-visible HUD, even
+    // when the rest of the overlay is collapsed.
+    if (gconfig_hud_type == 1 && hudToggleWindow != -1) {
+        Window* toggleWnd = GNW_find(hudToggleWindow);
+        if (toggleWnd != NULL) {
+            bool shown = (toggleWnd->flags & WINDOW_HIDDEN) == 0;
+            bool wantsShown = current_screen == SCREEN_GAME;
+            if (wantsShown && !shown) {
+                win_show(hudToggleWindow);
+            } else if (!wantsShown && shown) {
+                win_hide(hudToggleWindow);
+            }
+        }
+    }
+
+    if (hudHidden) {
+        visible = false;
     }
 
     Window* scrollWnd = GNW_find(hudScrollWindow);
@@ -525,6 +666,21 @@ void hud_process()
 
 void hud_exit()
 {
+    if (hudToggleWindow != -1) {
+        win_delete(hudToggleWindow);
+        hudToggleWindow = -1;
+    }
+
+    if (hudToggleUp != NULL) {
+        free(hudToggleUp);
+        hudToggleUp = NULL;
+    }
+    if (hudToggleDown != NULL) {
+        free(hudToggleDown);
+        hudToggleDown = NULL;
+    }
+    hudToggleButton = -1;
+
     if (hudActionsWindow != -1) {
         win_delete(hudActionsWindow);
         hudActionsWindow = -1;
@@ -548,6 +704,7 @@ void hud_exit()
     }
 
     memset(hudScrollButtons, 0, sizeof(hudScrollButtons));
+    hudHidden = false;
 }
 
 } // namespace fallout

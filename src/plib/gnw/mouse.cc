@@ -429,6 +429,25 @@ void mouse_info()
         return;
     }
 
+    // A tap is a full click spread over three frames: move the cursor (the
+    // engine marks the button under it as hovered during a frame with no mouse
+    // events), then press the button, then release it on the following frame.
+    // The down and up events must be in separate frames for the engine to act
+    // on the click (e.g. moving to a point happens on button up).
+    static int pendingPress = 0;
+    static bool pendingRelease = false;
+
+    if (pendingRelease) {
+        mouse_simulate_input(0, 0, 0);
+        pendingRelease = false;
+    }
+
+    if (pendingPress != 0) {
+        mouse_simulate_input(0, 0, pendingPress);
+        pendingPress = 0;
+        pendingRelease = true;
+    }
+
     Gesture gesture;
     if (touch_get_gesture(&gesture)) {
         static int prevx;
@@ -440,35 +459,47 @@ void mouse_info()
             prevx = gesture.x;
             prevy = gesture.y;
             if (gesture.numberOfTouches == 1) {
-                mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                pendingPress = MOUSE_STATE_LEFT_BUTTON_DOWN;
             } else if (gesture.numberOfTouches == 2) {
-                mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                pendingPress = MOUSE_STATE_RIGHT_BUTTON_DOWN;
             }
             break;
         case kLongPress:
+            if (gesture.numberOfTouches == 1) {
+                if (gesture.state == kBegan) {
+                    prevx = gesture.x;
+                    prevy = gesture.y;
+                    // A long press is a right mouse click.
+                    mouse_set_position(gesture.x, gesture.y);
+                    pendingPress = MOUSE_STATE_RIGHT_BUTTON_DOWN;
+                }
+            } else if (gesture.numberOfTouches == 2) {
+                if (gesture.state == kBegan) {
+                    prevx = gesture.x;
+                    prevy = gesture.y;
+                }
+
+                mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+
+                prevx = gesture.x;
+                prevy = gesture.y;
+            }
+            break;
         case kPan:
             if (gesture.state == kBegan) {
                 prevx = gesture.x;
                 prevy = gesture.y;
             }
 
-            if (gesture.type == kLongPress) {
-                if (gesture.numberOfTouches == 1) {
-                    mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_STATE_LEFT_BUTTON_DOWN);
-                } else if (gesture.numberOfTouches == 2) {
-                    mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_STATE_RIGHT_BUTTON_DOWN);
-                }
-            } else if (gesture.type == kPan) {
-                if (gesture.numberOfTouches == 1) {
-                    mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, 0);
-                } else if (gesture.numberOfTouches == 2) {
-                    gMouseWheelX = (prevx - gesture.x) / 2;
-                    gMouseWheelY = (gesture.y - prevy) / 2;
+            if (gesture.numberOfTouches == 1) {
+                mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, 0);
+            } else if (gesture.numberOfTouches == 2) {
+                gMouseWheelX = (prevx - gesture.x) / 2;
+                gMouseWheelY = (gesture.y - prevy) / 2;
 
-                    if (gMouseWheelX != 0 || gMouseWheelY != 0) {
-                        mouse_buttons |= MOUSE_EVENT_WHEEL;
-                        raw_buttons |= MOUSE_EVENT_WHEEL;
-                    }
+                if (gMouseWheelX != 0 || gMouseWheelY != 0) {
+                    mouse_buttons |= MOUSE_EVENT_WHEEL;
+                    raw_buttons |= MOUSE_EVENT_WHEEL;
                 }
             }
 
