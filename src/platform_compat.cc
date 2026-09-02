@@ -195,7 +195,8 @@ int compat_read(int fileHandle, void* buf, unsigned int size)
 
 int compat_write(int fileHandle, const void* buf, unsigned int size)
 {
-    return write(fileHandle, buf, size);
+    ssize_t written = write(fileHandle, buf, size);
+    return (int)written;
 }
 
 long compat_lseek(int fileHandle, long offset, int origin)
@@ -380,15 +381,26 @@ long getFileSize(FILE* stream)
 
 void system_execute_cmd(const char* cmd)
 {
+#if __APPLE__ && TARGET_OS_IOS
+    // std::system() is unavailable on iOS, so the kiosk exec feature can't run
+    // external commands there. Silently drop them.
+    (void)cmd;
+#else
     std::system(cmd);
+#endif
 }
 
 int compat_exec(const char* cmd)
 {
+#if __APPLE__ && TARGET_OS_IOS
+    (void)cmd;
+    return -1;
+#else
     std::thread worker(system_execute_cmd, cmd);
     worker.detach();
 
     return 0;
+#endif
 }
 
 } // namespace fallout
