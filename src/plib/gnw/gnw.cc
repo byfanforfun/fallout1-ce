@@ -152,10 +152,10 @@ int win_init(VideoOptions* video_options, int flags)
         mem_free(palette);
     }
 
-    //GNW_debug_init();
+    // GNW_debug_init();
 
     debug_register_env();
-    //debug_register_log("debug.log", "wt");
+    // debug_register_log("debug.log", "wt");
 
     if (GNW_input_init(flags) == -1) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
@@ -1124,7 +1124,8 @@ int win_get_top_win(int x, int y)
 {
     for (int index = num_windows - 1; index >= 0; index--) {
         Window* w = window[index];
-        if (x >= w->rect.ulx && x <= w->rect.lrx
+        if ((w->flags & WINDOW_HIDDEN) == 0
+            && x >= w->rect.ulx && x <= w->rect.lrx
             && y >= w->rect.uly && y <= w->rect.lry) {
             return w->id;
         }
