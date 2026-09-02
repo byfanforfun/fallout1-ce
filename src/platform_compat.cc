@@ -195,8 +195,11 @@ int compat_read(int fileHandle, void* buf, unsigned int size)
 
 int compat_write(int fileHandle, const void* buf, unsigned int size)
 {
-    ssize_t written = write(fileHandle, buf, size);
-    return (int)written;
+#ifdef _WIN32
+    return _write(fileHandle, buf, size);
+#else
+    return (int)write(fileHandle, buf, size);
+#endif
 }
 
 long compat_lseek(int fileHandle, long offset, int origin)
