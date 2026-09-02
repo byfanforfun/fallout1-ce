@@ -371,8 +371,6 @@ int hud_init()
                         continue;
                     }
 
-                    win_register_button_mask(btnId, up);
-
                     if (isCenter) {
                         // The HOME-analog button: no scroll callback, the
                         // engine handles the KEY_HOME event it produces.
