@@ -2,6 +2,7 @@
 
 #include "plib/color/color.h"
 #include "plib/gnw/dxinput.h"
+#include "plib/gnw/gamepad.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/input.h"
 #include "plib/gnw/memory.h"
@@ -474,6 +475,7 @@ void mouse_info()
             break;
         }
 
+        gamepad_update_mouse();
         return;
     }
 
@@ -525,6 +527,8 @@ void mouse_info()
         mouse_buttons |= MOUSE_EVENT_WHEEL;
         raw_buttons |= MOUSE_EVENT_WHEEL;
     }
+
+    gamepad_update_mouse();
 }
 
 // 0x4B4ECC

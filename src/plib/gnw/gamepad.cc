@@ -407,22 +407,12 @@ static void gamepad_rstick_down()
     gamepad_rstick_pressed = true;
     gamepad_rstick_press_time = get_time();
     gamepad_rstick_context = false;
-
-    // The game samples mouse buttons once per frame after the event pump, so
-    // the DOWN must survive for at least a frame. Emit it here and clear it on
-    // the release edge (gamepad_rstick_up), mirroring the touch tap path.
-    mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
 }
 
 static void gamepad_rstick_up()
 {
-    if (!gamepad_rstick_pressed) {
-        return;
-    }
-
     gamepad_rstick_pressed = false;
     gamepad_rstick_context = false;
-    mouse_simulate_input(0, 0, 0);
 }
 
 // Called once per frame from GNW95_process_message. Right stick drives the
@@ -451,7 +441,7 @@ static void gamepad_poll_mouse()
         }
     }
 
-    int buttons = gamepad_rstick_context ? MOUSE_STATE_RIGHT_BUTTON_DOWN : 0;
+    int buttons = gamepad_rstick_context ? MOUSE_STATE_RIGHT_BUTTON_DOWN : (gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0);
     if (dx != 0 || dy != 0 || buttons != 0) {
         mouse_simulate_input(dx, dy, buttons);
     }
@@ -461,6 +451,28 @@ static void gamepad_poll_mouse()
         gamepad_rstick_context = true;
         mouse_simulate_input(0, 0, 0);
         mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+    }
+}
+
+// Called from mouse_info() at the point where the game reads the mouse state.
+// The emulated button bits must be applied here (not earlier in gamepad_poll)
+// because other mouse handling in the same frame would otherwise overwrite
+// them before the game samples the buttons - this mirrors the touch layer,
+// which emits its taps inside mouse_info() as well.
+void gamepad_update_mouse()
+{
+    if (gamepad_controller == NULL) {
+        return;
+    }
+
+    int buttons = gamepad_rstick_context
+        ? MOUSE_STATE_RIGHT_BUTTON_DOWN
+        : (gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0);
+    if (buttons != 0) {
+        // Only re-assert the pressed state here; releasing is handled by the
+        // regular mouse_idling path, so an idle (0,0,0) call must not be made
+        // - it would wipe the taps emitted by the touch gesture path above.
+        mouse_simulate_input(0, 0, buttons);
     }
 }
 
