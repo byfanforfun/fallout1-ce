@@ -475,7 +475,6 @@ void mouse_info()
             break;
         }
 
-        gamepad_update_mouse();
         return;
     }
 
@@ -498,6 +497,13 @@ void mouse_info()
     } else {
         x = 0;
         y = 0;
+    }
+
+    // Folding the gamepad's button here (rather than a separate call) keeps the
+    // emulated left button inside the frame's single state update, so it stays
+    // held like a real mouse button instead of being re-armed on every frame.
+    if (gamepad_mouse_button_pressed()) {
+        buttons |= MOUSE_STATE_LEFT_BUTTON_DOWN;
     }
 
     // Adjust for mouse senstivity.
@@ -527,8 +533,6 @@ void mouse_info()
         mouse_buttons |= MOUSE_EVENT_WHEEL;
         raw_buttons |= MOUSE_EVENT_WHEEL;
     }
-
-    gamepad_update_mouse();
 }
 
 // 0x4B4ECC

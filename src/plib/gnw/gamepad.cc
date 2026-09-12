@@ -31,6 +31,11 @@ namespace fallout {
 // Default mouse pointer speed in pixels per frame at full stick deflection.
 #define GAMEPAD_MOUSE_SPEED 12
 
+// Consecutive frames a stick-click button must report as released before the
+// emulated left button is actually released. Guards against a single trans-
+// ient poll miss dropping an in-progress drag or hold.
+#define GAMEPAD_BUTTON_RELEASE_DEBOUNCE 3
+
 typedef enum GamepadBindType {
     GAMEPAD_BIND_NONE,
     GAMEPAD_BIND_KEY,
@@ -60,6 +65,9 @@ static int gamepad_connected = 0;
 // Right stick press state. While pressed it holds the left mouse button, which
 // the game turns into the actions (context) menu after ~250ms in arrow mode.
 static bool gamepad_rstick_pressed = false;
+
+// Consecutive not-pressed frames of the right stick before releasing.
+static int gamepad_rstick_release_counter = 0;
 
 // Left stick press state for the stick-click key polling.
 static bool gamepad_lstick_held = false;
@@ -525,23 +533,13 @@ static void gamepad_poll_mouse()
     }
 }
 
-// Called from mouse_info() at the point where the game reads the mouse state.
-// The emulated button bits must be applied here (not earlier in gamepad_poll)
-// because other mouse handling in the same frame would otherwise overwrite
-// them before the game samples the buttons - this mirrors the touch layer,
-// which emits its taps inside mouse_info() as well.
-void gamepad_update_mouse()
+// Returns whether the right stick currently emulates a left-button hold.
+// mouse_info() folds this into its single per-frame mouse state update so the
+// emulated button behaves like a real mouse button (sustained DOWN|REPEAT,
+// no per-frame edge re-generation that would break drags and the hold menu).
+bool gamepad_mouse_button_pressed()
 {
-    if (gamepad_controller == NULL) {
-        return;
-    }
-
-    if (gamepad_rstick_pressed) {
-        // Only re-assert the pressed state here; releasing is handled by the
-        // regular mouse_idling path, so an idle (0,0,0) call must not be made
-        // - it would wipe the taps emitted by the touch gesture path above.
-        mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-    }
+    return gamepad_rstick_pressed;
 }
 
 // Reports the current physical state of a stick-click button. Polling is used
@@ -581,11 +579,15 @@ static void gamepad_poll_button(SDL_GameControllerButton button, bool* held)
             }
         }
     } else if (bind->type == GAMEPAD_BIND_MOUSE_CLICK) {
-        if (down && !*held) {
-            *held = true;
-            gamepad_rstick_down();
-        } else if (!down && *held) {
+        if (down) {
+            if (!*held) {
+                *held = true;
+                gamepad_rstick_down();
+            }
+            gamepad_rstick_release_counter = 0;
+        } else if (*held && ++gamepad_rstick_release_counter >= GAMEPAD_BUTTON_RELEASE_DEBOUNCE) {
             *held = false;
+            gamepad_rstick_release_counter = 0;
             gamepad_rstick_up();
         }
     }

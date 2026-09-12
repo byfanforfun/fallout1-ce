@@ -9,7 +9,7 @@ bool gamepad_init();
 void gamepad_exit();
 void gamepad_process_event(SDL_Event* event);
 void gamepad_poll();
-void gamepad_update_mouse();
+bool gamepad_mouse_button_pressed();
 int gamepad_get_connected();
 
 } // namespace fallout
