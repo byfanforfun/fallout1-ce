@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "game/config.h"
+#include "platform_compat.h"
 #include "plib/gnw/input.h"
 #include "plib/gnw/mouse.h"
 
@@ -243,6 +244,64 @@ static const char* gamepad_axis_config_key(SDL_GameControllerAxis axis)
     }
 }
 
+static const char* gamepad_button_default(SDL_GameControllerButton button)
+{
+    switch (button) {
+    case SDL_CONTROLLER_BUTTON_DPAD_UP:
+        return "i";
+    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+        return "tab";
+    case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+        return "c";
+    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+        return "p";
+    case SDL_CONTROLLER_BUTTON_A:
+        return "return";
+    case SDL_CONTROLLER_BUTTON_B:
+        return "space";
+    case SDL_CONTROLLER_BUTTON_X:
+        return "s";
+    case SDL_CONTROLLER_BUTTON_Y:
+        return "esc";
+    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+        return "n";
+    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+        return "a";
+    case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+        return "home";
+    case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+        return "mouse";
+    case SDL_CONTROLLER_BUTTON_START:
+        return "f6";
+    case SDL_CONTROLLER_BUTTON_BACK:
+        return "f7";
+    case SDL_CONTROLLER_BUTTON_GUIDE:
+        return "f12";
+    default:
+        return NULL;
+    }
+}
+
+static const char* gamepad_axis_default(SDL_GameControllerAxis axis)
+{
+    switch (axis) {
+    case SDL_CONTROLLER_AXIS_LEFTX:
+        return "left,right";
+    case SDL_CONTROLLER_AXIS_LEFTY:
+        return "up,down";
+    case SDL_CONTROLLER_AXIS_RIGHTX:
+        return "mouse";
+    case SDL_CONTROLLER_AXIS_RIGHTY:
+        return "mouse";
+    case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+        return "b";
+    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+        return "m";
+    default:
+        return NULL;
+    }
+}
+
 static bool gamepad_load_bindings()
 {
     Config config;
@@ -252,66 +311,50 @@ static bool gamepad_load_bindings()
 
     const char* section = "gamepad";
 
-    // Optional: read the user overrides from the data directory. When the
-    // file is absent the defaults below are used as-is.
-    config_load(&config, GAMEPAD_CONFIG_FILE_NAME, false);
-
-    const char* button_defaults[SDL_CONTROLLER_BUTTON_MAX] = { 0 };
-    button_defaults[SDL_CONTROLLER_BUTTON_DPAD_UP] = "i";
-    button_defaults[SDL_CONTROLLER_BUTTON_DPAD_DOWN] = "tab";
-    button_defaults[SDL_CONTROLLER_BUTTON_DPAD_LEFT] = "c";
-    button_defaults[SDL_CONTROLLER_BUTTON_DPAD_RIGHT] = "p";
-    button_defaults[SDL_CONTROLLER_BUTTON_A] = "return";
-    button_defaults[SDL_CONTROLLER_BUTTON_B] = "space";
-    button_defaults[SDL_CONTROLLER_BUTTON_X] = "s";
-    button_defaults[SDL_CONTROLLER_BUTTON_Y] = "esc";
-    button_defaults[SDL_CONTROLLER_BUTTON_LEFTSHOULDER] = "n";
-    button_defaults[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] = "a";
-    button_defaults[SDL_CONTROLLER_BUTTON_LEFTSTICK] = "home";
-    button_defaults[SDL_CONTROLLER_BUTTON_RIGHTSTICK] = "mouse";
-    button_defaults[SDL_CONTROLLER_BUTTON_START] = "f6";
-    button_defaults[SDL_CONTROLLER_BUTTON_BACK] = "f7";
-    button_defaults[SDL_CONTROLLER_BUTTON_GUIDE] = "f12";
-
     for (int button = 0; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
         const char* key = gamepad_button_config_key((SDL_GameControllerButton)button);
-        const char* defaultValue = button_defaults[button];
-        const char* value = defaultValue;
-
-        if (key != NULL) {
-            char* configValue = NULL;
-            if (config_get_string(&config, section, key, &configValue)) {
-                value = configValue;
-            }
-        }
-
-        if (value != NULL) {
-            gamepad_set_button_default((SDL_GameControllerButton)button, value);
+        const char* value = gamepad_button_default((SDL_GameControllerButton)button);
+        if (key != NULL && value != NULL) {
+            config_set_string(&config, section, key, value);
         }
     }
 
-    const char* axis_defaults[SDL_CONTROLLER_AXIS_MAX] = { 0 };
-    axis_defaults[SDL_CONTROLLER_AXIS_LEFTX] = "left,right";
-    axis_defaults[SDL_CONTROLLER_AXIS_LEFTY] = "up,down";
-    axis_defaults[SDL_CONTROLLER_AXIS_RIGHTX] = "mouse";
-    axis_defaults[SDL_CONTROLLER_AXIS_RIGHTY] = "mouse";
-    axis_defaults[SDL_CONTROLLER_AXIS_TRIGGERLEFT] = "b";
-    axis_defaults[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] = "m";
+    for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
+        const char* key = gamepad_axis_config_key((SDL_GameControllerAxis)axis);
+        const char* value = gamepad_axis_default((SDL_GameControllerAxis)axis);
+        if (key != NULL && value != NULL) {
+            config_set_string(&config, section, key, value);
+        }
+    }
+
+    // Write the file with the default bindings on the first run so the user
+    // has a reference to edit.
+    FILE* probe = compat_fopen(GAMEPAD_CONFIG_FILE_NAME, "rt");
+    if (probe == NULL) {
+        config_save(&config, GAMEPAD_CONFIG_FILE_NAME, false);
+    } else {
+        fclose(probe);
+    }
+
+    config_load(&config, GAMEPAD_CONFIG_FILE_NAME, false);
+
+    for (int button = 0; button < SDL_CONTROLLER_BUTTON_MAX; button++) {
+        const char* key = gamepad_button_config_key((SDL_GameControllerButton)button);
+        if (key != NULL) {
+            char* value = NULL;
+            if (config_get_string(&config, section, key, &value) && value != NULL) {
+                gamepad_set_button_default((SDL_GameControllerButton)button, value);
+            }
+        }
+    }
 
     for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
         const char* key = gamepad_axis_config_key((SDL_GameControllerAxis)axis);
-        const char* defaultValue = axis_defaults[axis];
-        const char* value = defaultValue;
-
         if (key != NULL) {
-            char* configValue = NULL;
-            if (config_get_string(&config, section, key, &configValue)) {
-                value = configValue;
+            char* value = NULL;
+            if (config_get_string(&config, section, key, &value) && value != NULL) {
+                gamepad_set_axis_default((SDL_GameControllerAxis)axis, value);
             }
-        }
-
-        if (value != NULL) {
-            gamepad_set_axis_default((SDL_GameControllerAxis)axis, value);
         }
     }
 
