@@ -364,6 +364,11 @@ static void gamepad_rstick_down()
     gamepad_rstick_pressed = true;
     gamepad_rstick_press_time = get_time();
     gamepad_rstick_context = false;
+
+    // The game samples mouse buttons once per frame after the event pump, so
+    // the DOWN must survive for at least a frame. Emit it here and clear it on
+    // the release edge (gamepad_rstick_up), mirroring the touch tap path.
+    mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
 }
 
 static void gamepad_rstick_up()
@@ -373,14 +378,8 @@ static void gamepad_rstick_up()
     }
 
     gamepad_rstick_pressed = false;
-
-    if (gamepad_rstick_context) {
-        gamepad_rstick_context = false;
-        mouse_simulate_input(0, 0, 0);
-    } else {
-        mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-        mouse_simulate_input(0, 0, 0);
-    }
+    gamepad_rstick_context = false;
+    mouse_simulate_input(0, 0, 0);
 }
 
 // Called once per frame from GNW95_process_message. Right stick drives the
@@ -417,6 +416,7 @@ static void gamepad_poll_mouse()
     if (gamepad_rstick_pressed && !gamepad_rstick_context
         && elapsed_time(gamepad_rstick_press_time) >= GAMEPAD_CLICK_HOLD_MS) {
         gamepad_rstick_context = true;
+        mouse_simulate_input(0, 0, 0);
         mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
     }
 }
