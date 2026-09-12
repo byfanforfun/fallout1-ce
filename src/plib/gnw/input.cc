@@ -8,6 +8,7 @@
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
 #include "plib/gnw/dxinput.h"
+#include "plib/gnw/gamepad.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input_rebind.h"
@@ -50,7 +51,7 @@ static void pause_game();
 static int default_pause_window();
 static void buf_blit(unsigned char* src, unsigned int src_pitch, unsigned int a3, unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int dest_x, unsigned int dest_y);
 static void GNW95_build_key_map();
-static void GNW95_process_key(KeyboardData* data);
+void GNW95_process_key(KeyboardData* data);
 
 static void idleImpl();
 
@@ -131,6 +132,10 @@ int GNW_input_init(int use_msec_timer)
         return -1;
     }
 
+    if (!gamepad_init()) {
+        return -1;
+    }
+
     if (GNW_kb_set() == -1) {
         return -1;
     }
@@ -171,6 +176,7 @@ void GNW_input_exit()
     GNW95_input_exit();
     GNW_mouse_exit();
     GNW_kb_restore();
+    gamepad_exit();
     dxinput_exit();
 
     FuncPtr curr = bk_list;
@@ -1117,6 +1123,13 @@ void GNW95_process_message()
                 GNW95_process_key(&keyboardData);
             }
             break;
+        case SDL_CONTROLLERDEVICEADDED:
+        case SDL_CONTROLLERDEVICEREMOVED:
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP:
+        case SDL_CONTROLLERAXISMOTION:
+            gamepad_process_event(&e);
+            break;
         case SDL_WINDOWEVENT:
             switch (e.window.event) {
             case SDL_WINDOWEVENT_EXPOSED:
@@ -1177,7 +1190,7 @@ void GNW95_clear_time_stamps()
 }
 
 // 0x4B465C
-static void GNW95_process_key(KeyboardData* data)
+void GNW95_process_key(KeyboardData* data)
 {
     // Use originally pressed scancode, not qwerty-remapped one, for tracking
     // timestamps, see usage from |_GNW95_process_message|.
