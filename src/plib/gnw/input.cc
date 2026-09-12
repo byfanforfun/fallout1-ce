@@ -1157,6 +1157,7 @@ void GNW95_process_message()
     }
 
     touch_process_gesture();
+    gamepad_poll();
 
     if (GNW95_isActive && !kb_is_disabled()) {
         // NOTE: Uninline
