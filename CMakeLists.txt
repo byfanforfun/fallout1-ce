@@ -264,6 +264,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/gnw_types.h"
     "src/plib/gnw/gnw.cc"
     "src/plib/gnw/gnw.h"
+    "src/plib/gnw/gamepad.cc"
+    "src/plib/gnw/gamepad.h"
     "src/plib/gnw/intrface.cc"
     "src/plib/gnw/intrface.h"
     "src/plib/gnw/hash_fnv-1a.cc"

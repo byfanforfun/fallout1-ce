@@ -2,6 +2,7 @@
 
 #include "plib/color/color.h"
 #include "plib/gnw/dxinput.h"
+#include "plib/gnw/gamepad.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/input.h"
 #include "plib/gnw/memory.h"
@@ -497,6 +498,20 @@ void mouse_info()
         x = 0;
         y = 0;
     }
+
+    // Folding the gamepad's button and movement here keeps the emulated input
+    // inside the frame's single state update, so it behaves like a real mouse
+    // button (sustained DOWN|REPEAT) instead of being re-armed on every frame,
+    // which broke menu clicks, drags and the hold-to-menu gesture.
+    if (gamepad_mouse_button_pressed()) {
+        buttons |= MOUSE_STATE_LEFT_BUTTON_DOWN;
+    }
+
+    int gamepadDx;
+    int gamepadDy;
+    gamepad_mouse_get_movement(&gamepadDx, &gamepadDy);
+    x += gamepadDx;
+    y += gamepadDy;
 
     // Adjust for mouse senstivity.
     x = (int)(x * mouse_sensitivity);

@@ -21,6 +21,7 @@
 #include "game/tile.h"
 #include "platform_compat.h"
 #include "plib/color/color.h"
+#include "plib/gnw/gamepad.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
@@ -1072,6 +1073,8 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     tile_refresh_rect(&v43, map_elevation);
                     map_disable_bk_processes();
 
+                    gamepad_set_pointer_slow(true);
+
                     int v33 = mouseY;
                     int actionIndex = 0;
                     while ((mouse_get_buttons() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
@@ -1105,6 +1108,8 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     }
 
                     map_enable_bk_processes();
+
+                    gamepad_set_pointer_slow(false);
 
                     gmouse_3d_hover_test = false;
                     gmouse_3d_last_mouse_x = mouseX;
