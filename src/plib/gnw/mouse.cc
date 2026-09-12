@@ -499,16 +499,24 @@ void mouse_info()
         y = 0;
     }
 
-    // Folding the gamepad's button here (rather than a separate call) keeps the
-    // emulated left button inside the frame's single state update, so it stays
-    // held like a real mouse button instead of being re-armed on every frame.
+    // Adjust for mouse senstivity.
+    x = (int)(x * mouse_sensitivity);
+    y = (int)(y * mouse_sensitivity);
+
+    // Folding the gamepad's button and movement here keeps the emulated input
+    // inside the frame's single state update, so it behaves like a real mouse
+    // button (sustained DOWN|REPEAT) instead of being re-armed on every frame,
+    // which broke menu clicks, drags and the hold-to-menu gesture. The right
+    // stick deltas are already in pixels and must not be re-scaled.
     if (gamepad_mouse_button_pressed()) {
         buttons |= MOUSE_STATE_LEFT_BUTTON_DOWN;
     }
 
-    // Adjust for mouse senstivity.
-    x = (int)(x * mouse_sensitivity);
-    y = (int)(y * mouse_sensitivity);
+    int gamepadDx;
+    int gamepadDy;
+    gamepad_mouse_get_movement(&gamepadDx, &gamepadDy);
+    x += gamepadDx;
+    y += gamepadDy;
 
     if (vcr_state == VCR_STATE_PLAYING) {
         if (((vcr_terminate_flags & VCR_TERMINATE_ON_MOUSE_PRESS) != 0 && buttons != 0)

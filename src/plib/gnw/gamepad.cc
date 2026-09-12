@@ -69,6 +69,11 @@ static bool gamepad_rstick_pressed = false;
 // Consecutive not-pressed frames of the right stick before releasing.
 static int gamepad_rstick_release_counter = 0;
 
+// Right stick pointer movement accumulated per frame; consumed and emitted by
+// mouse_info()'s single mouse-state update.
+static int gamepad_mouse_dx = 0;
+static int gamepad_mouse_dy = 0;
+
 // Left stick press state for the stick-click key polling.
 static bool gamepad_lstick_held = false;
 
@@ -497,15 +502,18 @@ static void gamepad_rstick_up()
 // Called once per frame from GNW95_process_message. The right stick drives the
 // emulated mouse pointer; while the right stick is pressed the left button is
 // held, which the game turns into the actions (context) menu after ~250ms in
-// arrow mode.
+// arrow mode. Movement and buttons are only applied by mouse_info()'s single
+// per-frame state update, so the emulated input is never split across two
+// events in the same frame (that would re-arm the DOWN edge before the window
+// system samples it and drop menu clicks and drags).
 static void gamepad_poll_mouse()
 {
+    gamepad_mouse_dx = 0;
+    gamepad_mouse_dy = 0;
+
     if (gamepad_controller == NULL) {
         return;
     }
-
-    int dx = 0;
-    int dy = 0;
 
     if (gamepad_axis_binds[SDL_CONTROLLER_AXIS_RIGHTX].type == GAMEPAD_BIND_MOUSE_MOVE) {
         Sint16 value = SDL_GameControllerGetAxis(gamepad_controller, SDL_CONTROLLER_AXIS_RIGHTX);
@@ -513,7 +521,7 @@ static void gamepad_poll_mouse()
             value = -value;
         }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            dx = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
+            gamepad_mouse_dx = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
         }
     }
 
@@ -523,13 +531,8 @@ static void gamepad_poll_mouse()
             value = -value;
         }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            dy = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
+            gamepad_mouse_dy = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
         }
-    }
-
-    int buttons = gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0;
-    if (dx != 0 || dy != 0 || buttons != 0) {
-        mouse_simulate_input(dx, dy, buttons);
     }
 }
 
@@ -542,6 +545,14 @@ bool gamepad_mouse_button_pressed()
     return gamepad_rstick_pressed;
 }
 
+// Returns the right stick pointer movement. Called by mouse_info() so movement
+// and buttons reach the game in one consistent state update.
+void gamepad_mouse_get_movement(int* dx, int* dy)
+{
+    *dx = gamepad_mouse_dx;
+    *dy = gamepad_mouse_dy;
+}
+
 // Reports the current physical state of a stick-click button. Polling is used
 // because some controllers/mappings do not deliver SDL_CONTROLLERBUTTONDOWN
 // for the stick clicks (they arrive only as raw joystick buttons), so the
@@ -552,11 +563,16 @@ static bool gamepad_button_held(SDL_GameControllerButton button)
         return false;
     }
 
-    if (SDL_GameControllerGetButton(gamepad_controller, button) == SDL_PRESSED) {
-        return true;
+    // Trust SDL's own mapping first. The raw-index fallback below must never
+    // run for a button SDL knows about: guessing flat indices here can cross-
+    // match another physical button (e.g. read L3's press as R3).
+    SDL_GameControllerButtonBind bind = SDL_GameControllerGetBindForButton(gamepad_controller, button);
+    if (bind.bindType != SDL_CONTROLLER_BINDTYPE_NONE) {
+        return SDL_GameControllerGetButton(gamepad_controller, button) == SDL_PRESSED;
     }
 
-    // Fallback: probe the raw joystick at the conventional L3/R3 positions.
+    // Fallback for controllers/mappings without stick buttons: probe the raw
+    // joystick at the conventional L3/R3 positions.
     SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad_controller);
     if (joystick == NULL) {
         return false;
