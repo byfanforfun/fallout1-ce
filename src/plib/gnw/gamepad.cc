@@ -23,12 +23,13 @@ namespace fallout {
 // Right stick is ignored while its value stays below this threshold.
 #define GAMEPAD_AXIS_DEADZONE_MOUSE 2000
 
-// Mouse pointer speed in pixels per frame at full stick deflection.
-#define GAMEPAD_MOUSE_SPEED 12
+// Triggers are digital (no analog pressure), so a much lower press threshold
+// is enough to register a pull.
+#define GAMEPAD_TRIGGER_DEADZONE_PRESS 10000
+#define GAMEPAD_TRIGGER_DEADZONE_RELEASE 3000
 
-// Right stick press is a click if released within this time, otherwise it
-// becomes a right-button hold (context menu).
-#define GAMEPAD_CLICK_HOLD_MS 350
+// Default mouse pointer speed in pixels per frame at full stick deflection.
+#define GAMEPAD_MOUSE_SPEED 12
 
 typedef enum GamepadBindType {
     GAMEPAD_BIND_NONE,
@@ -56,13 +57,18 @@ static GamepadAxisBind gamepad_axis_binds[SDL_CONTROLLER_AXIS_MAX];
 static SDL_GameController* gamepad_controller = NULL;
 static int gamepad_connected = 0;
 
-// Right stick press state for click / context-menu hold logic.
+// Right stick press state. While pressed it holds the left mouse button, which
+// the game turns into the actions (context) menu after ~250ms in arrow mode.
 static bool gamepad_rstick_pressed = false;
-static unsigned int gamepad_rstick_press_time = 0;
-static bool gamepad_rstick_context = false;
 
 // Left stick press state for the stick-click key polling.
 static bool gamepad_lstick_held = false;
+
+// Mouse pointer speed in pixels per frame at full stick deflection.
+static int gamepad_mouse_speed = GAMEPAD_MOUSE_SPEED;
+
+// Per-axis inversion flags (negate the incoming axis value).
+static bool gamepad_axis_inverted[SDL_CONTROLLER_AXIS_MAX];
 
 static void gamepad_parse_bind(const char* value, GamepadButtonBind* out)
 {
@@ -160,7 +166,9 @@ static void gamepad_set_axis_default(SDL_GameControllerAxis axis, const char* va
         return;
     }
 
-    // "neg,pos" or a single key (used for one-way axes like triggers).
+    // "neg,pos" or a single key (used for one-way axes like triggers). A
+    // single key is assigned to the positive side: trigger axes report only
+    // positive values, so posting from the negative side would never fire.
     char buffer[64];
     strncpy(buffer, value, sizeof(buffer) - 1);
     buffer[sizeof(buffer) - 1] = '\0';
@@ -171,6 +179,15 @@ static void gamepad_set_axis_default(SDL_GameControllerAxis axis, const char* va
     }
 
     GamepadButtonBind parsed;
+    if (positive == NULL) {
+        gamepad_parse_bind(buffer, &parsed);
+        if (parsed.type == GAMEPAD_BIND_KEY) {
+            bind->type = GAMEPAD_BIND_KEY;
+            bind->positiveScancode = parsed.scancode;
+        }
+        return;
+    }
+
     gamepad_parse_bind(buffer, &parsed);
     if (parsed.type == GAMEPAD_BIND_KEY) {
         bind->type = GAMEPAD_BIND_KEY;
@@ -236,9 +253,29 @@ static const char* gamepad_axis_config_key(SDL_GameControllerAxis axis)
     case SDL_CONTROLLER_AXIS_RIGHTY:
         return "axis_righty";
     case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-        return "axis_lefttrigger";
+        return "btn_l2";
     case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-        return "axis_righttrigger";
+        return "btn_r2";
+    default:
+        return NULL;
+    }
+}
+
+static const char* gamepad_axis_invert_config_key(SDL_GameControllerAxis axis)
+{
+    switch (axis) {
+    case SDL_CONTROLLER_AXIS_LEFTX:
+        return "invert_leftx";
+    case SDL_CONTROLLER_AXIS_LEFTY:
+        return "invert_lefty";
+    case SDL_CONTROLLER_AXIS_RIGHTX:
+        return "invert_rightx";
+    case SDL_CONTROLLER_AXIS_RIGHTY:
+        return "invert_righty";
+    case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+        return "invert_lefttrigger";
+    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+        return "invert_righttrigger";
     default:
         return NULL;
     }
@@ -327,6 +364,15 @@ static bool gamepad_load_bindings()
         }
     }
 
+    config_set_string(&config, section, "mouse_speed", "12");
+
+    for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
+        const char* key = gamepad_axis_invert_config_key((SDL_GameControllerAxis)axis);
+        if (key != NULL) {
+            config_set_string(&config, section, key, "0");
+        }
+    }
+
     // Write the file with the default bindings on the first run so the user
     // has a reference to edit.
     FILE* probe = compat_fopen(GAMEPAD_CONFIG_FILE_NAME, "rt");
@@ -358,6 +404,21 @@ static bool gamepad_load_bindings()
         }
     }
 
+    int mouseSpeed = 0;
+    if (config_get_value(&config, section, "mouse_speed", &mouseSpeed) && mouseSpeed > 0) {
+        gamepad_mouse_speed = mouseSpeed;
+    }
+
+    for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; axis++) {
+        const char* key = gamepad_axis_invert_config_key((SDL_GameControllerAxis)axis);
+        if (key != NULL) {
+            int invert = 0;
+            if (config_get_value(&config, section, key, &invert)) {
+                gamepad_axis_inverted[axis] = invert != 0;
+            }
+        }
+    }
+
     config_exit(&config);
 
     return true;
@@ -382,13 +443,26 @@ static void gamepad_process_axis_event(int axis, Sint16 value)
         return;
     }
 
-    bool negativePressed = value < -GAMEPAD_AXIS_DEADZONE_PRESS;
-    bool positivePressed = value > GAMEPAD_AXIS_DEADZONE_PRESS;
+    if (gamepad_axis_inverted[axis]) {
+        value = -value;
+    }
+
+    // Triggers are digital on/off controls in this game, so make them far more
+    // sensitive than the analog sticks.
+    int pressThreshold = (axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT || axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+        ? GAMEPAD_TRIGGER_DEADZONE_PRESS
+        : GAMEPAD_AXIS_DEADZONE_PRESS;
+    int releaseThreshold = (axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT || axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+        ? GAMEPAD_TRIGGER_DEADZONE_RELEASE
+        : GAMEPAD_AXIS_DEADZONE_RELEASE;
+
+    bool negativePressed = value < -pressThreshold;
+    bool positivePressed = value > pressThreshold;
 
     if (negativePressed && !bind->negativePressed) {
         bind->negativePressed = true;
         gamepad_post_key(bind->negativeScancode, true);
-    } else if (!negativePressed && bind->negativePressed && value > -GAMEPAD_AXIS_DEADZONE_RELEASE) {
+    } else if (!negativePressed && bind->negativePressed && value > -releaseThreshold) {
         bind->negativePressed = false;
         gamepad_post_key(bind->negativeScancode, false);
     }
@@ -396,7 +470,7 @@ static void gamepad_process_axis_event(int axis, Sint16 value)
     if (positivePressed && !bind->positivePressed) {
         bind->positivePressed = true;
         gamepad_post_key(bind->positiveScancode, true);
-    } else if (!positivePressed && bind->positivePressed && value < GAMEPAD_AXIS_DEADZONE_RELEASE) {
+    } else if (!positivePressed && bind->positivePressed && value < releaseThreshold) {
         bind->positivePressed = false;
         gamepad_post_key(bind->positiveScancode, false);
     }
@@ -405,19 +479,17 @@ static void gamepad_process_axis_event(int axis, Sint16 value)
 static void gamepad_rstick_down()
 {
     gamepad_rstick_pressed = true;
-    gamepad_rstick_press_time = get_time();
-    gamepad_rstick_context = false;
 }
 
 static void gamepad_rstick_up()
 {
     gamepad_rstick_pressed = false;
-    gamepad_rstick_context = false;
 }
 
-// Called once per frame from GNW95_process_message. Right stick drives the
-// emulated mouse pointer; a long press of the right stick becomes the
-// right-button hold that opens the context menu.
+// Called once per frame from GNW95_process_message. The right stick drives the
+// emulated mouse pointer; while the right stick is pressed the left button is
+// held, which the game turns into the actions (context) menu after ~250ms in
+// arrow mode.
 static void gamepad_poll_mouse()
 {
     if (gamepad_controller == NULL) {
@@ -429,28 +501,27 @@ static void gamepad_poll_mouse()
 
     if (gamepad_axis_binds[SDL_CONTROLLER_AXIS_RIGHTX].type == GAMEPAD_BIND_MOUSE_MOVE) {
         Sint16 value = SDL_GameControllerGetAxis(gamepad_controller, SDL_CONTROLLER_AXIS_RIGHTX);
+        if (gamepad_axis_inverted[SDL_CONTROLLER_AXIS_RIGHTX]) {
+            value = -value;
+        }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            dx = (value * GAMEPAD_MOUSE_SPEED) / GAMEPAD_AXIS_RANGE;
+            dx = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
         }
     }
 
     if (gamepad_axis_binds[SDL_CONTROLLER_AXIS_RIGHTY].type == GAMEPAD_BIND_MOUSE_MOVE) {
         Sint16 value = SDL_GameControllerGetAxis(gamepad_controller, SDL_CONTROLLER_AXIS_RIGHTY);
+        if (gamepad_axis_inverted[SDL_CONTROLLER_AXIS_RIGHTY]) {
+            value = -value;
+        }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            dy = (value * GAMEPAD_MOUSE_SPEED) / GAMEPAD_AXIS_RANGE;
+            dy = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
         }
     }
 
-    int buttons = gamepad_rstick_context ? MOUSE_STATE_RIGHT_BUTTON_DOWN : (gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0);
+    int buttons = gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0;
     if (dx != 0 || dy != 0 || buttons != 0) {
         mouse_simulate_input(dx, dy, buttons);
-    }
-
-    if (gamepad_rstick_pressed && !gamepad_rstick_context
-        && elapsed_time(gamepad_rstick_press_time) >= GAMEPAD_CLICK_HOLD_MS) {
-        gamepad_rstick_context = true;
-        mouse_simulate_input(0, 0, 0);
-        mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
     }
 }
 
@@ -465,14 +536,11 @@ void gamepad_update_mouse()
         return;
     }
 
-    int buttons = gamepad_rstick_context
-        ? MOUSE_STATE_RIGHT_BUTTON_DOWN
-        : (gamepad_rstick_pressed ? MOUSE_STATE_LEFT_BUTTON_DOWN : 0);
-    if (buttons != 0) {
+    if (gamepad_rstick_pressed) {
         // Only re-assert the pressed state here; releasing is handled by the
         // regular mouse_idling path, so an idle (0,0,0) call must not be made
         // - it would wipe the taps emitted by the touch gesture path above.
-        mouse_simulate_input(0, 0, buttons);
+        mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
     }
 }
 
