@@ -31,6 +31,9 @@ namespace fallout {
 // Default mouse pointer speed in pixels per frame at full stick deflection.
 #define GAMEPAD_MOUSE_SPEED 12
 
+// Pointer speed divisor while the pointer slow mode (context menu) is active.
+#define GAMEPAD_POINTER_SLOW_DIV 3
+
 // Consecutive frames a stick-click button must report as released before the
 // emulated left button is actually released. Guards against a single trans-
 // ient poll miss dropping an in-progress drag or hold.
@@ -79,6 +82,10 @@ static bool gamepad_lstick_held = false;
 
 // Mouse pointer speed in pixels per frame at full stick deflection.
 static int gamepad_mouse_speed = GAMEPAD_MOUSE_SPEED;
+
+// When set, the right stick pointer is slowed down (used while the in-game
+// context/actions menu is open, where items sit close together).
+static bool gamepad_pointer_slow = false;
 
 // Per-axis inversion flags (negate the incoming axis value).
 static bool gamepad_axis_inverted[SDL_CONTROLLER_AXIS_MAX];
@@ -515,13 +522,18 @@ static void gamepad_poll_mouse()
         return;
     }
 
+    int speed = gamepad_mouse_speed;
+    if (gamepad_pointer_slow) {
+        speed /= GAMEPAD_POINTER_SLOW_DIV;
+    }
+
     if (gamepad_axis_binds[SDL_CONTROLLER_AXIS_RIGHTX].type == GAMEPAD_BIND_MOUSE_MOVE) {
         Sint16 value = SDL_GameControllerGetAxis(gamepad_controller, SDL_CONTROLLER_AXIS_RIGHTX);
         if (gamepad_axis_inverted[SDL_CONTROLLER_AXIS_RIGHTX]) {
             value = -value;
         }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            gamepad_mouse_dx = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
+            gamepad_mouse_dx = (value * speed) / GAMEPAD_AXIS_RANGE;
         }
     }
 
@@ -531,9 +543,16 @@ static void gamepad_poll_mouse()
             value = -value;
         }
         if (value > GAMEPAD_AXIS_DEADZONE_MOUSE || value < -GAMEPAD_AXIS_DEADZONE_MOUSE) {
-            gamepad_mouse_dy = (value * gamepad_mouse_speed) / GAMEPAD_AXIS_RANGE;
+            gamepad_mouse_dy = (value * speed) / GAMEPAD_AXIS_RANGE;
         }
     }
+}
+
+// Slows the right stick pointer down while the in-game context menu is open so
+// its items (spaced ~10px apart) can be selected precisely.
+void gamepad_set_pointer_slow(bool slow)
+{
+    gamepad_pointer_slow = slow;
 }
 
 // Returns whether the right stick currently emulates a left-button hold.
