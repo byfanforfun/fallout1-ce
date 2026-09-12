@@ -9,7 +9,7 @@
 
 namespace fallout {
 
-#define GAMEPAD_CONFIG_FILE_NAME "gp_bindings.cfg"
+#define GAMEPAD_CONFIG_FILE_NAME "gamepad.cfg"
 
 // The maximum distance analog stick can travel (SDL2 reports -32768..32767).
 #define GAMEPAD_AXIS_RANGE 32768
@@ -59,6 +59,9 @@ static int gamepad_connected = 0;
 static bool gamepad_rstick_pressed = false;
 static unsigned int gamepad_rstick_press_time = 0;
 static bool gamepad_rstick_context = false;
+
+// Left stick press state for the stick-click key polling.
+static bool gamepad_lstick_held = false;
 
 static void gamepad_parse_bind(const char* value, GamepadButtonBind* out)
 {
@@ -418,6 +421,61 @@ static void gamepad_poll_mouse()
     }
 }
 
+// Reports the current physical state of a stick-click button. Polling is used
+// because some controllers/mappings do not deliver SDL_CONTROLLERBUTTONDOWN
+// for the stick clicks (they arrive only as raw joystick buttons), so the
+// event path alone would silently swallow them.
+static bool gamepad_button_held(SDL_GameControllerButton button)
+{
+    if (gamepad_controller == NULL) {
+        return false;
+    }
+
+    if (SDL_GameControllerGetButton(gamepad_controller, button) == SDL_PRESSED) {
+        return true;
+    }
+
+    // Fallback: probe the raw joystick at the conventional L3/R3 positions.
+    SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad_controller);
+    if (joystick == NULL) {
+        return false;
+    }
+
+    int rawButton = button == SDL_CONTROLLER_BUTTON_RIGHTSTICK ? 9 : 8;
+    return rawButton < SDL_JoystickNumButtons(joystick) && SDL_JoystickGetButton(joystick, rawButton) != 0;
+}
+
+static void gamepad_poll_button(SDL_GameControllerButton button, bool* held)
+{
+    GamepadButtonBind* bind = &(gamepad_button_binds[button]);
+    bool down = gamepad_button_held(button);
+
+    if (bind->type == GAMEPAD_BIND_KEY) {
+        if (down != *held) {
+            *held = down;
+            if (!kb_is_disabled()) {
+                gamepad_post_key(bind->scancode, down);
+            }
+        }
+    } else if (bind->type == GAMEPAD_BIND_MOUSE_CLICK) {
+        if (down && !*held) {
+            *held = true;
+            gamepad_rstick_down();
+        } else if (!down && *held) {
+            *held = false;
+            gamepad_rstick_up();
+        }
+    }
+}
+
+// Polled per frame from gamepad_poll(); stick clicks are read by state rather
+// than by event (see gamepad_button_held for details).
+static void gamepad_poll_stick_buttons()
+{
+    gamepad_poll_button(SDL_CONTROLLER_BUTTON_LEFTSTICK, &gamepad_lstick_held);
+    gamepad_poll_button(SDL_CONTROLLER_BUTTON_RIGHTSTICK, &gamepad_rstick_pressed);
+}
+
 static void gamepad_open(int index)
 {
     if (!SDL_IsGameController(index)) {
@@ -492,6 +550,11 @@ void gamepad_process_event(SDL_Event* event)
             break;
         }
 
+        // Stick clicks are polled per-frame; ignore events to avoid double posts.
+        if (button == SDL_CONTROLLER_BUTTON_LEFTSTICK || button == SDL_CONTROLLER_BUTTON_RIGHTSTICK) {
+            break;
+        }
+
         GamepadButtonBind* bind = &(gamepad_button_binds[button]);
         bool down = event->cbutton.state == SDL_PRESSED;
 
@@ -516,6 +579,7 @@ void gamepad_process_event(SDL_Event* event)
 
 void gamepad_poll()
 {
+    gamepad_poll_stick_buttons();
     gamepad_poll_mouse();
 }
 
