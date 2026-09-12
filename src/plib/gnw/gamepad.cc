@@ -32,7 +32,7 @@ namespace fallout {
 #define GAMEPAD_MOUSE_SPEED 12
 
 // Pointer speed divisor while the pointer slow mode (context menu) is active.
-#define GAMEPAD_POINTER_SLOW_DIV 3
+#define GAMEPAD_POINTER_SLOW_DIV 5
 
 // Consecutive frames a stick-click button must report as released before the
 // emulated left button is actually released. Guards against a single trans-
