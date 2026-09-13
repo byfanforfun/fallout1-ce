@@ -196,12 +196,28 @@ int screenGetHeight()
 
 static bool createRenderer(int width, int height)
 {
-    static const char* const drivers[] = { "gpu", "opengl", "software" };
-    for (int i = 0; i < 3; i++) {
+    // KMSDRM windows run on a GLES-only stack (panfrost/Mali on the kiosk
+    // device), so the "opengl" renderer (SDL_render_gl.c, desktop
+    // fixed-function GL) is useless there: its calls do not exist in an
+    // ES 2.0 context and every frame fails. Use the dedicated GLES2
+    // renderer. Note there is no "gpu" renderer in SDL 2.x (that name is
+    // SDL3), and an unknown hint makes SDL_CreateRenderer silently pick the
+    // first driver (desktop GL), so never list it here.
+    const char* currentVideoDriver = SDL_GetCurrentVideoDriver();
+    const bool isKmsdrm = currentVideoDriver != NULL && SDL_strcasecmp(currentVideoDriver, "kmsdrm") == 0;
+    static const char* const kmsdrmDrivers[] = { "opengles2", "software" };
+    static const char* const defaultDrivers[] = { "opengl", "software" };
+    const char* const* drivers = isKmsdrm ? kmsdrmDrivers : defaultDrivers;
+    unsigned int driverCount = isKmsdrm ? SDL_arraysize(kmsdrmDrivers) : SDL_arraysize(defaultDrivers);
+
+    for (unsigned int i = 0; i < driverCount; i++) {
+        SDL_ClearError();
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, drivers[i]);
         gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
         if (gSdlRenderer != NULL) {
-            fprintf(stderr, "svga: renderer=%s\n", drivers[i]);
+            SDL_RendererInfo info;
+            SDL_GetRendererInfo(gSdlRenderer, &info);
+            fprintf(stderr, "svga: renderer=%s\n", info.name);
             break;
         }
         fprintf(stderr, "svga: renderer %s unavailable: %s\n", drivers[i], SDL_GetError());
