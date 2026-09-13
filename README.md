@@ -294,6 +294,10 @@ regains control when the game process exits.
   frontend (clean process exit) as long as `launcher_return_on_exit=1`, even if
   `game_exit=0`. Keep `launcher_enabled=1` in `kiosk.cfg` to run frontend-style
   without passing the command line flag.
+- With `FALLOUT_RETROARCH`, the commands of `kiosk_exec.cfg` are executed when
+  the player confirms "Exit" in the in-game menu (instead of on character
+  death). Use them to chain the next content or hand control further on the
+  way back to the frontend.
 
 Gamepad layout (`gamepad.cfg`)
 
