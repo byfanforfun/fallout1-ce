@@ -36,6 +36,10 @@ $ sudo apt install libsdl2-2.0-0
 
 ### Linux (aarch64, cross-compilation)
 
+>A complete reproducible walkthrough (both sysroot paths, every required
+>chroot symlink and a troubleshooting matrix) lives in
+>[docs/cross-build-aarch64.md](docs/cross-build-aarch64.md).
+
 Debian/Ubuntu: add the arm64 architecture and install the cross-compilers:
 
 ```console
