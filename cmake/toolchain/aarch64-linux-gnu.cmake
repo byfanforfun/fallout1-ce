@@ -32,6 +32,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib64/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
 
 # Target sysroot. The aarch64-linux-gnu-gcc driver defaults to an empty
 # /usr/aarch64-linux-gnu/sys-root (stub shipped by the Fedora binutils
@@ -58,4 +60,34 @@ else()
     message(FATAL_ERROR "aarch64 sysroot not found; install "
         "sysroot-aarch64-fc43-glibc (Fedora) or libc6-dev-arm64-cross "
         "(Debian/Ubuntu) or pass -DCMAKE_SYSROOT=...")
+endif()
+
+# Redirect pkg-config at the target root: otherwise the host pkg-config wins
+# and its modules (EGL, GL, dbus, wayland, ...) resolve to host include and
+# library paths, polluting every compile test (e.g. HAVE_PTHREADS ends up
+# including the host /usr/include). If the target has no .pc files at all,
+# the module checks simply fail and the build stays minimal.
+
+# The Fedora cross gcc-c++-aarch64-linux-gnu package ships no C++ headers
+# (and no target libstdc++), so point g++ at the standard headers living in
+# the target root (Fedora installs them under /usr/include/c++/<ver> with
+# the arch and backward subdirectories).
+if(EXISTS "${CMAKE_SYSROOT}/usr/include/c++")
+    file(GLOB _cxx_ver_dirs RELATIVE "${CMAKE_SYSROOT}/usr/include/c++"
+        "${CMAKE_SYSROOT}/usr/include/c++/*")
+    foreach(_ver IN LISTS _cxx_ver_dirs)
+        if(NOT IS_DIRECTORY "${CMAKE_SYSROOT}/usr/include/c++/${_ver}")
+            continue()
+        endif()
+        string(APPEND CMAKE_CXX_FLAGS
+            " -isystem ${CMAKE_SYSROOT}/usr/include/c++/${_ver}")
+        foreach(_cxx_sub IN ITEMS backward
+                "${CMAKE_SYSTEM_PROCESSOR}-redhat-linux"
+                "${CMAKE_SYSTEM_PROCESSOR}-linux-gnu")
+            if(EXISTS "${CMAKE_SYSROOT}/usr/include/c++/${_ver}/${_cxx_sub}")
+                string(APPEND CMAKE_CXX_FLAGS
+                    " -isystem ${CMAKE_SYSROOT}/usr/include/c++/${_ver}/${_cxx_sub}")
+            endif()
+        endforeach()
+    endforeach()
 endif()

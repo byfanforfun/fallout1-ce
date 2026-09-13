@@ -86,6 +86,7 @@ if(FALLOUT_STATIC_BUILD)
         set(SDL_X11 OFF CACHE BOOL "Build SDL with X11 support (kiosk static build)")
         set(SDL_PIPEWIRE OFF CACHE BOOL "Build SDL with libpipewire support")
         set(SDL_HIDAPI OFF CACHE BOOL "Build SDL with hidapi joystick support")
+        set(SDL_HAPTIC OFF CACHE BOOL "Build SDL with haptic (force feedback) support")
         target_link_options(${EXECUTABLE_NAME} PUBLIC
             "-static-libgcc;-static-libstdc++")
         if(FALLOUT_STATIC_GLIBC)
