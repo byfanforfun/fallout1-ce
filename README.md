@@ -60,6 +60,36 @@ $ sudo cp -av /opt/aarch64-rootfs/usr/lib/gcc/aarch64-redhat-linux/15/libstdc++.
 $ sudo ln -sfv libstdc++.so.6 /opt/aarch64-rootfs/usr/lib64/libstdc++.so
 ```
 
+If the target box runs a glibc that is older than the host distro's (handheld
+consoles like EmuELEC/ArkOS often ship one), build against a Debian-based
+chroot carrying that glibc version instead (Debian 12 "bookworm" = glibc
+2.36, Ubuntu 22.04 = 2.35, Debian 11 = 2.31, ...). The cross-compiler stays
+the host's `gcc-c++-aarch64-linux-gnu`:
+
+```console
+$ sudo dnf install debootstrap qemu-user-static
+$ sudo debootstrap --arch=arm64 --foreign bookworm /opt/aarch64-bk12 \
+      http://deb.debian.org/debian
+$ sudo cp /usr/bin/qemu-aarch64-static /opt/aarch64-bk12/usr/bin/
+$ sudo chroot /opt/aarch64-bk12 /debootstrap/debootstrap --second-stage
+$ sudo chroot /opt/aarch64-bk12 bash -c 'apt-get update && apt-get install -y \
+      libc6-dev libstdc++-12-dev zlib1g-dev \
+      libdrm-dev libgbm-dev libudev-dev libasound2-dev'
+```
+
+Debian puts the libc startup objects (`crt1.o`, `crti.o`, `crtn.o`) and the
+`libc.so` linker script in the multiarch directory
+`/usr/lib/aarch64-linux-gnu`, which is outside GNU ld's default sysroot
+search (=`/usr/lib64`, =`/usr/lib`), and `-L` does not apply to bare object
+names like `crt1.o`. Symlink the startup objects into a default-search
+location so the linker can find them:
+
+```console
+$ sudo mkdir -p /opt/aarch64-bk12/usr/lib64
+$ sudo ln -sfv /opt/aarch64-bk12/usr/lib/aarch64-linux-gnu/{crt1.o,Scrt1.o,crti.o,crtn.o} \
+      /opt/aarch64-bk12/usr/lib64/
+```
+
 Build with the toolchain:
 
 ```console
@@ -73,6 +103,12 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
         -DCMAKE_SYSROOT=/opt/aarch64-rootfs \
         -DCMAKE_FIND_ROOT_PATH=/opt/aarch64-rootfs \
         -DCMAKE_PREFIX_PATH=/opt/aarch64-rootfs/usr \
+        -DFALLOUT_RETROARCH=ON ..
+# Debian-based chroot (glibc of the target box)
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+        -DCMAKE_SYSROOT=/opt/aarch64-bk12 \
+        -DCMAKE_FIND_ROOT_PATH=/opt/aarch64-bk12 \
+        -DCMAKE_PREFIX_PATH=/opt/aarch64-bk12/usr \
         -DFALLOUT_RETROARCH=ON ..
 $ make
 ```
@@ -93,6 +129,8 @@ Verify the binary will run on the box:
 $ readelf -d fallout-ce | grep NEEDED        # expect only libm.so.6 + libc.so.6
 $ objdump -T fallout-ce | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -3
 ```
+The `GLIBC_*` maximum must be at or below the glibc version on the target
+box - check it with `ldd --version` on the box.
 
 The second command lists the newest `GLIBC_x.y` symbols the binary
 references; the box's glibc must provide at least those versions. See
