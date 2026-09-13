@@ -52,6 +52,15 @@ if(FALLOUT_RETROARCH)
     target_compile_definitions(${EXECUTABLE_NAME} PUBLIC FALLOUT_RETROARCH)
 endif()
 
+# Command executed after the game exits (via kiosk_exec.cfg, same mechanism
+# that used to hardcode 'retroarch --menu' for FALLOUT_RETROARCH). Empty by
+# default: nothing is forcibly written into kiosk_exec.cfg. When set, the
+# line is written on first run (file missing) exactly like before.
+set(FALLOUT_EXIT_EXEC "" CACHE STRING "Command to run after game exit, written to kiosk_exec.cfg on first run (empty = no exit hook)")
+if(FALLOUT_EXIT_EXEC)
+    target_compile_definitions(${EXECUTABLE_NAME} PUBLIC FALLOUT_EXIT_EXEC="${FALLOUT_EXIT_EXEC}")
+endif()
+
 # Fully static distribution build. FALLOUT_RETROARCH targets standalone
 # TV-boxes running a frontend (EmuELEC/RetroArch/EmulationStation), so the
 # binary should not depend on the target distro's C++ runtime and SDL2.

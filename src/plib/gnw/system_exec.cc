@@ -33,13 +33,14 @@ bool exec_config_init()
     strcpy(exec_config_file_name, EXEC_CONFIG_FILE_NAME);
     config_load(&exec_config, exec_config_file_name, false);
 
-#ifdef FALLOUT_RETROARCH
+#ifdef FALLOUT_EXIT_EXEC
     // Missing on first run — write the default hook for the frontend chain:
-    // RetroArch opens its menu after the game exits (the config executes its
-    // lines on the in-game menu Exit in this variant).
+    // the configured command runs when the game exits (the config executes
+    // its lines on the in-game menu Exit in this variant). When the option
+    // is not set nothing is written here.
     FILE* probe = compat_fopen(exec_config_file_name, "rt");
     if (probe == NULL) {
-        config_set_string(&exec_config, EXEC_CONFIG_EXEC_SECTION, "0", "retroarch --menu");
+        config_set_string(&exec_config, EXEC_CONFIG_EXEC_SECTION, "0", FALLOUT_EXIT_EXEC);
         config_save(&exec_config, exec_config_file_name, false);
     } else {
         fclose(probe);
