@@ -89,5 +89,16 @@ if(EXISTS "${CMAKE_SYSROOT}/usr/include/c++")
                     " -isystem ${CMAKE_SYSROOT}/usr/include/c++/${_ver}/${_cxx_sub}")
             endif()
         endforeach()
+        # Debian/Ubuntu multiarch keeps the arch-specific headers outside the
+        # version dir: /usr/include/<tuple>/c++/<ver> (bits/c++config.h).
+        foreach(_cxx_tuple IN ITEMS
+                "${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+                "${CMAKE_SYSTEM_PROCESSOR}-redhat-linux")
+            if(EXISTS
+               "${CMAKE_SYSROOT}/usr/include/${_cxx_tuple}/c++/${_ver}")
+                string(APPEND CMAKE_CXX_FLAGS
+                    " -isystem ${CMAKE_SYSROOT}/usr/include/${_cxx_tuple}/c++/${_ver}")
+            endif()
+        endforeach()
     endforeach()
 endif()
