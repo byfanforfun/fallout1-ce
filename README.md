@@ -36,13 +36,21 @@ $ sudo apt install libsdl2-2.0-0
 
 ### Linux (aarch64, cross-compilation)
 
-On the host install the cross-compilers and the SDL2 development files for the
-target architecture:
+On the host install the cross-compilers and the development files for the
+target architecture. Debian/Ubuntu:
 
 ```console
 $ sudo dpkg --add-architecture arm64
 $ sudo apt update
-$ sudo apt install crossbuild-essential-arm64 libsdl2-dev:arm64 zlib1g-dev:arm64
+$ sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64
+```
+
+Fedora (the toolchain also needs the static libstdc++, and `glibc-static`
+if using `-DFALLOUT_STATIC_GLIBC=ON`):
+
+```console
+$ sudo dnf install gcc-aarch64-linux-gnu gcc-c++-aarch64-linux-gnu \
+      binutils-aarch64-linux-gnu libstdc++-static glibc-static
 ```
 
 Build with the toolchain:
@@ -54,6 +62,16 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
         -DFALLOUT_RETROARCH=ON ..
 $ make
 ```
+
+The kiosk build (`FALLOUT_RETROARCH=ON`) is statically linked: SDL2
+(compiled from `third_party/sdl2`), adecode, fpattern and the C++ runtime
+(`-static-libstdc++ -static-libgcc`) are embedded, so the only runtime
+dependencies are glibc and the system audio/video libraries, which keeps
+SDL's dlopen-based drivers working. Pass `-DFALLOUT_STATIC_GLIBC=ON` for a
+fully static binary (maximum portability, but SDL drivers that rely on
+dlopen will not load). SDL X11, pipewire and hidapi support are off by
+default in this mode (`-DSDL_X11=ON` etc. re-enable) since the kiosk
+targets headless DRM boxes; gamepads are read through SDL's evdev backend.
 
 Copy the resulting `fallout-ce` to the aarch64 device along with the game
 assets (see [Linux](#linux)).

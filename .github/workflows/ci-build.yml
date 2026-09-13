@@ -216,7 +216,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture arm64
           sudo apt update
-          sudo apt install crossbuild-essential-arm64 libsdl2-dev:arm64 zlib1g-dev:arm64
+          sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64
 
       - name: Cache cmake build
         uses: actions/cache@v4
