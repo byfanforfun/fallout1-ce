@@ -203,6 +203,57 @@ jobs:
           path:  build/fallout-ce
           retention-days: 7
 
+  linux-aarch64:
+    name: Linux (aarch64 + RetroArch)
+
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt update
+          sudo apt install crossbuild-essential-arm64 libsdl2-dev:arm64 zlib1g-dev:arm64
+
+      - name: Cache cmake build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: linux-aarch64-cmake-v1
+
+      - name: Configure
+        run: |
+          cmake \
+            -B build \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+            -D CMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
+            -D CMAKE_PREFIX_PATH=/usr/aarch64-linux-gnu \
+            -D FALLOUT_RETROARCH=ON \
+            # EOL
+
+      - name: Build
+        run: |
+          cmake \
+            --build build \
+            -j $(nproc) \
+            # EOL
+
+      - name: Verify
+        run: |
+          file build/fallout-ce
+          readelf -A build/fallout-ce | grep Tag_CPU_arch
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: fallout-ce-linux-aarch64-retroarch
+          path:  build/fallout-ce
+          retention-days: 7
+
   macos:
     name: macOS
 

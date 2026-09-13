@@ -40,13 +40,15 @@ On the host install the cross-compilers and the SDL2 development files for the
 target architecture:
 
 ```console
-$ sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsdl2-dev:arm64
+$ sudo dpkg --add-architecture arm64
+$ sudo apt update
+$ sudo apt install crossbuild-essential-arm64 libsdl2-dev:arm64 zlib1g-dev:arm64
 ```
 
 Build with the toolchain:
 
 ```console
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/aarch64-linux-gnu.cmake \
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
         -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
         -DCMAKE_PREFIX_PATH=/usr/aarch64-linux-gnu \
         -DFALLOUT_RETROARCH=ON ..
