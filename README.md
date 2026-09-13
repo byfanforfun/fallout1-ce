@@ -41,7 +41,8 @@ Debian/Ubuntu: add the arm64 architecture and install the cross-compilers:
 ```console
 $ sudo dpkg --add-architecture arm64
 $ sudo apt update
-$ sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64
+$ sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64 \
+      libx11-dev:arm64 libxext-dev:arm64
 ```
 
 Fedora: the RPM cross packages (`gcc-c++-aarch64-linux-gnu`) ship only the
@@ -52,7 +53,8 @@ aarch64 sysroot and install the runtime/dev packages into it (add
 ```console
 $ sudo dnf install qemu-user-static
 $ sudo dnf --installroot=/opt/aarch64-rootfs --releasever=43 --forcearch=aarch64 \
-      install glibc-devel glibc-static libstdc++-devel libstdc++-static
+      install glibc-devel glibc-static libstdc++-devel libstdc++-static \
+      libX11-devel libXext-devel
 $ sudo cp -av /opt/aarch64-rootfs/usr/lib/gcc/aarch64-redhat-linux/15/libstdc++.a \
               /opt/aarch64-rootfs/usr/lib64/
 $ sudo ln -sfv libstdc++.so.6 /opt/aarch64-rootfs/usr/lib64/libstdc++.so
