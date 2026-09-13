@@ -26,6 +26,7 @@ set(CMAKE_CXX_EXTENSIONS NO)
 
 option(ASAN "Enable address sanitizer" OFF)
 option(UBSAN "Enable undefined behaviour sanitizer" OFF)
+option(FALLOUT_RETROARCH "Enable RetroArch compatibility layer (kiosk)" OFF)
 
 if (ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
@@ -40,6 +41,10 @@ endif()
 if(UBSAN)
     target_compile_options(${EXECUTABLE_NAME} PUBLIC "-fsanitize=undefined")
     target_link_options(${EXECUTABLE_NAME} PUBLIC "-fsanitize=undefined")
+endif()
+
+if(FALLOUT_RETROARCH)
+    target_compile_definitions(${EXECUTABLE_NAME} PUBLIC FALLOUT_RETROARCH)
 endif()
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC src)

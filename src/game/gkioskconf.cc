@@ -40,6 +40,10 @@ int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
 int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
 int gconfig_debug_spawn_drugs;
 
+int gconfig_launcher_enabled;
+int gconfig_launcher_return_on_exit;
+char* gconfig_launcher_name;
+
 bool gkioskconf_init()
 {
     char* sep;
@@ -71,6 +75,10 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, 50);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, 5);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, 5);
+
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, 1);
+    config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, "");
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, 5);
 
@@ -112,6 +120,10 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, &gconfig_random_containers_base_chance);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, &gconfig_random_containers_luck_factor);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, &gconfig_random_containers_barter_factor);
+
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, &gconfig_launcher_enabled);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, &gconfig_launcher_return_on_exit);
+    config_get_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, &gconfig_launcher_name);
 
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, &gconfig_quality_levels);
 

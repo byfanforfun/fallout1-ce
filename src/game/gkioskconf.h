@@ -40,6 +40,12 @@ namespace fallout {
 #define KIOSK_CONFIG_DEBUG_SPAWN_DRUGS "debug_spawn_drugs"
 #define MAX_QUALITY_LEVELS 10
 
+// Compatibility layer with Emustation/EmulationStation/ES-DE frontends, see
+// RETROARCH_EMUSTATION_RESEARCH.md.
+#define KIOSK_CONFIG_LAUNCHER_ENABLED "launcher_enabled"
+#define KIOSK_CONFIG_LAUNCHER_NAME "launcher_name"
+#define KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT "launcher_return_on_exit"
+
 extern Config kiosk_config;
 extern int gconfig_exp_start;
 extern int gconfig_caps_start;
@@ -62,6 +68,10 @@ extern int gconfig_quality_npc_hp[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_debug_spawn_drugs;
+
+extern int gconfig_launcher_enabled;
+extern int gconfig_launcher_return_on_exit;
+extern char* gconfig_launcher_name;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

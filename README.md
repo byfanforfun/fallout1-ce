@@ -134,6 +134,10 @@ inact2=30
 inact3=20
 ;allow exit from game :)
 game_exit=1
+;run under a game frontend (see "Frontend integration"); allows returning to it
+launcher_enabled=0
+launcher_name=esde
+launcher_return_on_exit=1
 ;allow player interact with options menu
 disable_options=0
 ;allow player to save/load game
@@ -254,6 +258,20 @@ Example:
 ```
 
 Max 8 lines
+
+Frontend integration (RetroArch / Emustation)
+
+The kiosk build can run as an ordinary "game" of a game frontend
+(EmulationStation/ES-DE/Emustation family). The frontend starts the game and
+regains control when the game process exits.
+
+- Build with the compatibility layer: `-DFALLOUT_RETROARCH=ON`.
+- Launch contract: `fallout-ce --launcher=<name>` (e.g. `esde`, `emustation`).
+  It records the frontend name in `launcher_name` and enables the launcher mode.
+- In launcher mode, the "Exit" item of the main menu always returns to the
+  frontend (clean process exit) as long as `launcher_return_on_exit=1`, even if
+  `game_exit=0`. Keep `launcher_enabled=1` in `kiosk.cfg` to run frontend-style
+  without passing the command line flag.
 
 Key rebind config `fallout_keys.cfg`
 ```
