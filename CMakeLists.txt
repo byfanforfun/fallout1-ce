@@ -91,6 +91,15 @@ if(FALLOUT_STATIC_BUILD)
             "-static-libgcc;-static-libstdc++")
         if(FALLOUT_STATIC_GLIBC)
             target_link_options(${EXECUTABLE_NAME} PUBLIC "-static")
+            # dlopen() cannot load DSOs in a fully static binary, so every SDL
+            # driver that matters must be linked at link time instead of being
+            # dlopen'ed, and the pure dlopen-based backends are dropped. This
+            # removes the otherwise inevitable "Using 'dlopen' in statically
+            # linked applications..." linker warning at the cost of real
+            # audio/video support. Existing command-line -D values win.
+            set(SDL_X11_SHARED OFF CACHE BOOL "Statically link SDL's X11 driver (fully static build)")
+            set(SDL_PULSEAUDIO OFF CACHE BOOL "Build SDL pulseaudio support (dlopen, unusable fully static)")
+            set(SDL_JACK OFF CACHE BOOL "Build SDL jack support (dlopen, unusable fully static)")
         endif()
     endif()
 endif()

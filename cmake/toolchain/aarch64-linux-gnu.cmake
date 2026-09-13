@@ -32,7 +32,26 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib64/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+# Use the HOST pkg-config binary: a pkg-config found inside the sysroot is an
+# aarch64 ELF that cannot execute on the build host (qemu lacks the target
+# dynamic loader), which silently breaks every pkg-config module check. Its
+# search paths are redirected below to the target .pc files. find_program is
+# avoided here: it still resolves into the sysroot via the root search.
+set(_fallout1_host_pkg_config "")
+foreach(_pc_candidate IN ITEMS
+        /usr/bin/pkg-config /usr/local/bin/pkg-config /bin/pkg-config
+        /usr/bin/pkgconf /usr/local/bin/pkgconf)
+    if(EXISTS "${_pc_candidate}")
+        set(_fallout1_host_pkg_config "${_pc_candidate}")
+        break()
+    endif()
+endforeach()
+if(_fallout1_host_pkg_config)
+    set(PKG_CONFIG_EXECUTABLE "${_fallout1_host_pkg_config}"
+        CACHE FILEPATH "Host pkg-config (a sysroot one cannot run on the host)" FORCE)
+    set(ENV{PKG_CONFIG_EXECUTABLE} "${_fallout1_host_pkg_config}")
+endif()
+set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib64/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig:${CMAKE_SYSROOT}/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/pkgconfig")
 set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
 
 # Target sysroot. The aarch64-linux-gnu-gcc driver defaults to an empty
@@ -80,9 +99,25 @@ foreach(_candidate_sysroot IN LISTS _sysroot_link_dirs)
     string(APPEND CMAKE_C_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
     string(APPEND CMAKE_CXX_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
     string(APPEND CMAKE_EXE_LINKER_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
+    # check_c_source_compiles and similar try_compile macros use only
+    # CMAKE_REQUIRED_FLAGS for linking and do NOT inherit CMAKE_C_FLAGS.
+    string(APPEND CMAKE_REQUIRED_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
     if(EXISTS "${CMAKE_SYSROOT}/${_candidate_sysroot}")
         list(APPEND CMAKE_SYSTEM_LIBRARY_PATH
             "${CMAKE_SYSROOT}/${_candidate_sysroot}")
+    endif()
+endforeach()
+
+# Debian/Ubuntu multiarch keeps the arch-specific glibc headers (bits/
+# wordsize.h, asm/...) in /usr/include/<tuple>. The Fedora cross driver does
+# not add that directory, so expose it (harmless where it does not exist).
+foreach(_arch_inc IN ITEMS
+        "usr/include/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+        "usr/include/${CMAKE_SYSTEM_PROCESSOR}-redhat-linux")
+    if(EXISTS "${CMAKE_SYSROOT}/${_arch_inc}")
+        string(APPEND CMAKE_C_FLAGS " -isystem ${CMAKE_SYSROOT}/${_arch_inc}")
+        string(APPEND CMAKE_CXX_FLAGS " -isystem ${CMAKE_SYSROOT}/${_arch_inc}")
+        string(APPEND CMAKE_REQUIRED_FLAGS " -isystem ${CMAKE_SYSROOT}/${_arch_inc}")
     endif()
 endforeach()
 
