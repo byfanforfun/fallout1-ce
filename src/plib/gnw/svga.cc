@@ -88,6 +88,23 @@ bool svga_init(VideoOptions* video_options)
         return false;
     }
 
+    // Force an OpenGL ES context. SDL's default GL profile is desktop
+    // OpenGL (SDL_VIDEO_OPENGL wins over SDL_VIDEO_OPENGL_ES2 at compile
+    // time), but the DRM targets are GLES-only: on panfrost (Mali)
+    // SDL_EGL_ChooseConfig then requests EGL_OPENGL_BIT, finds no config and
+    // fails with "Can't window GBM/EGL surfaces on window creation.", while
+    // the non-ES profile also makes SDL bootstrap EGL through libGL.so.1
+    // (gl4es on EmuELEC). Pinning ES 2.0 selects a valid GLES config and
+    // routes the EGL/GLES library loading to Mesa. Only the KMSDRM driver
+    // (headless DRM targets) gets this; desktop GLX drivers do not support
+    // an ES profile.
+    const char* currentVideoDriver = SDL_GetCurrentVideoDriver();
+    if (currentVideoDriver != NULL && SDL_strcasecmp(currentVideoDriver, "kmsdrm") == 0) {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    }
+
     Uint32 windowFlags = SDL_WINDOW_ALLOW_HIGHDPI;
 
     if (video_options->fullscreen) {
