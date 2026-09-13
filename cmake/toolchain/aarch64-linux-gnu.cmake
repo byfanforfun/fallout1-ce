@@ -32,3 +32,30 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+# Target sysroot. The aarch64-linux-gnu-gcc driver defaults to an empty
+# /usr/aarch64-linux-gnu/sys-root (stub shipped by the Fedora binutils
+# package), while the actual target runtime lives elsewhere, so locate it
+# explicitly. Fedora's cross sysroot packages install the runtime under
+# /usr/aarch64-redhat-linux/sys-root/<releasever>; Debian/Ubuntu multiarch
+# uses /usr/aarch64-linux-gnu directly. A manually supplied -DCMAKE_SYSROOT
+# (e.g. a Fedora aarch64 installroot) always wins.
+if(NOT CMAKE_SYSROOT)
+    foreach(candidate IN ITEMS
+            "/usr/aarch64-redhat-linux/sys-root/fc43"
+            "/usr/aarch64-linux-gnu")
+        if(EXISTS "${candidate}/usr/lib64/crt1.o"
+           OR EXISTS "${candidate}/usr/lib/crt1.o")
+            set(CMAKE_SYSROOT "${candidate}")
+            break()
+        endif()
+    endforeach()
+endif()
+
+if(CMAKE_SYSROOT)
+    message(STATUS "aarch64 sysroot: ${CMAKE_SYSROOT}")
+else()
+    message(FATAL_ERROR "aarch64 sysroot not found; install "
+        "sysroot-aarch64-fc43-glibc (Fedora) or libc6-dev-arm64-cross "
+        "(Debian/Ubuntu) or pass -DCMAKE_SYSROOT=...")
+endif()
