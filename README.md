@@ -34,6 +34,28 @@ $ sudo apt install libsdl2-2.0-0
 
 - Run `./fallout-ce`.
 
+### Linux (aarch64, cross-compilation)
+
+On the host install the cross-compilers and the SDL2 development files for the
+target architecture:
+
+```console
+$ sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsdl2-dev:arm64
+```
+
+Build with the toolchain:
+
+```console
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/aarch64-linux-gnu.cmake \
+        -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
+        -DCMAKE_PREFIX_PATH=/usr/aarch64-linux-gnu \
+        -DFALLOUT_RETROARCH=ON ..
+$ make
+```
+
+Copy the resulting `fallout-ce` to the aarch64 device along with the game
+assets (see [Linux](#linux)).
+
 ### macOS
 
 > **NOTE**: macOS 10.11 (El Capitan) or higher is required. Runs natively on Intel-based Macs and Apple Silicon.
