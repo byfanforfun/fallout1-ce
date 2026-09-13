@@ -36,8 +36,7 @@ $ sudo apt install libsdl2-2.0-0
 
 ### Linux (aarch64, cross-compilation)
 
-On the host install the cross-compilers and the development files for the
-target architecture. Debian/Ubuntu:
+Debian/Ubuntu: add the arm64 architecture and install the cross-compilers:
 
 ```console
 $ sudo dpkg --add-architecture arm64
@@ -45,36 +44,58 @@ $ sudo apt update
 $ sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64
 ```
 
-Fedora (the toolchain also needs the static libstdc++, and `glibc-static`
-if using `-DFALLOUT_STATIC_GLIBC=ON`):
+Fedora: the RPM cross packages (`gcc-c++-aarch64-linux-gnu`) ship only the
+compiler drivers - no target libstdc++ and no C++ headers - so build an
+aarch64 sysroot and install the runtime/dev packages into it (add
+`glibc-static` for a fully static binary):
 
 ```console
-$ sudo dnf install gcc-aarch64-linux-gnu gcc-c++-aarch64-linux-gnu \
-      binutils-aarch64-linux-gnu libstdc++-static glibc-static
+$ sudo dnf install qemu-user-static
+$ sudo dnf --installroot=/opt/aarch64-rootfs --releasever=43 --forcearch=aarch64 \
+      install glibc-devel glibc-static libstdc++-devel libstdc++-static
+$ sudo cp -av /opt/aarch64-rootfs/usr/lib/gcc/aarch64-redhat-linux/15/libstdc++.a \
+              /opt/aarch64-rootfs/usr/lib64/
+$ sudo ln -sfv libstdc++.so.6 /opt/aarch64-rootfs/usr/lib64/libstdc++.so
 ```
 
 Build with the toolchain:
 
 ```console
+# Debian/Ubuntu (multiarch tree) or Fedora (sysroot)
 $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
         -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
-        -DCMAKE_PREFIX_PATH=/usr/aarch64-linux-gnu \
+        -DCMAKE_SYSROOT=/usr/aarch64-linux-gnu \
+        -DFALLOUT_RETROARCH=ON ..
+# Fedora
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+        -DCMAKE_SYSROOT=/opt/aarch64-rootfs \
+        -DCMAKE_FIND_ROOT_PATH=/opt/aarch64-rootfs \
+        -DCMAKE_PREFIX_PATH=/opt/aarch64-rootfs/usr \
         -DFALLOUT_RETROARCH=ON ..
 $ make
 ```
 
-The kiosk build (`FALLOUT_RETROARCH=ON`) is statically linked: SDL2
-(compiled from `third_party/sdl2`), adecode, fpattern and the C++ runtime
+The kiosk build (`FALLOUT_RETROARCH=ON`) links statically: SDL2 (compiled
+from `third_party/sdl2`), adecode, fpattern and the C++ runtime
 (`-static-libstdc++ -static-libgcc`) are embedded, so the only runtime
-dependencies are glibc and the system audio/video libraries, which keeps
-SDL's dlopen-based drivers working. Pass `-DFALLOUT_STATIC_GLIBC=ON` for a
-fully static binary (maximum portability, but SDL drivers that rely on
-dlopen will not load). SDL X11, pipewire and hidapi support are off by
-default in this mode (`-DSDL_X11=ON` etc. re-enable) since the kiosk
-targets headless DRM boxes; gamepads are read through SDL's evdev backend.
+dependencies are glibc and the system audio/video libraries - SDL's dlopen
+drivers keep working. Pass `-DFALLOUT_STATIC_GLIBC=ON` for a fully static
+binary (maximum portability, but SDL drivers that rely on dlopen will not
+load). SDL X11, pipewire, hidapi and haptic support are off by default in
+this mode (`-DSDL_X11=ON` etc. re-enable) since the kiosk targets headless
+DRM boxes; gamepads are read through SDL's evdev backend.
 
-Copy the resulting `fallout-ce` to the aarch64 device along with the game
-assets (see [Linux](#linux)).
+Verify the binary will run on the box:
+
+```console
+$ readelf -d fallout-ce | grep NEEDED        # expect only libm.so.6 + libc.so.6
+$ objdump -T fallout-ce | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -3
+```
+
+The second command lists the newest `GLIBC_x.y` symbols the binary
+references; the box's glibc must provide at least those versions. See
+[Deploying on the target](#deploying-on-the-target-emuelec--retroarch--emulationstation)
+for getting it onto the box.
 
 ### macOS
 
@@ -326,6 +347,37 @@ regains control when the game process exits.
   the player confirms "Exit" in the in-game menu (instead of on character
   death). Use them to chain the next content or hand control further on the
   way back to the frontend.
+
+Deploying on the target (EmuELEC / RetroArch / EmulationStation)
+
+The kiosk build is an ordinary native executable, not a libretro core, and
+the frontends start it as an external process:
+
+- Copy the binary and the game assets to the box, for example under
+  `/storage/roms/fallout1/` on EmuELEC: `fallout-ce` plus `master.dat`,
+  `critter.dat`, `data/` (from a Fallout install or
+  [fallout1-kiosk-assets](https://github.com/byfanforfun/fallout1-kiosk-assets))
+  and the config files `fallout.cfg`, `f1_res.ini`, `kiosk.cfg`,
+  `gamepad.cfg`. Run the binary once from a shell so the default config
+  files are generated.
+- With launcher mode (`launcher_enabled=1`, `launcher_name=<frontend>`,
+  `launcher_return_on_exit=1` in `kiosk.cfg`) the process exits cleanly when
+  the player picks "Exit" in the main menu, and control returns to the
+  frontend.
+- EmulationStation / ES-DE / Emustation: register Fallout as a system that
+  launches the binary, e.g. in `es_systems.cfg`:
+  `<command>fallout-ce --launcher=esde</command>`.
+- RetroArch: RetroArch runs libretro cores and fallout-ce is not one, so it
+  cannot be started as a core. RetroArch either sits behind the frontend
+  (EmuELEC's EmulationStation starts the game) or is used as the next-menu
+  the game chains into on exit: the generated `kiosk_exec.cfg`
+  (`0=retroarch --menu`) hands control to RetroArch's menu when the game
+  exits.
+- Display: the default build has SDL X11 disabled. If the box runs its
+  frontend under Xorg (typical for EmuELEC/ES-DE), rebuild with
+  `-DSDL_X11=ON` and install the static X11 development libraries into the
+  sysroot, otherwise the game has no usable video driver. Set `WINDOWED=0`
+  in `f1_res.ini` for fullscreen.
 
 Gamepad layout (`gamepad.cfg`)
 
