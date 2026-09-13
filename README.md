@@ -295,6 +295,53 @@ regains control when the game process exits.
   `game_exit=0`. Keep `launcher_enabled=1` in `kiosk.cfg` to run frontend-style
   without passing the command line flag.
 
+Gamepad layout (`gamepad.cfg`)
+
+The gamepad maps buttons and axes to the same game keys the keyboard uses. The
+config file is written with the defaults on first run and can be edited to
+rebind. Keys use the same names as `fallout_keys.cfg` values (`return`, `esc`,
+`i`, `tab`, `home`, `f6`, `f7`, ...) or `mouse` for mouse actions.
+
+```
+[gamepad]
+btn_dpad_up=i        ; Inventory
+btn_dpad_down=tab    ; Automap
+btn_dpad_left=c      ; Character
+btn_dpad_right=p     ; PIP-Boy
+btn_a=return         ; confirm / use in arrow mode
+btn_b=space          ; interact with the current selection
+btn_x=s              ; Skilldex
+btn_y=esc            ; back / options menu (ESC)
+btn_l1=n             ; toggle item mode (hands/use)
+btn_r1=a             ; combat mode
+btn_l3=home          ; center view on the player
+btn_r3=mouse         ; mouse button: click menus / hold = actions menu
+btn_start=f6         ; quick save
+btn_back=f7          ; quick load
+btn_guide=f12        ; screenshot
+btn_l2=b             ; switch active hand
+btn_r2=m             ; toggle 3D mouse mode
+
+; left stick moves the player (arrow keys)
+axis_leftx=left,right
+axis_lefty=up,down
+; right stick moves the mouse pointer
+axis_rightx=mouse
+axis_righty=mouse
+
+mouse_speed=12       ; pointer speed in pixels per frame at full deflection
+invert_leftx=0       ; invert analog axes (0/1)
+invert_lefty=0
+invert_rightx=0
+invert_righty=0
+invert_lefttrigger=0
+invert_righttrigger=0
+```
+
+While the in-game actions (context) menu is open the right stick pointer moves
+5x slower for precise item selection. The game fully owns the gamepad while it
+runs; when you quit back to the frontend, the frontend takes over again.
+
 Key rebind config `fallout_keys.cfg`
 ```
 [main]
