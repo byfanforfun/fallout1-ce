@@ -65,16 +65,22 @@ endif()
 # libc startup objects (crt1.o, crti.o, crtn.o) and the libc.so linker script
 # live in the multiarch directory (/usr/lib/aarch64-linux-gnu) on Debian and
 # under /usr/lib64 on Fedora. The compiler driver only searches its own
-# Fedora paths, so the linker must be told about the sysroot libdirs.
-foreach(_candidate_sysroot IN ITEMS
-        "usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
-        "lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
-        "usr/lib/${CMAKE_SYSTEM_PROCESSOR}-redhat-linux"
-        "usr/lib64"
-        "usr/lib")
+# Fedora paths, so the linker must be told about the sysroot libdirs. The -L
+# goes into the language flags as well: try_compile tests (link-time checks
+# at configure) do not receive CMAKE_EXE_LINKER_FLAGS, and gcc forwards -L to
+# the real link line anyway.
+# Missing directories are harmless for -L, so no existence checks here.
+set(_sysroot_link_dirs
+    "usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+    "lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+    "usr/lib/${CMAKE_SYSTEM_PROCESSOR}-redhat-linux"
+    "usr/lib64"
+    "usr/lib")
+foreach(_candidate_sysroot IN LISTS _sysroot_link_dirs)
+    string(APPEND CMAKE_C_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
+    string(APPEND CMAKE_CXX_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
     if(EXISTS "${CMAKE_SYSROOT}/${_candidate_sysroot}")
-        string(APPEND CMAKE_EXE_LINKER_FLAGS
-            " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
         list(APPEND CMAKE_SYSTEM_LIBRARY_PATH
             "${CMAKE_SYSROOT}/${_candidate_sysroot}")
     endif()
