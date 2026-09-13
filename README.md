@@ -279,6 +279,14 @@ Example:
 0=touch /tmp/approach-apocalipse
 ```
 
+With `FALLOUT_RETROARCH` the file is generated on the first run if missing:
+```
+[exec]
+0=retroarch --menu
+```
+so RetroArch opens its menu on the way back to the frontend. The file you
+provide is never overwritten.
+
 Max 8 lines
 
 Frontend integration (RetroArch / Emustation)
