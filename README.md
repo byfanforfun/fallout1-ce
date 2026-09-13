@@ -90,6 +90,24 @@ $ sudo ln -sfv /opt/aarch64-bk12/usr/lib/aarch64-linux-gnu/{crt1.o,Scrt1.o,crti.
       /opt/aarch64-bk12/usr/lib64/
 ```
 
+Debian also ships no `libpthread.so` dev symlink (only `libpthread.so.0` +
+`libpthread.a`), so `-lpthread`/SDL's `HAVE_PTHREADS` check fails at link
+time, and the static `libstdc++.a` is not searched by default. Add both to
+the same default-search directory:
+
+```console
+$ sudo ln -sfv libpthread.so.0 /opt/aarch64-bk12/usr/lib64/libpthread.so
+$ sudo ln -sfv /opt/aarch64-bk12/usr/lib/gcc/aarch64-linux-gnu/12/libstdc++.a \
+      /opt/aarch64-bk12/usr/lib64/libstdc++.a
+```
+
+The toolchain handles the rest of the multiarch layout: the arch-specific
+headers (`/usr/include/aarch64-linux-gnu`, where `bits/wordsize.h` lives)
+are exposed via `-isystem`, the multiarch libdirs are added to the linker
+search and to `CMAKE_REQUIRED_FLAGS` (needed by `check_c_source_compiles`
+probes), and `libgcc`/unwinding is intentionally pulled from the *host*
+cross-compiler rather than the Debian gcc dir to keep `_Unwind_*` symbols.
+
 Build with the toolchain:
 
 ```console
@@ -126,7 +144,7 @@ DRM boxes; gamepads are read through SDL's evdev backend.
 Verify the binary will run on the box:
 
 ```console
-$ readelf -d fallout-ce | grep NEEDED        # expect only libm.so.6 + libc.so.6
+$ readelf -d fallout-ce | grep NEEDED        # expect only libc/libpthread/ld
 $ objdump -T fallout-ce | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -3
 ```
 The `GLIBC_*` maximum must be at or below the glibc version on the target
