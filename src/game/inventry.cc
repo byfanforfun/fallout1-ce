@@ -18,6 +18,7 @@
 #include "game/game.h"
 #include "game/gdialog.h"
 #include "game/gmouse.h"
+#include "game/gkioskconf.h"
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
@@ -178,6 +179,29 @@ namespace fallout {
 #define INVENTORY_NORMAL_WINDOW_PC_ROTATION_DELAY (1000U / ROTATION_COUNT)
 
 #define INVENTORY_MAX_MOVE_ITEMS (9999)
+
+// Virtual keyboard shown at the bottom of the move items / set timer modal
+// window when kiosk.cfg show_virt_kb enables it. The keyboard background is a
+// dedicated FRM (MOVE_TIMER_VIRTUAL_KB_WIDTH x MOVE_TIMER_VIRTUAL_KB_HEIGHT);
+// digit rows 1-5 and 6-0 are laid out on it starting at
+// MOVE_TIMER_VIRTUAL_KB_COL_START_X and stepping by MOVE_TIMER_VIRTUAL_KB_STEP,
+// while the DELETE key is a tall button on the image's right edge. Digits are
+// rendered with BIGNUM.frm (fid 170), the same glyphs as the quantity display.
+#define MOVE_TIMER_VIRTUAL_KB_WIDTH 259
+#define MOVE_TIMER_VIRTUAL_KB_HEIGHT 94
+// TODO: placeholder FRM id, real one is TBD by the designer.
+#define MOVE_TIMER_VIRTUAL_KB_FRM 309
+#define MOVE_TIMER_VIRTUAL_KB_COL_START_X 30
+#define MOVE_TIMER_VIRTUAL_KB_STEP 40
+#define MOVE_TIMER_VIRTUAL_KB_ROW1_CENTER_Y 36
+#define MOVE_TIMER_VIRTUAL_KB_ROW2_CENTER_Y 70
+#define MOVE_TIMER_VIRTUAL_KB_DELETE_ULX 215
+#define MOVE_TIMER_VIRTUAL_KB_DELETE_ULY 22
+#define MOVE_TIMER_VIRTUAL_KB_DELETE_LRX 236
+#define MOVE_TIMER_VIRTUAL_KB_DELETE_LRY 85
+#define MOVE_TIMER_VIRTUAL_KB_DIGIT_COUNT 5
+#define MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_WIDTH 14
+#define MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_HEIGHT 24
 
 typedef void(InventoryPrintItemDescriptionHandler)(char* string);
 
@@ -5232,7 +5256,7 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
             }
         }
 
-        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
+        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS || inventoryWindowType == INVENTORY_WINDOW_TYPE_SET_TIMER) {
             if (keyCode >= KEY_0 && keyCode <= KEY_9) {
                 int number = keyCode - KEY_0;
                 if (!numbersEntered) {
@@ -5264,6 +5288,84 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
     exit_move_timer_win(inventoryWindowType);
 
     return value;
+}
+
+// Draws the virtual keyboard at the bottom of the move items / set timer
+// window: the background FRM (or a plain stub until it is provided) plus the
+// 1-5 / 6-0 digit glyphs rendered with BIGNUM.frm at the mapped cell centers.
+static void move_timer_draw_virtual_kb(unsigned char* windowBuffer, int windowWidth, int windowHeight)
+{
+    const int kbX = 0;
+    const int kbY = windowHeight - MOVE_TIMER_VIRTUAL_KB_HEIGHT;
+
+    // Background. Until the real FRM is provided the keyboard is drawn as a
+    // plain box so the key geometry is still testable.
+    CacheEntry* backgroundHandle;
+    int backgroundFid = art_id(OBJ_TYPE_INTERFACE, MOVE_TIMER_VIRTUAL_KB_FRM, 0, 0, 0);
+    unsigned char* backgroundData = art_ptr_lock_data(backgroundFid, 0, 0, &backgroundHandle);
+    if (backgroundData != NULL) {
+        buf_to_buf(backgroundData, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, MOVE_TIMER_VIRTUAL_KB_WIDTH, windowBuffer + kbY * windowWidth + kbX, windowWidth);
+        art_ptr_unlock(backgroundHandle);
+    } else {
+        buf_fill(windowBuffer + kbY * windowWidth + kbX, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, windowWidth, 84);
+    }
+
+    // Digits from BIGNUM.frm.
+    CacheEntry* digitHandle;
+    int digitFid = art_id(OBJ_TYPE_INTERFACE, 170, 0, 0, 0);
+    unsigned char* digitData = art_ptr_lock_data(digitFid, 0, 0, &digitHandle);
+    if (digitData == NULL) {
+        return;
+    }
+
+    const int rowCenterY[2] = {
+        MOVE_TIMER_VIRTUAL_KB_ROW1_CENTER_Y,
+        MOVE_TIMER_VIRTUAL_KB_ROW2_CENTER_Y,
+    };
+    for (int row = 0; row < 2; row++) {
+        for (int index = 0; index < MOVE_TIMER_VIRTUAL_KB_DIGIT_COUNT; index++) {
+            int digit = row == 0 ? index + 1 : (index < 4 ? index + 6 : 0);
+            int centerX = MOVE_TIMER_VIRTUAL_KB_COL_START_X + index * MOVE_TIMER_VIRTUAL_KB_STEP;
+            unsigned char* src = digitData + 14 * digit;
+            buf_to_buf(src, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_WIDTH, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_HEIGHT, 336, windowBuffer + windowWidth * (kbY + rowCenterY[row] - 12) + (kbX + centerX - 7), windowWidth);
+        }
+    }
+
+    art_ptr_unlock(digitHandle);
+}
+
+// Registers the invisible virtual keyboard buttons on the move items / set
+// timer window. Digit keys append their value (KEY_0..KEY_9), the DELETE key
+// erases the last digit (KEY_BACKSPACE). They are registered after the
+// original buttons, so they sit at the head of the window's button list and
+// win clicks in the overlap with the All/Done/Cancel controls hidden below
+// the keyboard image.
+static void move_timer_register_virtual_kb(int windowHeight)
+{
+    const int kbX = 0;
+    const int kbY = windowHeight - MOVE_TIMER_VIRTUAL_KB_HEIGHT;
+
+    for (int row = 0; row < 2; row++) {
+        int centerY = row == 0 ? MOVE_TIMER_VIRTUAL_KB_ROW1_CENTER_Y : MOVE_TIMER_VIRTUAL_KB_ROW2_CENTER_Y;
+        for (int index = 0; index < MOVE_TIMER_VIRTUAL_KB_DIGIT_COUNT; index++) {
+            int digit = row == 0 ? index + 1 : (index < 4 ? index + 6 : 0);
+            int centerX = MOVE_TIMER_VIRTUAL_KB_COL_START_X + index * MOVE_TIMER_VIRTUAL_KB_STEP;
+            int btn = win_register_button(mt_wid, kbX + centerX - 18, kbY + centerY - 15, 36, 30, -1, -1, KEY_0 + digit, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            if (btn != -1) {
+                win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+            }
+        }
+    }
+
+    int btn = win_register_button(mt_wid,
+        kbX + MOVE_TIMER_VIRTUAL_KB_DELETE_ULX,
+        kbY + MOVE_TIMER_VIRTUAL_KB_DELETE_ULY,
+        MOVE_TIMER_VIRTUAL_KB_DELETE_LRX - MOVE_TIMER_VIRTUAL_KB_DELETE_ULX + 1,
+        MOVE_TIMER_VIRTUAL_KB_DELETE_LRY - MOVE_TIMER_VIRTUAL_KB_DELETE_ULY + 1,
+        -1, -1, KEY_BACKSPACE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+    if (btn != -1) {
+        win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+    }
 }
 
 // Creates move items/set timer interface.
@@ -5413,6 +5515,11 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
                 }
             }
         }
+    }
+
+    if (gconfig_show_virtual_keyboard != 0) {
+        move_timer_draw_virtual_kb(win_get_buf(mt_wid), win_width(mt_wid), win_height(mt_wid));
+        move_timer_register_virtual_kb(win_height(mt_wid));
     }
 
     win_draw(mt_wid);

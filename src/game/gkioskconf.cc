@@ -26,6 +26,7 @@ int gconfig_dialog_exit_0_allowed;
 int gconfig_game_exit_allowed;
 int gconfig_screensaver_enabled;
 int gconfig_screensaver_timeout;
+int gconfig_show_virtual_keyboard;
 int gconfig_random_locations;
 int gconfig_random_containers;
 int gconfig_random_containers_base_chance;
@@ -70,6 +71,7 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, 1);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, 120);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SHOW_VIRTUAL_KB, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, 50);
@@ -115,6 +117,7 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_GAME_EXIT, &gconfig_game_exit_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, &gconfig_screensaver_enabled);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, &gconfig_screensaver_timeout);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SHOW_VIRTUAL_KB, &gconfig_show_virtual_keyboard);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, &gconfig_random_locations);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, &gconfig_random_containers);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, &gconfig_random_containers_base_chance);
