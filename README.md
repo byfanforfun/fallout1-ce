@@ -382,12 +382,14 @@ Example:
 0=touch /tmp/approach-apocalipse
 ```
 
-With `FALLOUT_RETROARCH` the file is generated on the first run if missing:
+When the build is configured with `-DFALLOUT_EXIT_EXEC="<command>"` the file is
+generated on the first run if missing:
 ```
 [exec]
-0=retroarch --menu
+0=<command>
 ```
-so RetroArch opens its menu on the way back to the frontend. The file you
+so the command runs on the way back to the frontend. The option is **empty by
+default**, so nothing is forcibly written into `kiosk_exec.cfg`. The file you
 provide is never overwritten.
 
 Max 8 lines
@@ -405,6 +407,10 @@ regains control when the game process exits.
   frontend (clean process exit) as long as `launcher_return_on_exit=1`, even if
   `game_exit=0`. Keep `launcher_enabled=1` in `kiosk.cfg` to run frontend-style
   without passing the command line flag.
+- With `-DFALLOUT_EXIT_EXEC="<command>"`, a default `kiosk_exec.cfg` with
+  `0=<command>` is written on first run (the write is the only thing controlled
+  by the option; exec on exit itself is part of the kiosk build). Leave it
+  unset to avoid forcing any exec line.
 - With `FALLOUT_RETROARCH`, the commands of `kiosk_exec.cfg` are executed when
   the player confirms "Exit" in the in-game menu (instead of on character
   death). Use them to chain the next content or hand control further on the
@@ -432,9 +438,9 @@ the frontends start it as an external process:
 - RetroArch: RetroArch runs libretro cores and fallout-ce is not one, so it
   cannot be started as a core. RetroArch either sits behind the frontend
   (EmuELEC's EmulationStation starts the game) or is used as the next-menu
-  the game chains into on exit: the generated `kiosk_exec.cfg`
-  (`0=retroarch --menu`) hands control to RetroArch's menu when the game
-  exits.
+  the game chains into on exit: give the build
+  `-DFALLOUT_EXIT_EXEC="retroarch --menu"` and the generated `kiosk_exec.cfg`
+  hands control to RetroArch's menu when the game exits.
 - Display: the default build has SDL X11 disabled. If the box runs its
   frontend under Xorg (typical for EmuELEC/ES-DE), rebuild with
   `-DSDL_X11=ON` and install the static X11 development libraries into the
