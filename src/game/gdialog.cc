@@ -2778,7 +2778,8 @@ static int talk_to_create_barter_win()
         return -1;
     }
 
-    // TRADE
+    // TRADE. The offer is handled on KEY_RETURN (barter_inventory), matching
+    // the gamepad A = confirm binding; 'm' is the gamepad cursor toggle.
     dialogue_bids[0] = win_register_button(dialogueWindow,
         41,
         163,
@@ -2787,7 +2788,7 @@ static int talk_to_create_barter_win()
         -1,
         -1,
         -1,
-        KEY_LOWERCASE_M,
+        KEY_RETURN,
         normal,
         pressed,
         0,
