@@ -209,6 +209,7 @@ typedef struct InventoryCursorData {
 
 static int inventry_msg_load();
 static int inventry_msg_unload();
+static void inven_toggle_cursor();
 static void display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool moving_item, int selected_quantity);
 static void inven_update_lighting(Object* a1);
 static int barter_compute_value(Object* buyer, Object* seller);
@@ -539,6 +540,15 @@ void handle_inventory()
         } else if (handle_inventory_scroll_key(keyCode, stack_offset[curr_stack], pud, INVENTORY_WINDOW_TYPE_NORMAL)) {
         } else if (keyCode == 2500) {
             container_exit(keyCode, INVENTORY_WINDOW_TYPE_NORMAL);
+        } else if (keyCode == KEY_LOWERCASE_M || keyCode == KEY_UPPERCASE_M) {
+            // Gamepad R2 ('m', "toggle mouse mode") switches the cursor
+            // between the hand (move items) and the arrow (select/use), same
+            // as the right mouse button below.
+            inven_toggle_cursor();
+            if (immode == INVENTORY_WINDOW_CURSOR_HAND) {
+                display_stats();
+                win_draw(i_wid);
+            }
         } else {
             if ((mouse_get_buttons() & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
                 if (immode == INVENTORY_WINDOW_CURSOR_HAND) {
@@ -1975,6 +1985,19 @@ void inven_set_mouse(int cursor)
     }
 }
 
+// Toggles the inventory cursor between the hand (move items) and the arrow
+// (select/use items). Gamepad R2 is bound to 'm' (the "toggle mouse mode"
+// key); the same toggle is bound to the right mouse button by each inventory
+// loop, so both inputs stay in sync.
+static void inven_toggle_cursor()
+{
+    if (immode == INVENTORY_WINDOW_CURSOR_HAND) {
+        inven_set_mouse(INVENTORY_WINDOW_CURSOR_ARROW);
+    } else if (immode == INVENTORY_WINDOW_CURSOR_ARROW) {
+        inven_set_mouse(INVENTORY_WINDOW_CURSOR_HAND);
+    }
+}
+
 // 0x46444C
 void inven_hover_on(int btn, int keyCode)
 {
@@ -2384,6 +2407,8 @@ void use_inventory_on(Object* a1)
         } else if (keyCode == 2500) {
             container_exit(keyCode, INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
         } else if (handle_inventory_scroll_key(keyCode, stack_offset[curr_stack], pud, INVENTORY_WINDOW_TYPE_USE_ITEM_ON)) {
+        } else if (keyCode == KEY_LOWERCASE_M || keyCode == KEY_UPPERCASE_M) {
+            inven_toggle_cursor();
         } else if ((mouse_get_buttons() & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
             if (immode == INVENTORY_WINDOW_CURSOR_HAND) {
                 inven_set_mouse(INVENTORY_WINDOW_CURSOR_ARROW);
@@ -3907,6 +3932,8 @@ int loot_container(Object* a1, Object* a2)
             }
         } else if (keyCode >= 2500 && keyCode <= 2501) {
             container_exit(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
+        } else if (keyCode == KEY_LOWERCASE_M || keyCode == KEY_UPPERCASE_M) {
+            inven_toggle_cursor();
         } else {
             if ((mouse_get_buttons() & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
                 if (immode == INVENTORY_WINDOW_CURSOR_HAND) {
@@ -4681,7 +4708,11 @@ void barter_inventory(int win, Object* target, Object* peon_table, Object* barte
             item_move_all(peon_table, obj_dude);
             barter_end_to_talk_to();
             break;
-        } else if (keyCode == KEY_LOWERCASE_M) {
+        } else if (keyCode == KEY_RETURN) {
+            // Make the offer. Previously this was on 'm', but the gamepad's
+            // R2 button is bound to 'm' as the cursor/mouse-mode toggle, so
+            // it now toggles the hand/arrow cursor (next branch) and the
+            // offer confirmation moved to Enter (gamepad A = confirm).
             if (peon_table->data.inventory.length != 0 || btable->data.inventory.length != 0) {
                 MessageListItem messageListItem;
                 if (barter_attempt_transaction(inven_dude, peon_table, target, barterer_table) == 0) {
@@ -4700,6 +4731,8 @@ void barter_inventory(int win, Object* target, Object* peon_table, Object* barte
                     gdialog_display_msg(messageListItem.text);
                 }
             }
+        } else if (keyCode == KEY_LOWERCASE_M || keyCode == KEY_UPPERCASE_M) {
+            inven_toggle_cursor();
         } else if (keyCode == KEY_PAGE_UP) {
             if (ptable_offset > 0) {
                 ptable_offset -= 1;
