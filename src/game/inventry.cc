@@ -5269,10 +5269,8 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
                 draw_amount(value, inventoryWindowType);
                 continue;
             } else if (keyCode == KEY_BACKSPACE) {
-                if (!numbersEntered) {
-                    value = 0;
-                }
-
+                // Erase exactly one digit from the current counter, no matter
+                // whether the value was typed in or set with the +/-/All keys.
                 value /= 10;
                 numbersEntered = true;
 
