@@ -303,9 +303,6 @@ static Object* stack[10];
 // 0x59CE1C
 static int mt_wid;
 
-// 0x59CE20
-static int mt_kb_wid = -1;
-
 // 0x59CE24
 static int barter_mod;
 
@@ -5293,12 +5290,14 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
     return value;
 }
 
-// Draws the virtual keyboard background (the FRM, or a plain stub until it is
-// provided) plus the 1-5 / 6-0 digit glyphs rendered with BIGNUM.frm at the
-// mapped cell centers.
-static void move_timer_draw_virtual_kb(void)
+// Draws the virtual keyboard at the bottom of the move items / set timer
+// window buffer: the background FRM (or a plain stub until it is provided)
+// plus the 1-5 / 6-0 digit glyphs rendered with BIGNUM.frm at the mapped cell
+// centers. kbY is the row where the keyboard area starts.
+static void move_timer_draw_virtual_kb(int kbY)
 {
-    unsigned char* windowBuffer = win_get_buf(mt_kb_wid);
+    unsigned char* windowBuffer = win_get_buf(mt_wid);
+    int windowWidth = win_width(mt_wid);
 
     // Background. Until the real FRM is provided the keyboard is drawn as a
     // plain box so the key geometry is still testable.
@@ -5306,10 +5305,10 @@ static void move_timer_draw_virtual_kb(void)
     int backgroundFid = art_id(OBJ_TYPE_INTERFACE, MOVE_TIMER_VIRTUAL_KB_FRM, 0, 0, 0);
     unsigned char* backgroundData = art_ptr_lock_data(backgroundFid, 0, 0, &backgroundHandle);
     if (backgroundData != NULL) {
-        buf_to_buf(backgroundData, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, MOVE_TIMER_VIRTUAL_KB_WIDTH, windowBuffer, MOVE_TIMER_VIRTUAL_KB_WIDTH);
+        buf_to_buf(backgroundData, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, MOVE_TIMER_VIRTUAL_KB_WIDTH, windowBuffer + kbY * windowWidth, windowWidth);
         art_ptr_unlock(backgroundHandle);
     } else {
-        buf_fill(windowBuffer, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, MOVE_TIMER_VIRTUAL_KB_WIDTH, 84);
+        buf_fill(windowBuffer + kbY * windowWidth, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, windowWidth, 84);
     }
 
     // Digits from BIGNUM.frm.
@@ -5329,57 +5328,42 @@ static void move_timer_draw_virtual_kb(void)
             int digit = row == 0 ? index + 1 : (index < 4 ? index + 6 : 0);
             int centerX = MOVE_TIMER_VIRTUAL_KB_COL_START_X + index * MOVE_TIMER_VIRTUAL_KB_STEP;
             unsigned char* src = digitData + 14 * digit;
-            buf_to_buf(src, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_WIDTH, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_HEIGHT, 336, windowBuffer + MOVE_TIMER_VIRTUAL_KB_WIDTH * (rowCenterY[row] - 12) + (centerX - 7), MOVE_TIMER_VIRTUAL_KB_WIDTH);
+            buf_to_buf(src, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_WIDTH, MOVE_TIMER_VIRTUAL_KB_DIGIT_GLYPH_HEIGHT, 336, windowBuffer + windowWidth * (kbY + rowCenterY[row] - 12) + (centerX - 7), windowWidth);
         }
     }
 
     art_ptr_unlock(digitHandle);
 }
 
-// Registers the invisible virtual keyboard buttons on its own window. Digit
+// Registers the invisible virtual keyboard buttons on the modal move items /
+// set timer window, in the keyboard area right below the modal content. Digit
 // keys append their value (KEY_0..KEY_9), the DELETE key erases the last
 // digit (KEY_BACKSPACE).
-static void move_timer_register_virtual_kb(void)
+static void move_timer_register_virtual_kb(int windowHeight)
 {
+    const int kbY = windowHeight;
+
     for (int row = 0; row < 2; row++) {
         int centerY = row == 0 ? MOVE_TIMER_VIRTUAL_KB_ROW1_CENTER_Y : MOVE_TIMER_VIRTUAL_KB_ROW2_CENTER_Y;
         for (int index = 0; index < MOVE_TIMER_VIRTUAL_KB_DIGIT_COUNT; index++) {
             int digit = row == 0 ? index + 1 : (index < 4 ? index + 6 : 0);
             int centerX = MOVE_TIMER_VIRTUAL_KB_COL_START_X + index * MOVE_TIMER_VIRTUAL_KB_STEP;
-            int btn = win_register_button(mt_kb_wid, centerX - 18, centerY - 15, 36, 30, -1, -1, KEY_0 + digit, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            int btn = win_register_button(mt_wid, centerX - 18, kbY + centerY - 15, 36, 30, -1, -1, KEY_0 + digit, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
             if (btn != -1) {
                 win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
             }
         }
     }
 
-    int btn = win_register_button(mt_kb_wid,
+    int btn = win_register_button(mt_wid,
         MOVE_TIMER_VIRTUAL_KB_DELETE_ULX,
-        MOVE_TIMER_VIRTUAL_KB_DELETE_ULY,
+        kbY + MOVE_TIMER_VIRTUAL_KB_DELETE_ULY,
         MOVE_TIMER_VIRTUAL_KB_DELETE_LRX - MOVE_TIMER_VIRTUAL_KB_DELETE_ULX + 1,
         MOVE_TIMER_VIRTUAL_KB_DELETE_LRY - MOVE_TIMER_VIRTUAL_KB_DELETE_ULY + 1,
         -1, -1, KEY_BACKSPACE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
     if (btn != -1) {
         win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
     }
-}
-
-// Creates the virtual keyboard as its own window right below the move items /
-// set timer window, so it never covers the quantity modal itself.
-static void move_timer_setup_virtual_kb(int windowX, int windowY)
-{
-    if (gconfig_show_virtual_keyboard == 0) {
-        return;
-    }
-
-    mt_kb_wid = win_add(windowX, windowY, MOVE_TIMER_VIRTUAL_KB_WIDTH, MOVE_TIMER_VIRTUAL_KB_HEIGHT, 257, WINDOW_MOVE_ON_TOP);
-    if (mt_kb_wid == -1) {
-        return;
-    }
-
-    move_timer_draw_virtual_kb();
-    move_timer_register_virtual_kb();
-    win_draw(mt_kb_wid);
 }
 
 // Creates move items/set timer interface.
@@ -5403,7 +5387,15 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
     int quantityWindowY = screenGetHeight() != 480
         ? (screenGetHeight() - windowDescription->height) / 2
         : windowDescription->y;
-    mt_wid = win_add(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+
+    // The virtual keyboard lives in the same modal window, stretched below the
+    // modal content, so its buttons are reachable while the modal is on top.
+    int windowHeight = windowDescription->height;
+    if (gconfig_show_virtual_keyboard != 0) {
+        windowHeight += MOVE_TIMER_VIRTUAL_KB_HEIGHT;
+    }
+
+    mt_wid = win_add(quantityWindowX, quantityWindowY, windowDescription->width, windowHeight, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     unsigned char* windowBuffer = win_get_buf(mt_wid);
 
     CacheEntry* backgroundHandle;
@@ -5531,7 +5523,10 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
         }
     }
 
-    move_timer_setup_virtual_kb(quantityWindowX, quantityWindowY + windowDescription->height);
+    if (gconfig_show_virtual_keyboard != 0) {
+        move_timer_draw_virtual_kb(windowDescription->height);
+        move_timer_register_virtual_kb(windowDescription->height);
+    }
 
     win_draw(mt_wid);
     inven_set_mouse(INVENTORY_WINDOW_CURSOR_ARROW);
@@ -5547,11 +5542,6 @@ static int exit_move_timer_win(int inventoryWindowType)
 
     for (int index = 0; index < count; index++) {
         art_ptr_unlock(mt_key[index]);
-    }
-
-    if (mt_kb_wid != -1) {
-        win_delete(mt_kb_wid);
-        mt_kb_wid = -1;
     }
 
     win_delete(mt_wid);
