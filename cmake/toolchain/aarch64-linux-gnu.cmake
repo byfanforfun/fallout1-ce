@@ -95,6 +95,18 @@ set(_sysroot_link_dirs
     "usr/lib/${CMAKE_SYSTEM_PROCESSOR}-redhat-linux"
     "usr/lib64"
     "usr/lib")
+
+# The target C++ runtime (libstdc++.a, needed by -static-libstdc++) lives in
+# the compiler version directory of the sysroot's own toolchain
+# (usr/lib/gcc/<tuple>/<version>), which the Fedora cross driver never
+# searches. Add every such version directory that exists.
+file(GLOB _sysroot_gcc_version_dirs RELATIVE "${CMAKE_SYSROOT}"
+    "${CMAKE_SYSROOT}/usr/lib/gcc/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/*")
+foreach(_gcc_version IN LISTS _sysroot_gcc_version_dirs)
+        if(IS_DIRECTORY "${CMAKE_SYSROOT}/${_gcc_version}")
+        list(APPEND _sysroot_link_dirs "${_gcc_version}")
+    endif()
+endforeach()
 foreach(_candidate_sysroot IN LISTS _sysroot_link_dirs)
     string(APPEND CMAKE_C_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
     string(APPEND CMAKE_CXX_FLAGS " -L${CMAKE_SYSROOT}/${_candidate_sysroot}")
@@ -120,6 +132,23 @@ foreach(_arch_inc IN ITEMS
         string(APPEND CMAKE_REQUIRED_FLAGS " -isystem ${CMAKE_SYSROOT}/${_arch_inc}")
     endif()
 endforeach()
+
+# -static-libgcc makes the driver resolve -lgcc inside the sysroot, i.e. the
+# root's own gcc <version> directory, whose libgcc.a carries no exception
+# unwinder. The unwind runtime (_Unwind_Resume) lives in the HOST driver's
+# libgcc.a, a path --sysroot rewrites out of existence. Link that archive at
+# the END of the command line, after the objects and libstdc++: static
+# archives only contribute members for symbols undefined at their position in
+# the link order. CMAKE_EXE_LINKER_FLAGS is emitted first and must not be
+# used here; CMAKE_CXX_STANDARD_LIBRARIES is appended last.
+execute_process(
+    COMMAND "${CMAKE_C_COMPILER}" "-print-file-name=libgcc.a"
+    OUTPUT_VARIABLE _host_libgcc_archive
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(EXISTS "${_host_libgcc_archive}")
+    string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " ${_host_libgcc_archive}")
+    string(APPEND CMAKE_REQUIRED_LIBRARIES " ${_host_libgcc_archive}")
+endif()
 
 # Redirect pkg-config at the target root: otherwise the host pkg-config wins
 # and its modules (EGL, GL, dbus, wayland, ...) resolve to host include and
