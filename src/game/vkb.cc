@@ -24,15 +24,9 @@ void vkb_numeric_draw(int win, int kbY)
     unsigned char* windowBuffer = win_get_buf(win);
     int windowWidth = win_width(win);
 
-    CacheEntry* backgroundHandle;
-    int backgroundFid = art_id(OBJ_TYPE_INTERFACE, VKB_NUMERIC_FRM, 0, 0, 0);
-    unsigned char* backgroundData = art_ptr_lock_data(backgroundFid, 0, 0, &backgroundHandle);
-    if (backgroundData != NULL) {
-        buf_to_buf(backgroundData, VKB_NUMERIC_FRM_WIDTH, VKB_NUMERIC_FRM_HEIGHT, VKB_NUMERIC_FRM_WIDTH, windowBuffer + kbY * windowWidth, windowWidth);
-        art_ptr_unlock(backgroundHandle);
-    } else {
-        buf_fill(windowBuffer + kbY * windowWidth, VKB_NUMERIC_FRM_WIDTH, VKB_NUMERIC_FRM_HEIGHT, windowWidth, 84);
-    }
+    // Temporary background fill until a proper FRM is made (same look as the
+    // split text keyboard).
+    buf_fill(windowBuffer + kbY * windowWidth, windowWidth, VKB_NUMERIC_FRM_HEIGHT, windowWidth, 84);
 
     CacheEntry* digitHandle;
     int digitFid = art_id(OBJ_TYPE_INTERFACE, VKB_NUMERIC_BIGNUM_FRM, 0, 0, 0);
@@ -256,16 +250,9 @@ void vkb_text_draw(int win, int kbY)
     int oldFont = text_curr();
     text_font(101);
 
-    // Background: FRM stub or plain fill.
-    CacheEntry* backgroundHandle;
-    int backgroundFid = art_id(OBJ_TYPE_INTERFACE, VKB_TEXT_FRM, 0, 0, 0);
-    unsigned char* backgroundData = art_ptr_lock_data(backgroundFid, 0, 0, &backgroundHandle);
-    if (backgroundData != NULL) {
-        buf_to_buf(backgroundData, windowWidth, VKB_TEXT_KEYBOARD_HEIGHT, windowWidth, windowBuffer + kbY * windowWidth, windowWidth);
-        art_ptr_unlock(backgroundHandle);
-    } else {
-        buf_fill(windowBuffer + kbY * windowWidth, windowWidth, VKB_TEXT_KEYBOARD_HEIGHT, windowWidth, 84);
-    }
+    // Temporary background fill until a proper FRM is made (same look as the
+    // split text keyboard).
+    buf_fill(windowBuffer + kbY * windowWidth, windowWidth, VKB_TEXT_KEYBOARD_HEIGHT, windowWidth, 84);
 
     char label[4];
 

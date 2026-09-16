@@ -6,9 +6,9 @@
 namespace fallout {
 
 // -- Numeric keyboard (move-items / set-timer) --------------------------------
-// Drawn inside a host window at the very bottom. The background comes from a
-// dedicated FRM (currently a placeholder); digit glyphs are rendered with the
-// BIGNUM.frm art.
+// Drawn inside a host window at the very bottom.  The background is a plain
+// temporary fill (see vkb_numeric_draw); these FRM ids are reserved for a real
+// background later.  Digit glyphs are rendered with the BIGNUM.frm art.
 
 #define VKB_NUMERIC_FRM 309
 #define VKB_NUMERIC_FRM_WIDTH 259
@@ -46,6 +46,8 @@ void vkb_numeric_register(int win, int kbY);
 // Toggle actions (LANG / CASE) use dedicated serial event codes and redraw
 // the keyboard in place.
 
+// Reserved FRM id for a future keyboard background; the current background is
+// a plain temporary fill (see vkb_text_draw).
 #define VKB_TEXT_FRM 311
 #define VKB_TEXT_KEYBOARD_COLUMNS 12
 #define VKB_TEXT_KEYBOARD_ROWS 5
