@@ -125,8 +125,9 @@ int vkb_text_kb_y(int windowHeight);
 //
 // While the text keyboard is shown the focus cursor is moved with the arrow
 // keys.  Moving past an edge wraps around to the opposite side, skipping
-// cells that are inactive on the active language page.  Return presses the
-// focused cell (letters, space, backspace, toggles, or OK to confirm).
+// cells that are inactive on the active language page.  Space presses the
+// focused cell (letters, space, backspace, toggles, or OK to confirm);
+// Return always confirms/leaves the window and 'i' inserts a literal space.
 // The same keyboard is used for the full (name/save) and the split (about)
 // layouts, so the focus state is a single global shared by both.
 
