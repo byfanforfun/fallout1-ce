@@ -128,7 +128,8 @@ int vkb_text_kb_y(int windowHeight);
 // cells that are inactive on the active language page.  On row 4 the cursor
 // moves between the grouped keys (space / case / lang / OK).  Space presses
 // the focused cell (letters, space, backspace, toggles, or OK to confirm);
-// Return always confirms/leaves the window and 'i' inserts a literal space.
+// 's' does the same, Return always confirms/leaves the window and 'i'
+// inserts a literal space.
 // The same keyboard is used for the full (name/save) and the split (about)
 // layouts, so the focus state is a single global shared by both.
 
