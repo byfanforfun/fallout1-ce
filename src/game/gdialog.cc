@@ -3860,6 +3860,8 @@ static void about_loop()
         kbY = win_height(about_win) - VKB_TEXT_KEYBOARD_HEIGHT;
     }
 
+    renderPresent();
+
     while (1) {
         sharedFpsLimiter.mark();
 
@@ -3869,6 +3871,7 @@ static void about_loop()
             if (kbY > 0) {
                 vkb_text_draw(about_win, kbY);
                 win_draw(about_win);
+                renderPresent();
             }
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
