@@ -192,6 +192,7 @@ static int about_process_input(int input);
 static void about_update_display(unsigned char should_redraw);
 static void about_clear_display(unsigned char should_redraw);
 static void about_reset_string();
+static void about_rebuild_input_string();
 static void about_process_string();
 static int about_lookup_word(const char* search);
 static int about_lookup_name(const char* search);
@@ -501,6 +502,11 @@ static int about_win_width;
 
 // 0x58DA9C
 static int about_input_index;
+
+// Real characters of the about input text and their count; the input string
+// itself stores the cursor char at about_input_index (see rebuild helper).
+static char about_text_chars[128];
+static int about_text_len;
 
 // 0x58DAA0
 static int about_old_font;
@@ -3650,6 +3656,9 @@ static void talk_to_blend_table_exit()
 // enough room on a side, that half is skipped.
 static void about_create_split_keyboard()
 {
+    vkb_text_set_split_layout(true);
+    vkb_text_nav_reset();
+
     Rect aboutRect;
     if (win_get_rect(about_win, &aboutRect) != 0) {
         return;
@@ -3703,6 +3712,8 @@ static void about_create_split_keyboard()
 
 static void about_remove_split_keyboard()
 {
+    vkb_text_set_split_layout(false);
+
     if (about_kb_left_win != -1) {
         win_delete(about_kb_left_win);
         about_kb_left_win = -1;
@@ -3934,6 +3945,9 @@ static void about_loop()
         int keyCode = get_input();
         keyCode = vkb_text_handle_key(keyCode);
         if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (gconfig_show_virtual_keyboard != 0) {
+                vkb_text_nav_anchor();
+            }
             if (about_kb_left_win != -1) {
                 vkb_text_split_draw(about_kb_left_win, 0, true);
                 win_draw(about_kb_left_win);
@@ -3946,6 +3960,58 @@ static void about_loop()
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
             continue;
+        }
+
+        if (gconfig_show_virtual_keyboard != 0) {
+            if (keyCode == KEY_LEFT || keyCode == KEY_RIGHT || keyCode == KEY_UP || keyCode == KEY_DOWN) {
+                vkb_text_navigate(keyCode);
+                if (about_kb_left_win != -1) {
+                    vkb_text_split_draw(about_kb_left_win, 0, true);
+                    win_draw(about_kb_left_win);
+                }
+                if (about_kb_right_win != -1) {
+                    vkb_text_split_draw(about_kb_right_win, 0, false);
+                    win_draw(about_kb_right_win);
+                }
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_RETURN) {
+                keyCode = vkb_text_focus_key();
+                if (keyCode == VKB_TEXT_KEY_CASE || keyCode == VKB_TEXT_KEY_LANG) {
+                    keyCode = vkb_text_handle_key(keyCode);
+                    if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+                        vkb_text_nav_anchor();
+                        if (about_kb_left_win != -1) {
+                            vkb_text_split_draw(about_kb_left_win, 0, true);
+                            win_draw(about_kb_left_win);
+                        }
+                        if (about_kb_right_win != -1) {
+                            vkb_text_split_draw(about_kb_right_win, 0, false);
+                            win_draw(about_kb_right_win);
+                        }
+                        renderPresent();
+                    }
+                    continue;
+                }
+            } else if (keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
+                keyCode = KEY_SPACE;
+            } else if (keyCode == KEY_LOWERCASE_C || keyCode == KEY_UPPERCASE_C) {
+                if (about_input_index > 0) {
+                    about_input_index--;
+                    about_rebuild_input_string();
+                    about_update_display(1);
+                }
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_P) {
+                if (about_input_index < about_text_len) {
+                    about_input_index++;
+                    about_rebuild_input_string();
+                    about_update_display(1);
+                }
+                renderPresent();
+                continue;
+            }
         }
 
         if (about_process_input(keyCode) == -1) {
@@ -3976,9 +4042,12 @@ static int about_process_input(int input)
     switch (input) {
     case KEY_BACKSPACE:
         if (about_input_index > 0) {
+            for (int i = about_input_index - 1; i < about_text_len - 1; i++) {
+                about_text_chars[i] = about_text_chars[i + 1];
+            }
+            about_text_len--;
             about_input_index--;
-            about_input_string[about_input_index] = about_input_cursor;
-            about_input_string[about_input_index + 1] = '\0';
+            about_rebuild_input_string();
             about_update_display(1);
         }
         break;
@@ -3994,18 +4063,18 @@ static int about_process_input(int input)
         return -1;
     default:
         text_font(101);
-        if (input >= KEY_SPACE && input < 256 && text_is_glyph(input) && about_input_index < 126) {
-            about_input_string[about_input_index] = '_';
-
+        if (input >= KEY_SPACE && input < 256 && text_is_glyph(input) && about_text_len < 126) {
+            about_rebuild_input_string();
             if (text_width(about_input_string) + text_char_width(input) < 244) {
-                about_input_string[about_input_index] = input;
-                about_input_string[about_input_index + 1] = about_input_cursor;
-                about_input_string[about_input_index + 2] = '\0';
+                for (int i = about_text_len; i > about_input_index; i--) {
+                    about_text_chars[i] = about_text_chars[i - 1];
+                }
+                about_text_chars[about_input_index] = input;
                 about_input_index++;
+                about_text_len++;
+                about_rebuild_input_string();
                 about_update_display(1);
             }
-
-            about_input_string[about_input_index] = about_input_cursor;
         }
         break;
     }
@@ -4066,9 +4135,20 @@ static void about_clear_display(unsigned char should_redraw)
 // 0x442910
 static void about_reset_string()
 {
+    about_text_len = 0;
     about_input_index = 0;
     about_input_string[0] = about_input_cursor;
     about_input_string[1] = '\0';
+}
+
+// Rebuild the display buffer from the real characters and the cursor index:
+// chars-before + cursor + chars-after + '\0'.
+static void about_rebuild_input_string()
+{
+    memcpy(about_input_string, about_text_chars, about_input_index);
+    about_input_string[about_input_index] = about_input_cursor;
+    memcpy(about_input_string + about_input_index + 1, about_text_chars + about_input_index, about_text_len - about_input_index);
+    about_input_string[about_text_len + 1] = '\0';
 }
 
 // 0x44292C
@@ -4083,7 +4163,8 @@ static void about_process_string()
     char* str;
     int random_msg_num;
 
-    about_input_string[about_input_index] = '\0';
+    memcpy(about_input_string, about_text_chars, about_text_len);
+    about_input_string[about_text_len] = '\0';
 
     if (about_input_string[0] != '\0') {
         tok = strtok(about_input_string, delimeters);
