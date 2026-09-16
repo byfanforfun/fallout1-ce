@@ -44,6 +44,7 @@ int gconfig_debug_spawn_drugs;
 int gconfig_launcher_enabled;
 int gconfig_launcher_return_on_exit;
 char* gconfig_launcher_name;
+char* gconfig_virtual_kb_languages;
 
 bool gkioskconf_init()
 {
@@ -81,6 +82,7 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, 1);
     config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, "");
+    config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_VKB_LANGUAGES, "en,ru");
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, 5);
 
@@ -127,6 +129,7 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, &gconfig_launcher_enabled);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, &gconfig_launcher_return_on_exit);
     config_get_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, &gconfig_launcher_name);
+    config_get_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_VKB_LANGUAGES, &gconfig_virtual_kb_languages);
 
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, &gconfig_quality_levels);
 

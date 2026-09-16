@@ -28,6 +28,7 @@ namespace fallout {
 #define KIOSK_CONFIG_SCREENSAVER_ENABLED "screensaver_enabled"
 #define KIOSK_CONFIG_SCREENSAVER_TIMEOUT "screensaver_timeout"
 #define KIOSK_CONFIG_SHOW_VIRTUAL_KB "show_virt_kb"
+#define KIOSK_CONFIG_VKB_LANGUAGES "vkb_languages"
 #define KIOSK_CONFIG_RANDOM_LOCATIONS "random_locations"
 #define KIOSK_CONFIG_RANDOM_CONTAINERS "random_containers"
 #define KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE "random_containers_base_chance"
@@ -74,6 +75,7 @@ extern int gconfig_debug_spawn_drugs;
 extern int gconfig_launcher_enabled;
 extern int gconfig_launcher_return_on_exit;
 extern char* gconfig_launcher_name;
+extern char* gconfig_virtual_kb_languages;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

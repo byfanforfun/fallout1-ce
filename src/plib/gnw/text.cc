@@ -320,9 +320,9 @@ void GNW_text_to_buf(unsigned char* buf, const char* str, int swidth, int fullw,
 
     unsigned char* ptr = buf;
     while (*str != '\0') {
-        char ch = *str++;
+        unsigned char ch = (unsigned char)*str++;
         if (ch < curr_font->num) {
-            FontInfo* glyph = &(curr_font->info[ch & 0xFF]);
+            FontInfo* glyph = &(curr_font->info[ch]);
 
             unsigned char* end;
             if ((color & FONT_MONO) != 0) {
@@ -386,8 +386,11 @@ static int GNW_text_width(const char* str)
     len = 0;
 
     for (i = 0; str[i] != '\0'; i++) {
-        if (str[i] < curr_font->num) {
-            fi = &(curr_font->info[str[i]]);
+        // Treat the byte as unsigned so high (e.g. Cyrillic) bytes 0x80-0xFF
+        // map to the glyph table instead of indexing before it.
+        unsigned char c = (unsigned char)str[i];
+        if (c < curr_font->num) {
+            fi = &(curr_font->info[c]);
             len += curr_font->spacing + fi->width;
         }
     }
@@ -398,7 +401,24 @@ static int GNW_text_width(const char* str)
 // 0x4C1C64
 static int GNW_text_char_width(char c)
 {
-    return curr_font->info[c].width;
+    unsigned char u = (unsigned char)c;
+    if (u < curr_font->num) {
+        return curr_font->info[u].width;
+    }
+
+    return 0;
+}
+
+// Returns the number of glyphs the currently selected font provides.
+int text_glyph_count()
+{
+    return curr_font != NULL ? curr_font->num : 0;
+}
+
+// Returns true when the current font provides a glyph for byte code c.
+bool text_is_glyph(int c)
+{
+    return c >= 0 && c < text_glyph_count();
 }
 
 // 0x4C1C78

@@ -30,6 +30,7 @@
 #include "game/stat.h"
 #include "game/textobj.h"
 #include "game/tile.h"
+#include "game/vkb.h"
 #include "int/dialog.h"
 #include "int/window.h"
 #include "platform_compat.h"
@@ -3669,10 +3670,20 @@ static int about_init()
                 background_width = art_frame_width(background_frm, 0, 0);
                 background_height = art_frame_length(background_frm, 0, 0);
                 about_win_width = background_width;
+
+                int aboutWindowHeight = background_height;
+                if (gconfig_show_virtual_keyboard != 0) {
+                    aboutWindowHeight += VKB_TEXT_KEYBOARD_HEIGHT;
+                }
+
+                int aboutWindowY = gconfig_show_virtual_keyboard != 0
+                    ? (screenGetHeight() - aboutWindowHeight) / 2
+                    : (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356;
+
                 about_win = win_add((screenGetWidth() - background_width) / 2,
-                    (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356,
+                    aboutWindowY,
                     background_width,
-                    background_height,
+                    aboutWindowHeight,
                     colorTable[0],
                     WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                 if (about_win != -1) {
@@ -3770,10 +3781,15 @@ static int about_init()
                                                                         about_last_time = get_time();
                                                                         about_update_display(0);
 
-                                                                        art_ptr_unlock(background_key);
+art_ptr_unlock(background_key);
 
-                                                                        win_draw(about_win);
-                                                                        return 0;
+                                        if (gconfig_show_virtual_keyboard != 0) {
+                                            vkb_text_draw(about_win, aboutWindowHeight - VKB_TEXT_KEYBOARD_HEIGHT);
+                                            vkb_text_register(about_win, aboutWindowHeight - VKB_TEXT_KEYBOARD_HEIGHT);
+                                        }
+
+                                        win_draw(about_win);
+                                        return 0;
                                                                     }
                                                                 }
                                                             }
@@ -3839,10 +3855,27 @@ static void about_loop()
 
     beginTextInput();
 
+    int kbY = 0;
+    if (gconfig_show_virtual_keyboard != 0) {
+        kbY = win_height(about_win) - VKB_TEXT_KEYBOARD_HEIGHT;
+    }
+
     while (1) {
         sharedFpsLimiter.mark();
 
-        if (about_process_input(get_input()) == -1) {
+        int keyCode = get_input();
+        keyCode = vkb_text_handle_key(keyCode);
+        if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (kbY > 0) {
+                vkb_text_draw(about_win, kbY);
+                win_draw(about_win);
+            }
+            continue;
+        } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
+            continue;
+        }
+
+        if (about_process_input(keyCode) == -1) {
             break;
         }
 
@@ -3887,8 +3920,8 @@ static int about_process_input(int input)
         }
         return -1;
     default:
-        if (input >= 0 && about_input_index < 126) {
-            text_font(101);
+        text_font(101);
+        if (input >= KEY_SPACE && input < 256 && text_is_glyph(input) && about_input_index < 126) {
             about_input_string[about_input_index] = '_';
 
             if (text_width(about_input_string) + text_char_width(input) < 244) {

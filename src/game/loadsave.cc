@@ -43,6 +43,7 @@
 #include "game/tile.h"
 #include "game/trait.h"
 #include "game/version.h"
+#include "game/vkb.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "platform_compat.h"
@@ -2284,13 +2285,17 @@ static int GetComment(int a1)
     int commentWindowX = screenGetWidth() != 640
         ? (screenGetWidth() - ginfo[LOAD_SAVE_FRM_BOX].width) / 2
         : LS_COMMENT_WINDOW_X;
-    int commentWindowY = screenGetHeight() != 480
-        ? (screenGetHeight() - ginfo[LOAD_SAVE_FRM_BOX].height) / 2
+    int windowHeight = ginfo[LOAD_SAVE_FRM_BOX].height;
+    if (gconfig_show_virtual_keyboard != 0) {
+        windowHeight += VKB_TEXT_KEYBOARD_HEIGHT;
+    }
+    int commentWindowY = (screenGetHeight() != 480 || gconfig_show_virtual_keyboard != 0)
+        ? (screenGetHeight() - windowHeight) / 2
         : LS_COMMENT_WINDOW_Y;
     int window = win_add(commentWindowX,
         commentWindowY,
         ginfo[LOAD_SAVE_FRM_BOX].width,
-        ginfo[LOAD_SAVE_FRM_BOX].height,
+        windowHeight,
         256,
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (window == -1) {
@@ -2412,6 +2417,11 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
         maxLength = 255;
     }
 
+    int kbY = 0;
+    if (gconfig_show_virtual_keyboard != 0 && win_height(win) > VKB_TEXT_KEYBOARD_HEIGHT) {
+        kbY = win_height(win) - VKB_TEXT_KEYBOARD_HEIGHT;
+    }
+
     char text[256];
     strcpy(text, description);
 
@@ -2427,6 +2437,11 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
     win_draw(win);
     renderPresent();
 
+    if (kbY > 0) {
+        vkb_text_draw(win, kbY);
+        vkb_text_register(win, kbY);
+    }
+
     beginTextInput();
 
     int blinkCounter = 3;
@@ -2441,6 +2456,17 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
         int tick = get_time();
 
         int keyCode = get_input();
+        keyCode = vkb_text_handle_key(keyCode);
+        if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (kbY > 0) {
+                vkb_text_draw(win, kbY);
+                win_draw(win);
+            }
+            continue;
+        } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
+            continue;
+        }
+
         if ((keyCode & 0x80000000) == 0) {
             v1++;
         }
@@ -2462,7 +2488,7 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
                 text[textLength] = '\0';
                 text_to_buf(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
                 textLength--;
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && textLength < maxLength) {
+            } else if ((keyCode >= KEY_SPACE && keyCode < 256) && textLength < maxLength) {
                 if ((flags & 0x01) != 0) {
                     if (!isdoschar(keyCode)) {
                         break;

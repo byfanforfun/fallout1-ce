@@ -270,6 +270,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/trait.h"
     "src/game/version.cc"
     "src/game/version.h"
+    "src/game/vkb.cc"
+    "src/game/vkb.h"
     "src/game/wordwrap.cc"
     "src/game/wordwrap.h"
     "src/game/worldmap_walkmask.cc"

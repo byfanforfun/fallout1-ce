@@ -1,6 +1,8 @@
 #ifndef FALLOUT_PLIB_GNW_TEXT_H_
 #define FALLOUT_PLIB_GNW_TEXT_H_
 
+#include <stdbool.h>
+
 namespace fallout {
 
 #define FONT_SHADOW 0x10000
@@ -70,6 +72,8 @@ int text_add_manager(FontMgrPtr mgr);
 int text_remove_manager(int font_num);
 int text_curr();
 void text_font(int font_num);
+int text_glyph_count();
+bool text_is_glyph(int c);
 
 } // namespace fallout
 
