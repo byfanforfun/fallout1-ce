@@ -468,6 +468,10 @@ static char about_input_cursor = '_';
 // 0x505248
 static Rect about_input_rect = { 22, 32, 265, 45 };
 
+// Split virtual keyboard halves drawn left/right of the about window.
+static int about_kb_left_win = -1;
+static int about_kb_right_win = -1;
+
 // 0x58CD50
 static Rect optionRect;
 
@@ -3640,6 +3644,76 @@ static void talk_to_blend_table_exit()
     art_ptr_unlock(lower_hi_key);
 }
 
+// Create the two split keyboard halves to the left and right of the about
+// window.  Each half is a normal window on top of the (modal) about window,
+// so its buttons are polled before the modal input stop.  If there is not
+// enough room on a side, that half is skipped.
+static void about_create_split_keyboard()
+{
+    Rect aboutRect;
+    if (win_get_rect(about_win, &aboutRect) != 0) {
+        return;
+    }
+
+    int screenW = screenGetWidth();
+    int screenH = screenGetHeight();
+    int halfH = VKB_TEXT_KEYBOARD_HEIGHT;
+
+    int gap = 8;
+    int leftAvail = aboutRect.ulx - gap;
+    int rightAvail = screenW - (aboutRect.lrx + 1) - gap;
+    int avail = leftAvail < rightAvail ? leftAvail : rightAvail;
+
+    int halfW = VKB_TEXT_SPLIT_COLUMNS * 15 + (VKB_TEXT_SPLIT_COLUMNS - 1) * VKB_TEXT_KEYBOARD_GAP + 2 * VKB_TEXT_KEYBOARD_PAD_X;
+    if (avail < halfW) {
+        halfW = avail;
+    }
+    if (halfW < 64) {
+        halfW = 64;
+    }
+
+    int halfY = aboutRect.lry - halfH + 1;
+    if (halfY < 0) {
+        halfY = 0;
+    }
+    if (halfY + halfH > screenH) {
+        halfY = screenH - halfH;
+    }
+
+    int leftX = aboutRect.ulx - gap - halfW;
+    if (leftX >= 0) {
+        about_kb_left_win = win_add(leftX, halfY, halfW, halfH, 256, WINDOW_MOVE_ON_TOP);
+        if (about_kb_left_win != -1) {
+            vkb_text_split_draw(about_kb_left_win, 0, true);
+            vkb_text_split_register(about_kb_left_win, 0, true);
+            win_draw(about_kb_left_win);
+        }
+    }
+
+    int rightX = aboutRect.lrx + 1 + gap;
+    if (rightX + halfW <= screenW) {
+        about_kb_right_win = win_add(rightX, halfY, halfW, halfH, 256, WINDOW_MOVE_ON_TOP);
+        if (about_kb_right_win != -1) {
+            vkb_text_split_draw(about_kb_right_win, 0, false);
+            vkb_text_split_register(about_kb_right_win, 0, false);
+            win_draw(about_kb_right_win);
+        }
+    }
+}
+
+static void about_remove_split_keyboard()
+{
+    if (about_kb_left_win != -1) {
+        win_delete(about_kb_left_win);
+        about_kb_left_win = -1;
+    }
+
+    if (about_kb_right_win != -1) {
+        win_delete(about_kb_right_win);
+        about_kb_right_win = -1;
+    }
+}
+
 // 0x442154
 static int about_init()
 {
@@ -3673,13 +3747,8 @@ static int about_init()
                 about_win_width = background_width;
 
                 int aboutWindowHeight = background_height;
-                if (gconfig_show_virtual_keyboard != 0) {
-                    aboutWindowHeight += VKB_TEXT_KEYBOARD_HEIGHT;
-                }
 
-                int aboutWindowY = gconfig_show_virtual_keyboard != 0
-                    ? (screenGetHeight() - aboutWindowHeight) / 2
-                    : (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356;
+                int aboutWindowY = (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356;
 
                 about_win = win_add((screenGetWidth() - background_width) / 2,
                     aboutWindowY,
@@ -3785,8 +3854,7 @@ static int about_init()
 art_ptr_unlock(background_key);
 
                                         if (gconfig_show_virtual_keyboard != 0) {
-                                            vkb_text_draw(about_win, aboutWindowHeight - VKB_TEXT_KEYBOARD_HEIGHT);
-                                            vkb_text_register(about_win, aboutWindowHeight - VKB_TEXT_KEYBOARD_HEIGHT);
+                                            about_create_split_keyboard();
                                         }
 
                                         win_draw(about_win);
@@ -3840,6 +3908,8 @@ static void about_exit()
             about_button_down_key = NULL;
         }
 
+        about_remove_split_keyboard();
+
         win_delete(about_win);
         about_win = -1;
 
@@ -3856,11 +3926,6 @@ static void about_loop()
 
     beginTextInput();
 
-    int kbY = 0;
-    if (gconfig_show_virtual_keyboard != 0) {
-        kbY = win_height(about_win) - VKB_TEXT_KEYBOARD_HEIGHT;
-    }
-
     renderPresent();
 
     while (1) {
@@ -3869,11 +3934,15 @@ static void about_loop()
         int keyCode = get_input();
         keyCode = vkb_text_handle_key(keyCode);
         if (keyCode == VKB_TEXT_KEY_CONSUMED) {
-            if (kbY > 0) {
-                vkb_text_draw(about_win, kbY);
-                win_draw(about_win);
-                renderPresent();
+            if (about_kb_left_win != -1) {
+                vkb_text_split_draw(about_kb_left_win, 0, true);
+                win_draw(about_kb_left_win);
             }
+            if (about_kb_right_win != -1) {
+                vkb_text_split_draw(about_kb_right_win, 0, false);
+                win_draw(about_kb_right_win);
+            }
+            renderPresent();
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
             continue;

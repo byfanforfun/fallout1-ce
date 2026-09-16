@@ -1,6 +1,8 @@
 #ifndef FALLOUT_GAME_VKB_H_
 #define FALLOUT_GAME_VKB_H_
 
+#include <stdbool.h>
+
 namespace fallout {
 
 // -- Numeric keyboard (move-items / set-timer) --------------------------------
@@ -53,6 +55,11 @@ void vkb_numeric_register(int win, int kbY);
 #define VKB_TEXT_KEYBOARD_KEY_HEIGHT 30
 #define VKB_TEXT_KEYBOARD_ROW_GAP 4
 
+// Columns per half when the keyboard is split left/right of a window that
+// has no room below it (e.g. the "talk about" box at the bottom of the
+// dialogue screen).
+#define VKB_TEXT_SPLIT_COLUMNS 6
+
 // Total height of the text keyboard area (pixels).
 #define VKB_TEXT_KEYBOARD_HEIGHT \
     (VKB_TEXT_KEYBOARD_PAD_Y * 2                             \
@@ -89,6 +96,15 @@ void vkb_text_draw(int win, int kbY);
 
 // Register the invisible text keyboard buttons on the host window.
 void vkb_text_register(int win, int kbY);
+
+// Draw half a text keyboard into a window sized for
+// VKB_TEXT_SPLIT_COLUMNS columns.  isLeft selects the left half
+// (columns 0..5) or the right half (columns 6..11).  kbY is the top row of
+// the keyboard area inside the window buffer.
+void vkb_text_split_draw(int win, int kbY, bool isLeft);
+
+// Register the invisible buttons for half a text keyboard.
+void vkb_text_split_register(int win, int kbY, bool isLeft);
 
 // Translate a raw get_input() code. Returns:
 //   >= 0  — character byte to feed to the text-input field (or a real code

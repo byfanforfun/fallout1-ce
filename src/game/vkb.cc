@@ -417,4 +417,192 @@ void vkb_text_register(int win, int kbY)
     }
 }
 
+// =============================================================================
+// Text keyboard — split halves (used when the host window has no room below
+// it, e.g. the "talk about" box near the bottom of the dialogue screen).
+// Each half is drawn in its own window sized for VKB_TEXT_SPLIT_COLUMNS
+// columns.  The left half keeps the low columns, the right half the high
+// ones, so the serial codes stay the same as in the full keyboard.
+// =============================================================================
+
+static int vkb_text_split_cell_w(int windowWidth)
+{
+    int totalGaps = (VKB_TEXT_SPLIT_COLUMNS - 1) * VKB_TEXT_KEYBOARD_GAP;
+    return (windowWidth - 2 * VKB_TEXT_KEYBOARD_PAD_X - totalGaps) / VKB_TEXT_SPLIT_COLUMNS;
+}
+
+static void vkb_text_split_cell_rect(int row, int localCol, int span, int windowWidth,
+                                      int* outX, int* outY, int* outW, int* outH)
+{
+    int cellW = vkb_text_split_cell_w(windowWidth);
+    *outX = VKB_TEXT_KEYBOARD_PAD_X + localCol * (cellW + VKB_TEXT_KEYBOARD_GAP);
+    *outY = VKB_TEXT_KEYBOARD_PAD_Y + row * (VKB_TEXT_KEYBOARD_KEY_HEIGHT + VKB_TEXT_KEYBOARD_ROW_GAP);
+    *outW = span * cellW + (span - 1) * VKB_TEXT_KEYBOARD_GAP;
+    *outH = VKB_TEXT_KEYBOARD_KEY_HEIGHT;
+}
+
+void vkb_text_split_draw(int win, int kbY, bool isLeft)
+{
+    unsigned char* windowBuffer = win_get_buf(win);
+    int windowWidth = win_width(win);
+
+    int oldFont = text_curr();
+    text_font(101);
+
+    buf_fill(windowBuffer + kbY * windowWidth, windowWidth, VKB_TEXT_KEYBOARD_HEIGHT, windowWidth, 84);
+
+    char label[4];
+
+    // Row 0 — digits, Ё, backspace (only the cell(s) owned by this half).
+    for (int localCol = 0; localCol < VKB_TEXT_SPLIT_COLUMNS; localCol++) {
+        int globalCol = isLeft ? localCol : VKB_TEXT_SPLIT_COLUMNS + localCol;
+        int x, y, w, h;
+        vkb_text_split_cell_rect(0, localCol, 1, windowWidth, &x, &y, &w, &h);
+
+        if (globalCol < 10) {
+            int digit = (globalCol + 1) % 10;
+            label[0] = (char)('0' + digit);
+            label[1] = '\0';
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
+            continue;
+        }
+        if (globalCol == 10) {
+            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_Ё);
+            if (byte > 0 && text_is_glyph(byte)) {
+                label[0] = (char)byte;
+                label[1] = '\0';
+                vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
+            }
+            continue;
+        }
+        label[0] = '<';
+        label[1] = '\0';
+        vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
+    }
+
+    // Rows 1..3 — letter grid (stable serial codes, half of the columns).
+    for (int serial = VKB_TEXT_SERIAL_FIRST_LETTER; serial < VKB_TEXT_SERIAL_FIRST_LETTER + VKB_TEXT_LETTER_KEY_COUNT; serial++) {
+        int idx = serial - VKB_TEXT_SERIAL_FIRST_LETTER;
+        int row = idx / VKB_TEXT_KEYBOARD_COLUMNS + 1;
+        int globalCol = idx % VKB_TEXT_KEYBOARD_COLUMNS;
+        if ((isLeft && globalCol >= VKB_TEXT_SPLIT_COLUMNS) || (!isLeft && globalCol < VKB_TEXT_SPLIT_COLUMNS)) {
+            continue;
+        }
+
+        int byte = vkb_text_serial_to_byte(serial);
+        int localCol = globalCol - (isLeft ? 0 : VKB_TEXT_SPLIT_COLUMNS);
+        int x, y, w, h;
+        vkb_text_split_cell_rect(row, localCol, 1, windowWidth, &x, &y, &w, &h);
+
+        if (byte > 0 && text_is_glyph(byte)) {
+            label[0] = (char)byte;
+            label[1] = '\0';
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
+        }
+    }
+
+    // Row 4 — left: space; right: case, lang, enter.
+    {
+        int x, y, w, h;
+        if (isLeft) {
+            vkb_text_split_cell_rect(4, 0, VKB_TEXT_SPLIT_COLUMNS, windowWidth, &x, &y, &w, &h);
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "Space", colorTable[21091]);
+        } else {
+            vkb_text_split_cell_rect(4, 2, 1, windowWidth, &x, &y, &w, &h);
+            label[0] = (vkb_text_uppercase ? 'A' : 'a');
+            label[1] = (vkb_text_uppercase ? 'B' : 'b');
+            label[2] = (vkb_text_uppercase ? 'C' : 'c');
+            label[3] = '\0';
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
+
+            vkb_text_split_cell_rect(4, 3, 1, windowWidth, &x, &y, &w, &h);
+            const char* langLabel = (vkb_text_active_page == VKB_TEXT_LANGUAGE_RU) ? "RU" : "EN";
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, langLabel, colorTable[21091]);
+
+            vkb_text_split_cell_rect(4, 4, 2, windowWidth, &x, &y, &w, &h);
+            vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "OK", colorTable[21091]);
+        }
+    }
+
+    text_font(oldFont);
+}
+
+void vkb_text_split_register(int win, int kbY, bool isLeft)
+{
+    int windowWidth = win_width(win);
+
+    vkb_text_init();
+
+    // Row 0 — digits and special keys.
+    for (int localCol = 0; localCol < VKB_TEXT_SPLIT_COLUMNS; localCol++) {
+        int globalCol = isLeft ? localCol : VKB_TEXT_SPLIT_COLUMNS + localCol;
+        int x, y, w, h;
+        vkb_text_split_cell_rect(0, localCol, 1, windowWidth, &x, &y, &w, &h);
+
+        int keyCode;
+        if (globalCol < 10) {
+            int digit = (globalCol + 1) % 10;
+            keyCode = KEY_0 + digit;
+        } else if (globalCol == 10) {
+            keyCode = VKB_TEXT_KEY_SERIAL_BASE + VKB_TEXT_SERIAL_Ё;
+        } else {
+            keyCode = KEY_BACKSPACE;
+        }
+
+        int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, keyCode, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+        if (btn != -1) {
+            win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+        }
+    }
+
+    // Rows 1..3 — letter grid (stable serial codes).
+    for (int serial = VKB_TEXT_SERIAL_FIRST_LETTER; serial < VKB_TEXT_SERIAL_FIRST_LETTER + VKB_TEXT_LETTER_KEY_COUNT; serial++) {
+        int idx = serial - VKB_TEXT_SERIAL_FIRST_LETTER;
+        int row = idx / VKB_TEXT_KEYBOARD_COLUMNS + 1;
+        int globalCol = idx % VKB_TEXT_KEYBOARD_COLUMNS;
+        if ((isLeft && globalCol >= VKB_TEXT_SPLIT_COLUMNS) || (!isLeft && globalCol < VKB_TEXT_SPLIT_COLUMNS)) {
+            continue;
+        }
+
+        int localCol = globalCol - (isLeft ? 0 : VKB_TEXT_SPLIT_COLUMNS);
+        int x, y, w, h;
+        vkb_text_split_cell_rect(row, localCol, 1, windowWidth, &x, &y, &w, &h);
+
+        int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_SERIAL_BASE + serial, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+        if (btn != -1) {
+            win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+        }
+    }
+
+    // Row 4 — left half: space; right half: case, lang, enter.
+    {
+        int x, y, w, h;
+        if (isLeft) {
+            vkb_text_split_cell_rect(4, 0, VKB_TEXT_SPLIT_COLUMNS, windowWidth, &x, &y, &w, &h);
+            int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_SPACE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            if (btn != -1) {
+                win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+            }
+        } else {
+            vkb_text_split_cell_rect(4, 2, 1, windowWidth, &x, &y, &w, &h);
+            int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_CASE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            if (btn != -1) {
+                win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+            }
+
+            vkb_text_split_cell_rect(4, 3, 1, windowWidth, &x, &y, &w, &h);
+            btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_LANG, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            if (btn != -1) {
+                win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+            }
+
+            vkb_text_split_cell_rect(4, 4, 2, windowWidth, &x, &y, &w, &h);
+            btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_RETURN, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
+            if (btn != -1) {
+                win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
+            }
+        }
+    }
+}
+
 } // namespace fallout
