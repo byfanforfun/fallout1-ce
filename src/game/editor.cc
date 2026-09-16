@@ -2860,9 +2860,7 @@ static int NameWindow()
     }
 
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
-    int nameWindowY = gconfig_show_virtual_keyboard != 0
-        ? (screenGetHeight() - windowHeight) / 2
-        : (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
+    int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
     int win = win_add(nameWindowX, nameWindowY, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (win == -1) {
         return -1;
