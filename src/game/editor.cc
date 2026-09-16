@@ -1538,6 +1538,8 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
                     }
                     continue;
                 }
+            } else if (keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
+                keyCode = KEY_BACKSPACE;
             } else if (keyCode == KEY_LOWERCASE_I || keyCode == KEY_UPPERCASE_I) {
                 keyCode = KEY_SPACE;
             } else if (keyCode == KEY_LOWERCASE_C || keyCode == KEY_UPPERCASE_C) {
