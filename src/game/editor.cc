@@ -10,6 +10,7 @@
 #include "game/critter.h"
 #include "game/cycle.h"
 #include "game/game.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/graphlib.h"
 #include "game/gsound.h"
@@ -25,6 +26,7 @@
 #include "game/skill.h"
 #include "game/stat.h"
 #include "game/trait.h"
+#include "game/vkb.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "platform_compat.h"
@@ -1461,6 +1463,11 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         maxLength = 255;
     }
 
+    int kbY = 0;
+    if (gconfig_show_virtual_keyboard != 0 && win_height(win) > VKB_TEXT_KEYBOARD_HEIGHT) {
+        kbY = win_height(win) - VKB_TEXT_KEYBOARD_HEIGHT;
+    }
+
     char copy[257];
     strcpy(copy, text);
 
@@ -1477,6 +1484,11 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
     beginTextInput();
 
+    if (kbY > 0) {
+        vkb_text_draw(win, kbY);
+        vkb_text_register(win, kbY);
+    }
+
     int blinkingCounter = 3;
     bool blink = false;
 
@@ -1487,6 +1499,17 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         frame_time = get_time();
 
         int keyCode = get_input();
+        keyCode = vkb_text_handle_key(keyCode);
+        if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (kbY > 0) {
+                vkb_text_draw(win, kbY);
+                win_draw(win);
+            }
+            continue;
+        } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
+            continue;
+        }
+
         if (keyCode == cancelKeyCode) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
@@ -1503,7 +1526,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
                 nameLength--;
 
                 win_draw(win);
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && nameLength < maxLength) {
+            } else if ((keyCode >= KEY_SPACE && keyCode < 256) && nameLength < maxLength) {
                 if ((flags & 0x01) != 0) {
                     if (!isdoschar(keyCode)) {
                         break;
@@ -2829,9 +2852,14 @@ static int NameWindow()
 
     int windowWidth = GInfo[EDITOR_GRAPHIC_CHARWIN].width;
     int windowHeight = GInfo[EDITOR_GRAPHIC_CHARWIN].height;
+    if (gconfig_show_virtual_keyboard != 0) {
+        windowHeight += VKB_TEXT_KEYBOARD_HEIGHT;
+    }
 
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
-    int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
+    int nameWindowY = gconfig_show_virtual_keyboard != 0
+        ? (screenGetHeight() - windowHeight) / 2
+        : (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
     int win = win_add(nameWindowX, nameWindowY, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (win == -1) {
         return -1;
@@ -2839,8 +2867,9 @@ static int NameWindow()
 
     unsigned char* windowBuf = win_get_buf(win);
 
-    // Copy background
-    memcpy(windowBuf, grphbmp[EDITOR_GRAPHIC_CHARWIN], windowWidth * windowHeight);
+    // Copy background (only the original content rows; the vertical space below
+    // is filled by the virtual keyboard).
+    memcpy(windowBuf, grphbmp[EDITOR_GRAPHIC_CHARWIN], windowWidth * GInfo[EDITOR_GRAPHIC_CHARWIN].height);
 
     trans_buf_to_buf(
         grphbmp[EDITOR_GRAPHIC_NAME_BOX],
