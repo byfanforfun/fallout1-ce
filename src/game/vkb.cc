@@ -212,6 +212,19 @@ static int vkb_text_focus_row = 4;
 static int vkb_text_focus_col = 10;
 static bool vkb_text_nav_active = false;
 
+// Row 4 is not a plain 12-column grid: it holds four grouped keys separated
+// by gaps (space, case, lang, OK).  Navigation on that row moves between the
+// groups, so every group is always reachable.
+enum {
+    VKB_TEXT_GROUP_COUNT = 4,
+    VKB_TEXT_GROUP_SPACE = 0,
+    VKB_TEXT_GROUP_CASE = 1,
+    VKB_TEXT_GROUP_LANG = 2,
+    VKB_TEXT_GROUP_OK = 3,
+};
+
+static int vkb_text_focus_group = VKB_TEXT_GROUP_OK;
+
 void vkb_text_set_split_layout(bool splitLayout)
 {
     vkb_text_split_layout = splitLayout;
@@ -220,7 +233,7 @@ void vkb_text_set_split_layout(bool splitLayout)
 void vkb_text_nav_reset()
 {
     vkb_text_focus_row = 4;
-    vkb_text_focus_col = 10;
+    vkb_text_focus_group = VKB_TEXT_GROUP_OK;
     vkb_text_nav_active = true;
 }
 
@@ -230,7 +243,8 @@ void vkb_text_nav_disable()
 }
 
 // Key code produced by the given grid cell, or -1 when the cell is dead on the
-// active page.  Row 4 is the space/case/lang/OK row (see split layout above).
+// active page.  Only the letter/digit rows (0..3) are a plain grid; row 4 is
+// handled by the group helpers below.
 static int vkb_text_cell_key(int row, int col)
 {
     if (row == 0) {
@@ -251,22 +265,56 @@ static int vkb_text_cell_key(int row, int col)
         return (byte > 0 && text_is_glyph(byte)) ? byte : -1;
     }
 
-    if (vkb_text_split_layout) {
-        if (col < VKB_TEXT_SPLIT_COLUMNS) return KEY_SPACE;
-        if (col < 8) return -1; // gap between the two halves.
-        if (col == 8) return VKB_TEXT_KEY_CASE;
-        if (col == 9) return VKB_TEXT_KEY_LANG;
-        return KEY_RETURN; // columns 10..11 (OK).
-    }
+    return -1;
+}
 
-    if (col < 8) return KEY_SPACE;
-    if (col == 8) return VKB_TEXT_KEY_CASE;
-    if (col == 9) return VKB_TEXT_KEY_LANG;
-    return KEY_RETURN; // columns 10..11 (OK).
+// Grid column that the group is reached from / lands on when moving between
+// row 4 and the letter rows.
+static int vkb_text_group_to_col(int group)
+{
+    switch (group) {
+    case VKB_TEXT_GROUP_CASE:
+        return 8;
+    case VKB_TEXT_GROUP_LANG:
+        return 9;
+    case VKB_TEXT_GROUP_OK:
+        return 10;
+    default:
+        return 4;
+    }
+}
+
+// Group that a grid column maps to when crossing from the letter rows down
+// into row 4.
+static int vkb_text_group_from_col(int col)
+{
+    if (col < 8) return VKB_TEXT_GROUP_SPACE;
+    if (col == 8) return VKB_TEXT_GROUP_CASE;
+    if (col == 9) return VKB_TEXT_GROUP_LANG;
+    return VKB_TEXT_GROUP_OK;
+}
+
+static int vkb_text_group_key(int group)
+{
+    switch (group) {
+    case VKB_TEXT_GROUP_CASE:
+        return VKB_TEXT_KEY_CASE;
+    case VKB_TEXT_GROUP_LANG:
+        return VKB_TEXT_KEY_LANG;
+    case VKB_TEXT_GROUP_OK:
+        return KEY_RETURN;
+    default:
+        return KEY_SPACE;
+    }
 }
 
 void vkb_text_nav_anchor()
 {
+    if (vkb_text_focus_row == 4) {
+        // All four groups are always reachable keys.
+        return;
+    }
+
     if (vkb_text_cell_key(vkb_text_focus_row, vkb_text_focus_col) >= 0) {
         return;
     }
@@ -274,6 +322,7 @@ void vkb_text_nav_anchor()
     for (int row = 0; row < VKB_TEXT_KEYBOARD_ROWS; row++) {
         if (vkb_text_cell_key(row, vkb_text_focus_col) >= 0) {
             vkb_text_focus_row = row;
+            vkb_text_focus_col = 0;
             return;
         }
     }
@@ -295,6 +344,11 @@ static void vkb_text_focus_move_row(int dir)
         int row = (vkb_text_focus_row + dir * i) % VKB_TEXT_KEYBOARD_ROWS;
         if (row < 0) {
             row += VKB_TEXT_KEYBOARD_ROWS;
+        }
+        if (row == 4) {
+            vkb_text_focus_row = 4;
+            vkb_text_focus_group = vkb_text_group_from_col(vkb_text_focus_col);
+            return;
         }
         if (vkb_text_cell_key(row, vkb_text_focus_col) >= 0) {
             vkb_text_focus_row = row;
@@ -323,6 +377,32 @@ void vkb_text_navigate(int keyCode)
         return;
     }
 
+    if (vkb_text_focus_row == 4) {
+        switch (keyCode) {
+        case KEY_LEFT:
+            vkb_text_focus_group = (vkb_text_focus_group + VKB_TEXT_GROUP_COUNT - 1) % VKB_TEXT_GROUP_COUNT;
+            break;
+        case KEY_RIGHT:
+            vkb_text_focus_group = (vkb_text_focus_group + 1) % VKB_TEXT_GROUP_COUNT;
+            break;
+        case KEY_UP:
+        case KEY_DOWN: {
+            int col = vkb_text_group_to_col(vkb_text_focus_group);
+            int dir = (keyCode == KEY_UP) ? -1 : 1;
+            for (int i = 1; i <= VKB_TEXT_KEYBOARD_ROWS; i++) {
+                int row = (4 + dir * i + VKB_TEXT_KEYBOARD_ROWS) % VKB_TEXT_KEYBOARD_ROWS;
+                if (vkb_text_cell_key(row, col) >= 0) {
+                    vkb_text_focus_row = row;
+                    vkb_text_focus_col = col;
+                    return;
+                }
+            }
+            break;
+        }
+        }
+        return;
+    }
+
     switch (keyCode) {
     case KEY_LEFT:
         vkb_text_focus_move_col(-1);
@@ -345,6 +425,10 @@ int vkb_text_focus_key()
         return KEY_RETURN;
     }
 
+    if (vkb_text_focus_row == 4) {
+        return vkb_text_group_key(vkb_text_focus_group);
+    }
+
     int key = vkb_text_cell_key(vkb_text_focus_row, vkb_text_focus_col);
     if (key < 0) {
         return KEY_RETURN;
@@ -352,31 +436,11 @@ int vkb_text_focus_key()
     return key;
 }
 
-// Span (in grid columns) that the given cell joins on row 4: the space bar
-// covers all 8 columns, the OK button 2 columns, toggles 1 column.
-static void vkb_text_focus_span(int row, int col, int* colPos, int* span)
-{
-    if (row != 4) {
-        *colPos = col;
-        *span = 1;
-        return;
-    }
-
-    if (col < vkb_text_split_layout ? VKB_TEXT_SPLIT_COLUMNS : 8) {
-        *colPos = 0;
-        *span = vkb_text_split_layout ? VKB_TEXT_SPLIT_COLUMNS : 8;
-    } else if (col >= 10) {
-        *colPos = 10;
-        *span = 2;
-    } else {
-        *colPos = col;
-        *span = 1;
-    }
-}
-
 static void vkb_text_cell_rect(int row, int col, int span, int windowWidth,
     int* outX, int* outY, int* outW, int* outH);
 static void vkb_text_split_cell_rect(int row, int localCol, int span, int windowWidth,
+    int* outX, int* outY, int* outW, int* outH);
+static void vkb_text_row4_rect(int group, int windowWidth, bool isSplit, bool isLeft,
     int* outX, int* outY, int* outW, int* outH);
 
 // Draw a box around the active navigation cell (full or split keyboard).
@@ -387,21 +451,26 @@ static void vkb_text_draw_focus(unsigned char* windowBuffer, int windowWidth,
         return;
     }
 
-    int colPos;
-    int span;
-    vkb_text_focus_span(vkb_text_focus_row, vkb_text_focus_col, &colPos, &span);
-
-    if (isSplit) {
-        if ((isLeft && colPos >= VKB_TEXT_SPLIT_COLUMNS) || (!isLeft && colPos < VKB_TEXT_SPLIT_COLUMNS)) {
+    int x, y, w, h;
+    if (vkb_text_focus_row == 4) {
+        if (isSplit && ((isLeft && vkb_text_focus_group != VKB_TEXT_GROUP_SPACE)
+            || (!isLeft && vkb_text_focus_group == VKB_TEXT_GROUP_SPACE))) {
             return;
         }
-    }
-
-    int x, y, w, h;
-    if (isSplit) {
-        vkb_text_split_cell_rect(vkb_text_focus_row, colPos - (isLeft ? 0 : VKB_TEXT_SPLIT_COLUMNS), span, windowWidth, &x, &y, &w, &h);
+        vkb_text_row4_rect(vkb_text_focus_group, windowWidth, isSplit, isLeft, &x, &y, &w, &h);
+        if (w <= 0) {
+            return;
+        }
     } else {
-        vkb_text_cell_rect(vkb_text_focus_row, colPos, span, windowWidth, &x, &y, &w, &h);
+        if (isSplit) {
+            if ((isLeft && vkb_text_focus_col >= VKB_TEXT_SPLIT_COLUMNS)
+                || (!isLeft && vkb_text_focus_col < VKB_TEXT_SPLIT_COLUMNS)) {
+                return;
+            }
+            vkb_text_split_cell_rect(vkb_text_focus_row, vkb_text_focus_col - (isLeft ? 0 : VKB_TEXT_SPLIT_COLUMNS), 1, windowWidth, &x, &y, &w, &h);
+        } else {
+            vkb_text_cell_rect(vkb_text_focus_row, vkb_text_focus_col, 1, windowWidth, &x, &y, &w, &h);
+        }
     }
 
     draw_shaded_box(windowBuffer, windowWidth, x - 1, y + kbY - 1, x + w, y + kbY + h, colorTable[21091], colorTable[21091]);
@@ -425,6 +494,56 @@ static void vkb_text_cell_rect(int row, int col, int span, int windowWidth,
     *outY = VKB_TEXT_KEYBOARD_PAD_Y + row * (VKB_TEXT_KEYBOARD_KEY_HEIGHT + VKB_TEXT_KEYBOARD_ROW_GAP);
     *outW = span * keyW + (span - 1) * VKB_TEXT_KEYBOARD_GAP;
     *outH = VKB_TEXT_KEYBOARD_KEY_HEIGHT;
+}
+
+// Rectangle of one row-4 group key (space / case / lang / OK).  The keys are
+// sized on a unit column so the whole row fits the window width exactly and
+// each key is visually separated by a full gap:
+//   full : space(8u) gap case(1u) gap lang(1u) gap OK(2u)      = 12u + 3 gaps
+//   left : space fills the whole half
+//   right: case(1u) gap lang(1u) gap OK(2u)                    = 4u + 2 gaps
+static void vkb_text_row4_rect(int group, int windowWidth, bool isSplit, bool isLeft,
+                                int* outX, int* outY, int* outW, int* outH)
+{
+    int innerWidth = windowWidth - 2 * VKB_TEXT_KEYBOARD_PAD_X;
+    int gap = VKB_TEXT_KEYBOARD_GAP;
+
+    *outY = VKB_TEXT_KEYBOARD_PAD_Y + 4 * (VKB_TEXT_KEYBOARD_KEY_HEIGHT + VKB_TEXT_KEYBOARD_ROW_GAP);
+    *outH = VKB_TEXT_KEYBOARD_KEY_HEIGHT;
+
+    if (isSplit && !isLeft) {
+        int unitKeyW = (innerWidth - 2 * gap) / 4;
+        int x = VKB_TEXT_KEYBOARD_PAD_X;
+        if (group == VKB_TEXT_GROUP_CASE) {
+            *outX = x;
+            *outW = unitKeyW;
+        } else if (group == VKB_TEXT_GROUP_LANG) {
+            *outX = x + unitKeyW + gap;
+            *outW = unitKeyW;
+        } else {
+            *outX = x + 2 * (unitKeyW + gap);
+            *outW = 2 * unitKeyW;
+        }
+    } else if (isSplit && isLeft) {
+        *outX = VKB_TEXT_KEYBOARD_PAD_X;
+        *outW = (group == VKB_TEXT_GROUP_SPACE) ? innerWidth : 0;
+    } else {
+        int unitKeyW = (innerWidth - 3 * gap) / 12;
+        int x = VKB_TEXT_KEYBOARD_PAD_X;
+        if (group == VKB_TEXT_GROUP_SPACE) {
+            *outX = x;
+            *outW = 8 * unitKeyW;
+        } else if (group == VKB_TEXT_GROUP_CASE) {
+            *outX = x + 8 * unitKeyW + gap;
+            *outW = unitKeyW;
+        } else if (group == VKB_TEXT_GROUP_LANG) {
+            *outX = x + 9 * unitKeyW + 2 * gap;
+            *outW = unitKeyW;
+        } else {
+            *outX = x + 10 * unitKeyW + 3 * gap;
+            *outW = 2 * unitKeyW;
+        }
+    }
 }
 
 int vkb_text_kb_y(int windowHeight)
@@ -503,12 +622,16 @@ void vkb_text_draw(int win, int kbY)
         }
     }
 
-    // Row 4 — space (8 cols), case toggle, lang toggle, enter (2 cols).
+    // Row 4 — space, case, lang, OK as four grouped keys with gaps.
     {
         int x, y, w, h;
-        // Space: no label, just the empty filled cell.
+
+        // Space
+        vkb_text_row4_rect(VKB_TEXT_GROUP_SPACE, windowWidth, false, false, &x, &y, &w, &h);
+        vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "Space", colorTable[21091]);
+
         // Case toggle
-        vkb_text_cell_rect(4, 8, 1, windowWidth, &x, &y, &w, &h);
+        vkb_text_row4_rect(VKB_TEXT_GROUP_CASE, windowWidth, false, false, &x, &y, &w, &h);
         label[0] = (vkb_text_uppercase ? 'A' : 'a');
         label[1] = (vkb_text_uppercase ? 'B' : 'b');
         label[2] = (vkb_text_uppercase ? 'C' : 'c');
@@ -516,12 +639,12 @@ void vkb_text_draw(int win, int kbY)
         vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
 
         // Lang toggle
-        vkb_text_cell_rect(4, 9, 1, windowWidth, &x, &y, &w, &h);
+        vkb_text_row4_rect(VKB_TEXT_GROUP_LANG, windowWidth, false, false, &x, &y, &w, &h);
         const char* langLabel = (vkb_text_active_page == VKB_TEXT_LANGUAGE_RU) ? "RU" : "EN";
         vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, langLabel, colorTable[21091]);
 
-        // Enter
-        vkb_text_cell_rect(4, 10, 2, windowWidth, &x, &y, &w, &h);
+        // OK
+        vkb_text_row4_rect(VKB_TEXT_GROUP_OK, windowWidth, false, false, &x, &y, &w, &h);
         vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "OK", colorTable[21091]);
     }
 
@@ -576,33 +699,33 @@ void vkb_text_register(int win, int kbY)
         }
     }
 
-    // Row 4 — space, case, lang, enter.
+    // Row 4 — space, case, lang, OK as four grouped keys with gaps.
     {
         int x, y, w, h;
 
-        // Space (8 cols wide)
-        vkb_text_cell_rect(4, 0, 8, windowWidth, &x, &y, &w, &h);
+        // Space
+        vkb_text_row4_rect(VKB_TEXT_GROUP_SPACE, windowWidth, false, false, &x, &y, &w, &h);
         int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_SPACE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
         }
 
         // Case toggle
-        vkb_text_cell_rect(4, 8, 1, windowWidth, &x, &y, &w, &h);
+        vkb_text_row4_rect(VKB_TEXT_GROUP_CASE, windowWidth, false, false, &x, &y, &w, &h);
         btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_CASE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
         }
 
         // Lang toggle
-        vkb_text_cell_rect(4, 9, 1, windowWidth, &x, &y, &w, &h);
+        vkb_text_row4_rect(VKB_TEXT_GROUP_LANG, windowWidth, false, false, &x, &y, &w, &h);
         btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_LANG, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
         }
 
-        // Enter (2 cols wide)
-        vkb_text_cell_rect(4, 10, 2, windowWidth, &x, &y, &w, &h);
+        // OK
+        vkb_text_row4_rect(VKB_TEXT_GROUP_OK, windowWidth, false, false, &x, &y, &w, &h);
         btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_RETURN, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
@@ -694,25 +817,25 @@ void vkb_text_split_draw(int win, int kbY, bool isLeft)
         }
     }
 
-    // Row 4 — left: space; right: case, lang, enter.
+    // Row 4 — left: space; right: case, lang, OK as grouped keys with gaps.
     {
         int x, y, w, h;
         if (isLeft) {
-            vkb_text_split_cell_rect(4, 0, VKB_TEXT_SPLIT_COLUMNS, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_SPACE, windowWidth, true, true, &x, &y, &w, &h);
             vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "Space", colorTable[21091]);
         } else {
-            vkb_text_split_cell_rect(4, 2, 1, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_CASE, windowWidth, true, false, &x, &y, &w, &h);
             label[0] = (vkb_text_uppercase ? 'A' : 'a');
             label[1] = (vkb_text_uppercase ? 'B' : 'b');
             label[2] = (vkb_text_uppercase ? 'C' : 'c');
             label[3] = '\0';
             vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, label, colorTable[21091]);
 
-            vkb_text_split_cell_rect(4, 3, 1, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_LANG, windowWidth, true, false, &x, &y, &w, &h);
             const char* langLabel = (vkb_text_active_page == VKB_TEXT_LANGUAGE_RU) ? "RU" : "EN";
             vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, langLabel, colorTable[21091]);
 
-            vkb_text_split_cell_rect(4, 4, 2, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_OK, windowWidth, true, false, &x, &y, &w, &h);
             vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "OK", colorTable[21091]);
         }
     }
@@ -769,29 +892,29 @@ void vkb_text_split_register(int win, int kbY, bool isLeft)
         }
     }
 
-    // Row 4 — left half: space; right half: case, lang, enter.
+    // Row 4 — left half: space; right half: case, lang, OK as grouped keys.
     {
         int x, y, w, h;
         if (isLeft) {
-            vkb_text_split_cell_rect(4, 0, VKB_TEXT_SPLIT_COLUMNS, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_SPACE, windowWidth, true, true, &x, &y, &w, &h);
             int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_SPACE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
             if (btn != -1) {
                 win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
             }
         } else {
-            vkb_text_split_cell_rect(4, 2, 1, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_CASE, windowWidth, true, false, &x, &y, &w, &h);
             int btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_CASE, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
             if (btn != -1) {
                 win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
             }
 
-            vkb_text_split_cell_rect(4, 3, 1, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_LANG, windowWidth, true, false, &x, &y, &w, &h);
             btn = win_register_button(win, x, kbY + y, w, h, -1, -1, VKB_TEXT_KEY_LANG, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
             if (btn != -1) {
                 win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
             }
 
-            vkb_text_split_cell_rect(4, 4, 2, windowWidth, &x, &y, &w, &h);
+            vkb_text_row4_rect(VKB_TEXT_GROUP_OK, windowWidth, true, false, &x, &y, &w, &h);
             btn = win_register_button(win, x, kbY + y, w, h, -1, -1, KEY_RETURN, -1, NULL, NULL, NULL, BUTTON_FLAG_TRANSPARENT);
             if (btn != -1) {
                 win_register_button_sound_func(btn, gsound_red_butt_press, gsound_red_butt_release);
