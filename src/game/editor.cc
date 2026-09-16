@@ -1475,6 +1475,8 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
     copy[nameLength] = ' ';
     copy[nameLength + 1] = '\0';
 
+    int caretPos = nameLength;
+
     int nameWidth = text_width(copy);
 
     buf_fill(windowBuffer + windowWidth * y + x, nameWidth, text_height(), windowWidth, backgroundColor);
@@ -1485,6 +1487,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
     beginTextInput();
 
     if (kbY > 0) {
+        vkb_text_nav_reset();
         vkb_text_draw(win, kbY);
         vkb_text_register(win, kbY);
     }
@@ -1504,6 +1507,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         keyCode = vkb_text_handle_key(keyCode);
         if (keyCode == VKB_TEXT_KEY_CONSUMED) {
             if (kbY > 0) {
+                vkb_text_nav_anchor();
                 vkb_text_draw(win, kbY);
                 win_draw(win);
                 renderPresent();
@@ -1511,6 +1515,36 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
             continue;
+        }
+
+        bool caretLeft = false;
+        bool caretRight = false;
+        if (kbY > 0) {
+            if (keyCode == KEY_LEFT || keyCode == KEY_RIGHT || keyCode == KEY_UP || keyCode == KEY_DOWN) {
+                vkb_text_navigate(keyCode);
+                vkb_text_draw(win, kbY);
+                win_draw(win);
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_RETURN) {
+                keyCode = vkb_text_focus_key();
+                if (keyCode == VKB_TEXT_KEY_CASE || keyCode == VKB_TEXT_KEY_LANG) {
+                    keyCode = vkb_text_handle_key(keyCode);
+                    if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+                        vkb_text_nav_anchor();
+                        vkb_text_draw(win, kbY);
+                        win_draw(win);
+                        renderPresent();
+                    }
+                    continue;
+                }
+            } else if (keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
+                keyCode = KEY_SPACE;
+            } else if (keyCode == KEY_LOWERCASE_C || keyCode == KEY_UPPERCASE_C) {
+                caretLeft = true;
+            } else if (keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_P) {
+                caretRight = true;
+            }
         }
 
         if (keyCode == cancelKeyCode) {
@@ -1521,13 +1555,44 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         } else if (keyCode == KEY_ESCAPE || game_user_wants_to_quit != 0) {
             rc = -1;
         } else {
-            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
+            if (caretLeft) {
+                if (caretPos > 0) {
+                    caretPos--;
+                }
                 buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
-                copy[nameLength - 1] = ' ';
-                copy[nameLength] = '\0';
                 text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength--;
+                blinkingCounter = 1;
+                win_draw(win);
+            } else if (caretRight) {
+                if (caretPos < nameLength) {
+                    caretPos++;
+                }
+                buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+                blinkingCounter = 1;
+                win_draw(win);
+            } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
+                buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
+                if (keyCode == KEY_DELETE) {
+                    if (caretPos < nameLength) {
+                        for (int i = caretPos; i < nameLength - 1; i++) {
+                            copy[i] = copy[i + 1];
+                        }
+                        nameLength--;
+                        copy[nameLength] = ' ';
+                        copy[nameLength + 1] = '\0';
+                    }
+                } else if (caretPos > 0) {
+                    for (int i = caretPos - 1; i < nameLength - 1; i++) {
+                        copy[i] = copy[i + 1];
+                    }
+                    nameLength--;
+                    caretPos--;
+                    copy[nameLength] = ' ';
+                    copy[nameLength + 1] = '\0';
+                }
 
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
                 win_draw(win);
             } else if ((keyCode >= KEY_SPACE && keyCode < 256) && nameLength < maxLength) {
                 if ((flags & 0x01) != 0) {
@@ -1538,11 +1603,15 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
                 buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
 
-                copy[nameLength] = keyCode & 0xFF;
-                copy[nameLength + 1] = ' ';
-                copy[nameLength + 2] = '\0';
-                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+                for (int i = nameLength; i > caretPos; i--) {
+                    copy[i] = copy[i - 1];
+                }
+                copy[caretPos] = keyCode & 0xFF;
+                caretPos++;
                 nameLength++;
+                copy[nameLength] = ' ';
+                copy[nameLength + 1] = '\0';
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
 
                 win_draw(win);
             }
@@ -1555,7 +1624,15 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
             int color = blink ? backgroundColor : textColor;
             blink = !blink;
 
-            buf_fill(windowBuffer + windowWidth * y + x + text_width(copy) - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
+            char savedCaret = copy[caretPos];
+            copy[caretPos] = '\0';
+            int caretX = x + text_width(copy);
+            copy[caretPos] = savedCaret;
+            if (caretPos == nameLength) {
+                caretX += text_width(" ");
+            }
+
+            buf_fill(windowBuffer + windowWidth * y + caretX - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
         }
 
         win_draw(win);

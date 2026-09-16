@@ -204,6 +204,210 @@ int vkb_text_handle_key(int keyCode)
 }
 
 // =============================================================================
+// Text keyboard — navigation (arrows with wrap-around)
+// =============================================================================
+
+static bool vkb_text_split_layout = false;
+static int vkb_text_focus_row = 4;
+static int vkb_text_focus_col = 10;
+static bool vkb_text_nav_active = false;
+
+void vkb_text_set_split_layout(bool splitLayout)
+{
+    vkb_text_split_layout = splitLayout;
+}
+
+void vkb_text_nav_reset()
+{
+    vkb_text_focus_row = 4;
+    vkb_text_focus_col = 10;
+    vkb_text_nav_active = true;
+}
+
+void vkb_text_nav_disable()
+{
+    vkb_text_nav_active = false;
+}
+
+// Key code produced by the given grid cell, or -1 when the cell is dead on the
+// active page.  Row 4 is the space/case/lang/OK row (see split layout above).
+static int vkb_text_cell_key(int row, int col)
+{
+    if (row == 0) {
+        if (col < 10) {
+            int digit = (col + 1) % 10;
+            return KEY_0 + digit;
+        }
+        if (col == 10) {
+            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_Ё);
+            return (byte > 0 && text_is_glyph(byte)) ? byte : -1;
+        }
+        return KEY_BACKSPACE;
+    }
+
+    if (row < 4) {
+        int serial = VKB_TEXT_SERIAL_FIRST_LETTER + (row - 1) * VKB_TEXT_KEYBOARD_COLUMNS + col;
+        int byte = vkb_text_serial_to_byte(serial);
+        return (byte > 0 && text_is_glyph(byte)) ? byte : -1;
+    }
+
+    if (vkb_text_split_layout) {
+        if (col < VKB_TEXT_SPLIT_COLUMNS) return KEY_SPACE;
+        if (col < 8) return -1; // gap between the two halves.
+        if (col == 8) return VKB_TEXT_KEY_CASE;
+        if (col == 9) return VKB_TEXT_KEY_LANG;
+        return KEY_RETURN; // columns 10..11 (OK).
+    }
+
+    if (col < 8) return KEY_SPACE;
+    if (col == 8) return VKB_TEXT_KEY_CASE;
+    if (col == 9) return VKB_TEXT_KEY_LANG;
+    return KEY_RETURN; // columns 10..11 (OK).
+}
+
+void vkb_text_nav_anchor()
+{
+    if (vkb_text_cell_key(vkb_text_focus_row, vkb_text_focus_col) >= 0) {
+        return;
+    }
+
+    for (int row = 0; row < VKB_TEXT_KEYBOARD_ROWS; row++) {
+        if (vkb_text_cell_key(row, vkb_text_focus_col) >= 0) {
+            vkb_text_focus_row = row;
+            return;
+        }
+    }
+
+    for (int row = 0; row < VKB_TEXT_KEYBOARD_ROWS; row++) {
+        for (int col = 0; col < VKB_TEXT_KEYBOARD_COLUMNS; col++) {
+            if (vkb_text_cell_key(row, col) >= 0) {
+                vkb_text_focus_row = row;
+                vkb_text_focus_col = col;
+                return;
+            }
+        }
+    }
+}
+
+static void vkb_text_focus_move_row(int dir)
+{
+    for (int i = 1; i <= VKB_TEXT_KEYBOARD_ROWS; i++) {
+        int row = (vkb_text_focus_row + dir * i) % VKB_TEXT_KEYBOARD_ROWS;
+        if (row < 0) {
+            row += VKB_TEXT_KEYBOARD_ROWS;
+        }
+        if (vkb_text_cell_key(row, vkb_text_focus_col) >= 0) {
+            vkb_text_focus_row = row;
+            return;
+        }
+    }
+}
+
+static void vkb_text_focus_move_col(int dir)
+{
+    for (int i = 1; i <= VKB_TEXT_KEYBOARD_COLUMNS; i++) {
+        int col = (vkb_text_focus_col + dir * i) % VKB_TEXT_KEYBOARD_COLUMNS;
+        if (col < 0) {
+            col += VKB_TEXT_KEYBOARD_COLUMNS;
+        }
+        if (vkb_text_cell_key(vkb_text_focus_row, col) >= 0) {
+            vkb_text_focus_col = col;
+            return;
+        }
+    }
+}
+
+void vkb_text_navigate(int keyCode)
+{
+    if (!vkb_text_nav_active) {
+        return;
+    }
+
+    switch (keyCode) {
+    case KEY_LEFT:
+        vkb_text_focus_move_col(-1);
+        break;
+    case KEY_RIGHT:
+        vkb_text_focus_move_col(1);
+        break;
+    case KEY_UP:
+        vkb_text_focus_move_row(-1);
+        break;
+    case KEY_DOWN:
+        vkb_text_focus_move_row(1);
+        break;
+    }
+}
+
+int vkb_text_focus_key()
+{
+    if (!vkb_text_nav_active) {
+        return KEY_RETURN;
+    }
+
+    int key = vkb_text_cell_key(vkb_text_focus_row, vkb_text_focus_col);
+    if (key < 0) {
+        return KEY_RETURN;
+    }
+    return key;
+}
+
+// Span (in grid columns) that the given cell joins on row 4: the space bar
+// covers all 8 columns, the OK button 2 columns, toggles 1 column.
+static void vkb_text_focus_span(int row, int col, int* colPos, int* span)
+{
+    if (row != 4) {
+        *colPos = col;
+        *span = 1;
+        return;
+    }
+
+    if (col < vkb_text_split_layout ? VKB_TEXT_SPLIT_COLUMNS : 8) {
+        *colPos = 0;
+        *span = vkb_text_split_layout ? VKB_TEXT_SPLIT_COLUMNS : 8;
+    } else if (col >= 10) {
+        *colPos = 10;
+        *span = 2;
+    } else {
+        *colPos = col;
+        *span = 1;
+    }
+}
+
+static void vkb_text_cell_rect(int row, int col, int span, int windowWidth,
+    int* outX, int* outY, int* outW, int* outH);
+static void vkb_text_split_cell_rect(int row, int localCol, int span, int windowWidth,
+    int* outX, int* outY, int* outW, int* outH);
+
+// Draw a box around the active navigation cell (full or split keyboard).
+static void vkb_text_draw_focus(unsigned char* windowBuffer, int windowWidth,
+    int kbY, bool isSplit, bool isLeft)
+{
+    if (!vkb_text_nav_active) {
+        return;
+    }
+
+    int colPos;
+    int span;
+    vkb_text_focus_span(vkb_text_focus_row, vkb_text_focus_col, &colPos, &span);
+
+    if (isSplit) {
+        if ((isLeft && colPos >= VKB_TEXT_SPLIT_COLUMNS) || (!isLeft && colPos < VKB_TEXT_SPLIT_COLUMNS)) {
+            return;
+        }
+    }
+
+    int x, y, w, h;
+    if (isSplit) {
+        vkb_text_split_cell_rect(vkb_text_focus_row, colPos - (isLeft ? 0 : VKB_TEXT_SPLIT_COLUMNS), span, windowWidth, &x, &y, &w, &h);
+    } else {
+        vkb_text_cell_rect(vkb_text_focus_row, colPos, span, windowWidth, &x, &y, &w, &h);
+    }
+
+    draw_shaded_box(windowBuffer, windowWidth, x - 1, y + kbY - 1, x + w, y + kbY + h, colorTable[21091], colorTable[21091]);
+}
+
+// =============================================================================
 // Text keyboard — geometry helpers
 // =============================================================================
 
@@ -320,6 +524,8 @@ void vkb_text_draw(int win, int kbY)
         vkb_text_cell_rect(4, 10, 2, windowWidth, &x, &y, &w, &h);
         vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "OK", colorTable[21091]);
     }
+
+    vkb_text_draw_focus(windowBuffer, windowWidth, kbY, false, false);
 
     text_font(oldFont);
 }
@@ -510,6 +716,8 @@ void vkb_text_split_draw(int win, int kbY, bool isLeft)
             vkb_text_draw_label(windowBuffer, windowWidth, x, y + kbY, w, h, "OK", colorTable[21091]);
         }
     }
+
+    vkb_text_draw_focus(windowBuffer, windowWidth, kbY, true, isLeft);
 
     text_font(oldFont);
 }

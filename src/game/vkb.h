@@ -121,6 +121,37 @@ int vkb_text_handle_key(int keyCode);
 // sits for a given host-window height.
 int vkb_text_kb_y(int windowHeight);
 
+// -- Text keyboard navigation (arrows + wrap) --------------------------------
+//
+// While the text keyboard is shown the focus cursor is moved with the arrow
+// keys.  Moving past an edge wraps around to the opposite side, skipping
+// cells that are inactive on the active language page.  Return presses the
+// focused cell (letters, space, backspace, toggles, or OK to confirm).
+// The same keyboard is used for the full (name/save) and the split (about)
+// layouts, so the focus state is a single global shared by both.
+
+// Select the column mapping for the split halves (about) instead of the full
+// 12-column keyboard.  Call before the split keyboard windows are used and
+// clear it afterwards.
+void vkb_text_set_split_layout(bool splitLayout);
+
+// Re-anchor the focus on the OK key and make the focus box visible.
+void vkb_text_nav_reset();
+
+// Hide the focus box; Return keeps its default meaning.
+void vkb_text_nav_disable();
+
+// Move the focus one step for the given arrow code, wrapping around the grid
+// and skipping cells that are inactive on the current page.
+void vkb_text_navigate(int keyCode);
+
+// Snap the focus to a reachable cell (used after a language switch).
+void vkb_text_nav_anchor();
+
+// Key code produced by pressing the focused cell.  Returns KEY_RETURN when
+// navigation is disabled or the cell is dead on the active page.
+int vkb_text_focus_key();
+
 } // namespace fallout
 
 #endif /* FALLOUT_GAME_VKB_H_ */
