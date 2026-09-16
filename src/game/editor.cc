@@ -1526,7 +1526,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
                 win_draw(win);
                 renderPresent();
                 continue;
-            } else if (keyCode == KEY_SPACE) {
+            } else if (keyCode == KEY_SPACE || keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
                 keyCode = vkb_text_focus_key();
                 if (keyCode == VKB_TEXT_KEY_CASE || keyCode == VKB_TEXT_KEY_LANG) {
                     keyCode = vkb_text_handle_key(keyCode);
