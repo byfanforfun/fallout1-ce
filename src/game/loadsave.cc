@@ -2435,12 +2435,13 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
     text_to_buf(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
 
     win_draw(win);
-    renderPresent();
 
     if (kbY > 0) {
         vkb_text_draw(win, kbY);
         vkb_text_register(win, kbY);
     }
+
+    renderPresent();
 
     beginTextInput();
 
@@ -2461,6 +2462,7 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
             if (kbY > 0) {
                 vkb_text_draw(win, kbY);
                 win_draw(win);
+                renderPresent();
             }
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {

@@ -1489,6 +1489,8 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         vkb_text_register(win, kbY);
     }
 
+    renderPresent();
+
     int blinkingCounter = 3;
     bool blink = false;
 
@@ -1504,6 +1506,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
             if (kbY > 0) {
                 vkb_text_draw(win, kbY);
                 win_draw(win);
+                renderPresent();
             }
             continue;
         } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
