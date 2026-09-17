@@ -1364,8 +1364,8 @@ static int gDialogProcess()
                 }
             }
 
-            bool scrollUp = keyCode == DIALOG_REPLY_SCROLL_UP || (keyCode == KEY_ARROW_UP && gdNumOptions == 0);
-            bool scrollDown = keyCode == DIALOG_REPLY_SCROLL_DOWN || (keyCode == KEY_ARROW_DOWN && gdNumOptions == 0);
+            bool scrollUp = keyCode == DIALOG_REPLY_SCROLL_UP || keyCode == KEY_PAGE_UP || (keyCode == KEY_ARROW_UP && gdNumOptions == 0);
+            bool scrollDown = keyCode == DIALOG_REPLY_SCROLL_DOWN || keyCode == KEY_PAGE_DOWN || (keyCode == KEY_ARROW_DOWN && gdNumOptions == 0);
 
             if (scrollUp) {
                 if (pageIndex > 0) {
