@@ -126,8 +126,8 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt update
-          sudo apt install libpcre2-8-0:i386
-          sudo apt install g++-multilib libsdl2-dev:i386 zlib1g-dev:i386
+          sudo apt-get install -y --fix-broken
+          sudo apt-get install -t noble -y --no-install-recommends libpcre2-8-0:i386 g++-multilib libsdl2-dev:i386 zlib1g-dev:i386
 
       - name: Dependencies (x64)
         if: matrix.arch == 'x64'
