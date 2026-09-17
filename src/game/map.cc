@@ -1230,7 +1230,10 @@ int map_load_in_game(char* fileName)
     char mapName[16]; // TODO: Size is probably wrong.
     strmfe(mapName, fileName, "SAV");
 
+    bool savedLoadingFromSave = loadingFromSave;
+    loadingFromSave = true;
     int rc = map_load(mapName);
+    loadingFromSave = savedLoadingFromSave;
 
     if (game_time() >= map_data.lastVisitTime) {
         if (((game_time() - map_data.lastVisitTime) / GAME_TIME_TICKS_PER_HOUR) >= 24) {

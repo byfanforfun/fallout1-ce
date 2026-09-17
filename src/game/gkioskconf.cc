@@ -26,6 +26,7 @@ int gconfig_dialog_exit_0_allowed;
 int gconfig_game_exit_allowed;
 int gconfig_screensaver_enabled;
 int gconfig_screensaver_timeout;
+int gconfig_show_virtual_keyboard;
 int gconfig_random_locations;
 int gconfig_random_containers;
 int gconfig_random_containers_base_chance;
@@ -39,6 +40,11 @@ int gconfig_quality_npc_hp[MAX_QUALITY_LEVELS + 1];
 int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
 int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
 int gconfig_debug_spawn_drugs;
+
+int gconfig_launcher_enabled;
+int gconfig_launcher_return_on_exit;
+char* gconfig_launcher_name;
+char* gconfig_virtual_kb_languages;
 
 bool gkioskconf_init()
 {
@@ -66,11 +72,17 @@ bool gkioskconf_init()
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_START_MESSAGE, 1);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, 120);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SHOW_VIRTUAL_KB, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, 0);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, 50);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, 5);
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, 5);
+
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, 0);
+    config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, 1);
+    config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, "");
+    config_set_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_VKB_LANGUAGES, "en,ru");
 
     config_set_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, 5);
 
@@ -107,11 +119,17 @@ bool gkioskconf_init()
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_ENABLE_GAME_EXIT, &gconfig_game_exit_allowed);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_ENABLED, &gconfig_screensaver_enabled);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SCREENSAVER_TIMEOUT, &gconfig_screensaver_timeout);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_SHOW_VIRTUAL_KB, &gconfig_show_virtual_keyboard);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_LOCATIONS, &gconfig_random_locations);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS, &gconfig_random_containers);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE, &gconfig_random_containers_base_chance);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_LUCK_FACTOR, &gconfig_random_containers_luck_factor);
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_RANDOM_CONTAINERS_BARTER_FACTOR, &gconfig_random_containers_barter_factor);
+
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_ENABLED, &gconfig_launcher_enabled);
+    config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT, &gconfig_launcher_return_on_exit);
+    config_get_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_LAUNCHER_NAME, &gconfig_launcher_name);
+    config_get_string(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_VKB_LANGUAGES, &gconfig_virtual_kb_languages);
 
     config_get_value(&kiosk_config, KIOSK_CONFIG_GAME_KEY, KIOSK_CONFIG_QUALITY_ITEM_MOD, &gconfig_quality_levels);
 

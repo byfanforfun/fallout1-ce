@@ -27,6 +27,8 @@ namespace fallout {
 #define KIOSK_CONFIG_BARTER_MOD "barter_mod"
 #define KIOSK_CONFIG_SCREENSAVER_ENABLED "screensaver_enabled"
 #define KIOSK_CONFIG_SCREENSAVER_TIMEOUT "screensaver_timeout"
+#define KIOSK_CONFIG_SHOW_VIRTUAL_KB "show_virt_kb"
+#define KIOSK_CONFIG_VKB_LANGUAGES "vkb_languages"
 #define KIOSK_CONFIG_RANDOM_LOCATIONS "random_locations"
 #define KIOSK_CONFIG_RANDOM_CONTAINERS "random_containers"
 #define KIOSK_CONFIG_RANDOM_CONTAINERS_BASE_CHANCE "random_containers_base_chance"
@@ -40,6 +42,12 @@ namespace fallout {
 #define KIOSK_CONFIG_DEBUG_SPAWN_DRUGS "debug_spawn_drugs"
 #define MAX_QUALITY_LEVELS 10
 
+// Compatibility layer with Emustation/EmulationStation/ES-DE frontends, see
+// RETROARCH_EMUSTATION_RESEARCH.md.
+#define KIOSK_CONFIG_LAUNCHER_ENABLED "launcher_enabled"
+#define KIOSK_CONFIG_LAUNCHER_NAME "launcher_name"
+#define KIOSK_CONFIG_LAUNCHER_RETURN_ON_EXIT "launcher_return_on_exit"
+
 extern Config kiosk_config;
 extern int gconfig_exp_start;
 extern int gconfig_caps_start;
@@ -50,6 +58,7 @@ extern int gconfig_dialog_exit_0_allowed;
 extern int gconfig_game_exit_allowed;
 extern int gconfig_screensaver_enabled;
 extern int gconfig_screensaver_timeout;
+extern int gconfig_show_virtual_keyboard;
 extern int gconfig_random_locations;
 extern int gconfig_random_containers;
 extern int gconfig_random_containers_base_chance;
@@ -62,6 +71,11 @@ extern int gconfig_quality_npc_hp[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_ground_chance[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_quality_encounter_chance[MAX_QUALITY_LEVELS + 1];
 extern int gconfig_debug_spawn_drugs;
+
+extern int gconfig_launcher_enabled;
+extern int gconfig_launcher_return_on_exit;
+extern char* gconfig_launcher_name;
+extern char* gconfig_virtual_kb_languages;
 
 bool gkioskconf_init();
 bool gkioskconf_save();

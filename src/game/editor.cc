@@ -10,6 +10,7 @@
 #include "game/critter.h"
 #include "game/cycle.h"
 #include "game/game.h"
+#include "game/gkioskconf.h"
 #include "game/gmouse.h"
 #include "game/graphlib.h"
 #include "game/gsound.h"
@@ -25,6 +26,7 @@
 #include "game/skill.h"
 #include "game/stat.h"
 #include "game/trait.h"
+#include "game/vkb.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
 #include "platform_compat.h"
@@ -1461,12 +1463,19 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         maxLength = 255;
     }
 
+    int kbY = 0;
+    if (gconfig_show_virtual_keyboard != 0 && win_height(win) > VKB_TEXT_KEYBOARD_HEIGHT) {
+        kbY = win_height(win) - VKB_TEXT_KEYBOARD_HEIGHT;
+    }
+
     char copy[257];
     strcpy(copy, text);
 
     int nameLength = strlen(text);
     copy[nameLength] = ' ';
     copy[nameLength + 1] = '\0';
+
+    int caretPos = nameLength;
 
     int nameWidth = text_width(copy);
 
@@ -1476,6 +1485,14 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
     win_draw(win);
 
     beginTextInput();
+
+    if (kbY > 0) {
+        vkb_text_nav_reset();
+        vkb_text_draw(win, kbY);
+        vkb_text_register(win, kbY);
+    }
+
+    renderPresent();
 
     int blinkingCounter = 3;
     bool blink = false;
@@ -1487,6 +1504,49 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         frame_time = get_time();
 
         int keyCode = get_input();
+        keyCode = vkb_text_handle_key(keyCode);
+        if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (kbY > 0) {
+                vkb_text_nav_anchor();
+                vkb_text_draw(win, kbY);
+                win_draw(win);
+                renderPresent();
+            }
+            continue;
+        } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
+            continue;
+        }
+
+        bool caretLeft = false;
+        bool caretRight = false;
+        if (kbY > 0) {
+            if (keyCode == KEY_LEFT || keyCode == KEY_RIGHT || keyCode == KEY_UP || keyCode == KEY_DOWN) {
+                vkb_text_navigate(keyCode);
+                vkb_text_draw(win, kbY);
+                win_draw(win);
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_SPACE || keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
+                keyCode = vkb_text_focus_key();
+                if (keyCode == VKB_TEXT_KEY_CASE || keyCode == VKB_TEXT_KEY_LANG) {
+                    keyCode = vkb_text_handle_key(keyCode);
+                    if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+                        vkb_text_nav_anchor();
+                        vkb_text_draw(win, kbY);
+                        win_draw(win);
+                        renderPresent();
+                    }
+                    continue;
+                }
+            } else if (keyCode == KEY_LOWERCASE_I || keyCode == KEY_UPPERCASE_I) {
+                keyCode = KEY_SPACE;
+            } else if (keyCode == KEY_LOWERCASE_C || keyCode == KEY_UPPERCASE_C) {
+                caretLeft = true;
+            } else if (keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_P) {
+                caretRight = true;
+            }
+        }
+
         if (keyCode == cancelKeyCode) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
@@ -1495,15 +1555,46 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         } else if (keyCode == KEY_ESCAPE || game_user_wants_to_quit != 0) {
             rc = -1;
         } else {
-            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
+            if (caretLeft) {
+                if (caretPos > 0) {
+                    caretPos--;
+                }
                 buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
-                copy[nameLength - 1] = ' ';
-                copy[nameLength] = '\0';
                 text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength--;
-
+                blinkingCounter = 1;
                 win_draw(win);
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && nameLength < maxLength) {
+            } else if (caretRight) {
+                if (caretPos < nameLength) {
+                    caretPos++;
+                }
+                buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+                blinkingCounter = 1;
+                win_draw(win);
+            } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
+                buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
+                if (keyCode == KEY_DELETE) {
+                    if (caretPos < nameLength) {
+                        for (int i = caretPos; i < nameLength - 1; i++) {
+                            copy[i] = copy[i + 1];
+                        }
+                        nameLength--;
+                        copy[nameLength] = ' ';
+                        copy[nameLength + 1] = '\0';
+                    }
+                } else if (caretPos > 0) {
+                    for (int i = caretPos - 1; i < nameLength - 1; i++) {
+                        copy[i] = copy[i + 1];
+                    }
+                    nameLength--;
+                    caretPos--;
+                    copy[nameLength] = ' ';
+                    copy[nameLength + 1] = '\0';
+                }
+
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+                win_draw(win);
+            } else if ((keyCode >= KEY_SPACE && keyCode < 256) && nameLength < maxLength) {
                 if ((flags & 0x01) != 0) {
                     if (!isdoschar(keyCode)) {
                         break;
@@ -1512,11 +1603,15 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
                 buf_fill(windowBuffer + windowWidth * y + x, text_width(copy), v60, windowWidth, backgroundColor);
 
-                copy[nameLength] = keyCode & 0xFF;
-                copy[nameLength + 1] = ' ';
-                copy[nameLength + 2] = '\0';
-                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+                for (int i = nameLength; i > caretPos; i--) {
+                    copy[i] = copy[i - 1];
+                }
+                copy[caretPos] = keyCode & 0xFF;
+                caretPos++;
                 nameLength++;
+                copy[nameLength] = ' ';
+                copy[nameLength + 1] = '\0';
+                text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
 
                 win_draw(win);
             }
@@ -1529,7 +1624,15 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
             int color = blink ? backgroundColor : textColor;
             blink = !blink;
 
-            buf_fill(windowBuffer + windowWidth * y + x + text_width(copy) - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
+            char savedCaret = copy[caretPos];
+            copy[caretPos] = '\0';
+            int caretX = x + text_width(copy);
+            copy[caretPos] = savedCaret;
+            if (caretPos == nameLength) {
+                caretX += text_width(" ");
+            }
+
+            buf_fill(windowBuffer + windowWidth * y + caretX - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
         }
 
         win_draw(win);
@@ -2829,6 +2932,9 @@ static int NameWindow()
 
     int windowWidth = GInfo[EDITOR_GRAPHIC_CHARWIN].width;
     int windowHeight = GInfo[EDITOR_GRAPHIC_CHARWIN].height;
+    if (gconfig_show_virtual_keyboard != 0) {
+        windowHeight += VKB_TEXT_KEYBOARD_HEIGHT;
+    }
 
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
     int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
@@ -2839,8 +2945,9 @@ static int NameWindow()
 
     unsigned char* windowBuf = win_get_buf(win);
 
-    // Copy background
-    memcpy(windowBuf, grphbmp[EDITOR_GRAPHIC_CHARWIN], windowWidth * windowHeight);
+    // Copy background (only the original content rows; the vertical space below
+    // is filled by the virtual keyboard).
+    memcpy(windowBuf, grphbmp[EDITOR_GRAPHIC_CHARWIN], windowWidth * GInfo[EDITOR_GRAPHIC_CHARWIN].height);
 
     trans_buf_to_buf(
         grphbmp[EDITOR_GRAPHIC_NAME_BOX],

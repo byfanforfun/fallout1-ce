@@ -26,6 +26,12 @@ set(CMAKE_CXX_EXTENSIONS NO)
 
 option(ASAN "Enable address sanitizer" OFF)
 option(UBSAN "Enable undefined behaviour sanitizer" OFF)
+option(FALLOUT_RETROARCH "Enable RetroArch compatibility layer (kiosk)" OFF)
+
+#if (FALLOUT_RETROARCH)
+#    set(CMAKE_C_COMPILER_WORKS TRUE)
+#    set(CMAKE_CXX_COMPILER_WORKS TRUE)
+#endif()
 
 if (ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
@@ -40,6 +46,71 @@ endif()
 if(UBSAN)
     target_compile_options(${EXECUTABLE_NAME} PUBLIC "-fsanitize=undefined")
     target_link_options(${EXECUTABLE_NAME} PUBLIC "-fsanitize=undefined")
+endif()
+
+if(FALLOUT_RETROARCH)
+    target_compile_definitions(${EXECUTABLE_NAME} PUBLIC FALLOUT_RETROARCH)
+endif()
+
+# Command executed after the game exits (via kiosk_exec.cfg, same mechanism
+# that used to hardcode 'retroarch --menu' for FALLOUT_RETROARCH). Empty by
+# default: nothing is forcibly written into kiosk_exec.cfg. When set, the
+# line is written on first run (file missing) exactly like before.
+set(FALLOUT_EXIT_EXEC "" CACHE STRING "Command to run after game exit, written to kiosk_exec.cfg on first run (empty = no exit hook)")
+if(FALLOUT_EXIT_EXEC)
+    target_compile_definitions(${EXECUTABLE_NAME} PUBLIC FALLOUT_EXIT_EXEC="${FALLOUT_EXIT_EXEC}")
+endif()
+
+# Fully static distribution build. FALLOUT_RETROARCH targets standalone
+# TV-boxes running a frontend (EmuELEC/RetroArch/EmulationStation), so the
+# binary should not depend on the target distro's C++ runtime and SDL2.
+# A plain aarch64 build without the RetroArch layer is static as well when
+# neither sanitizer is enabled (both are development-time only).
+#
+# Only libgcc/libstdc++/SDL2/adecode/fpattern are linked statically by
+# default; glibc and the system libraries stay dynamic so that SDL's audio/
+# video backends keep working through dlopen. Pass FALLOUT_STATIC_GLIBC=ON
+# to additionally link glibc statically (fully static binary: maximum
+# portability, but dlopen-based SDL drivers will fail at runtime).
+set(FALLOUT_STATIC_BUILD OFF)
+if(FALLOUT_RETROARCH)
+    set(FALLOUT_STATIC_BUILD ON)
+elseif(NOT MSVC
+       AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+       AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
+       AND NOT ASAN AND NOT UBSAN)
+    set(FALLOUT_STATIC_BUILD ON)
+endif()
+
+option(FALLOUT_STATIC_GLIBC "Also link glibc statically (fully static binary)" OFF)
+
+if(FALLOUT_STATIC_BUILD)
+    if(NOT MSVC)
+        # Bundled SDL2 (third_party/sdl2) is already built as a static library
+        # (SDL_STATIC ON); X11, pipewire and hidapi are disabled by default
+        # since the kiosk targets headless DRM boxes, recent pipewire headers
+        # do not compile against SDL 2.26 and hidapi clashes with modern
+        # toolchains' headers. Gamepads are read through SDL's evdev backend.
+        # Existing command-line -D values win.
+        set(SDL_X11 OFF CACHE BOOL "Build SDL with X11 support (kiosk static build)")
+        set(SDL_PIPEWIRE OFF CACHE BOOL "Build SDL with libpipewire support")
+        set(SDL_HIDAPI OFF CACHE BOOL "Build SDL with hidapi joystick support")
+        set(SDL_HAPTIC OFF CACHE BOOL "Build SDL with haptic (force feedback) support")
+        target_link_options(${EXECUTABLE_NAME} PUBLIC
+            "-static-libgcc;-static-libstdc++")
+        if(FALLOUT_STATIC_GLIBC)
+            target_link_options(${EXECUTABLE_NAME} PUBLIC "-static")
+            # dlopen() cannot load DSOs in a fully static binary, so every SDL
+            # driver that matters must be linked at link time instead of being
+            # dlopen'ed, and the pure dlopen-based backends are dropped. This
+            # removes the otherwise inevitable "Using 'dlopen' in statically
+            # linked applications..." linker warning at the cost of real
+            # audio/video support. Existing command-line -D values win.
+            set(SDL_X11_SHARED OFF CACHE BOOL "Statically link SDL's X11 driver (fully static build)")
+            set(SDL_PULSEAUDIO OFF CACHE BOOL "Build SDL pulseaudio support (dlopen, unusable fully static)")
+            set(SDL_JACK OFF CACHE BOOL "Build SDL jack support (dlopen, unusable fully static)")
+        endif()
+    endif()
 endif()
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC src)
@@ -199,6 +270,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game/trait.h"
     "src/game/version.cc"
     "src/game/version.h"
+    "src/game/vkb.cc"
+    "src/game/vkb.h"
     "src/game/wordwrap.cc"
     "src/game/wordwrap.h"
     "src/game/worldmap_walkmask.cc"
@@ -381,7 +454,8 @@ if(APPLE)
     set(MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0")
 endif()
 
-if((NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND (NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD") AND (NOT ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD"))
+if(FALLOUT_STATIC_BUILD
+   OR ((NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND (NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD") AND (NOT ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")))
     add_subdirectory("third_party/sdl2")
 else()
     find_package(SDL2)

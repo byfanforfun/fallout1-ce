@@ -12,6 +12,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "game/amutex.h"
 #include "game/art.h"
@@ -62,6 +63,7 @@ namespace fallout {
 #define DEATH_WINDOW_HEIGHT 480
 
 static bool main_init_system(int argc, char** argv);
+static void main_parse_launcher_args(int argc, char** argv);
 static int main_reset_system();
 static void main_exit_system();
 static int main_load_new(char* fname);
@@ -184,6 +186,10 @@ int gnw_main(int argc, char** argv)
     if (!autorun_mutex_create()) {
         return 1;
     }
+
+#ifdef FALLOUT_RETROARCH
+    main_parse_launcher_args(argc, argv);
+#endif
 
     if (!main_init_system(argc, argv)) {
         return 1;
@@ -309,7 +315,11 @@ int gnw_main(int argc, char** argv)
                 break;
             case MAIN_MENU_EXIT:
             case -1:
+#ifdef FALLOUT_RETROARCH
+                if (gconfig_game_exit_allowed > 0 || (gconfig_launcher_enabled > 0 && gconfig_launcher_return_on_exit > 0)) {
+#else
                 if (gconfig_game_exit_allowed > 0) {
+#endif
                     done = true;
                     main_menu_hide(true);
                     main_menu_destroy();
@@ -353,6 +363,25 @@ static bool main_init_system(int argc, char** argv)
 
     return true;
 }
+
+#ifdef FALLOUT_RETROARCH
+// Handles the launch contract with Emustation/EmulationStation/ES-DE family
+// frontends: `--launcher=<name>` marks the game as started by a frontend, which
+// unlocks the "exit back to launcher" path (see MAIN_MENU_EXIT handling in
+// gnw_main).
+static void main_parse_launcher_args(int argc, char** argv)
+{
+    static const char* launcherArgPrefix = "--launcher=";
+    size_t prefixLen = strlen(launcherArgPrefix);
+
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], launcherArgPrefix, prefixLen) == 0 && argv[i][prefixLen] != '\0') {
+            gconfig_launcher_name = argv[i] + prefixLen;
+            gconfig_launcher_enabled = 1;
+        }
+    }
+}
+#endif
 
 // 0x472918
 static int main_reset_system()

@@ -34,6 +34,131 @@ $ sudo apt install libsdl2-2.0-0
 
 - Run `./fallout-ce`.
 
+### Linux (aarch64, cross-compilation)
+
+>A complete reproducible walkthrough (both sysroot paths, every required
+>chroot symlink and a troubleshooting matrix) lives in
+>[docs/cross-build-aarch64.md](docs/cross-build-aarch64.md).
+
+Debian/Ubuntu: add the arm64 architecture and install the cross-compilers:
+
+```console
+$ sudo dpkg --add-architecture arm64
+$ sudo apt update
+$ sudo apt install crossbuild-essential-arm64 zlib1g-dev:arm64 \
+      libx11-dev:arm64 libxext-dev:arm64
+```
+
+Fedora: the RPM cross packages (`gcc-c++-aarch64-linux-gnu`) ship only the
+compiler drivers - no target libstdc++ and no C++ headers - so build an
+aarch64 sysroot and install the runtime/dev packages into it (add
+`glibc-static` for a fully static binary):
+
+```console
+$ sudo dnf install qemu-user-static
+$ sudo dnf --installroot=/opt/aarch64-rootfs --releasever=43 --forcearch=aarch64 \
+      install glibc-devel glibc-static libstdc++-devel libstdc++-static \
+      libX11-devel libXext-devel
+$ sudo cp -av /opt/aarch64-rootfs/usr/lib/gcc/aarch64-redhat-linux/15/libstdc++.a \
+              /opt/aarch64-rootfs/usr/lib64/
+$ sudo ln -sfv libstdc++.so.6 /opt/aarch64-rootfs/usr/lib64/libstdc++.so
+```
+
+If the target box runs a glibc that is older than the host distro's (handheld
+consoles like EmuELEC/ArkOS often ship one), build against a Debian-based
+chroot carrying that glibc version instead (Debian 12 "bookworm" = glibc
+2.36, Ubuntu 22.04 = 2.35, Debian 11 = 2.31, ...). The cross-compiler stays
+the host's `gcc-c++-aarch64-linux-gnu`:
+
+```console
+$ sudo dnf install debootstrap qemu-user-static
+$ sudo debootstrap --arch=arm64 --foreign bookworm /opt/aarch64-bk12 \
+      http://deb.debian.org/debian
+$ sudo cp /usr/bin/qemu-aarch64-static /opt/aarch64-bk12/usr/bin/
+$ sudo chroot /opt/aarch64-bk12 /debootstrap/debootstrap --second-stage
+$ sudo chroot /opt/aarch64-bk12 bash -c 'apt-get update && apt-get install -y \
+      libc6-dev libstdc++-12-dev zlib1g-dev \
+      libdrm-dev libgbm-dev libudev-dev libasound2-dev'
+```
+
+Debian puts the libc startup objects (`crt1.o`, `crti.o`, `crtn.o`) and the
+`libc.so` linker script in the multiarch directory
+`/usr/lib/aarch64-linux-gnu`, which is outside GNU ld's default sysroot
+search (=`/usr/lib64`, =`/usr/lib`), and `-L` does not apply to bare object
+names like `crt1.o`. Symlink the startup objects into a default-search
+location so the linker can find them:
+
+```console
+$ sudo mkdir -p /opt/aarch64-bk12/usr/lib64
+$ sudo ln -sfv /opt/aarch64-bk12/usr/lib/aarch64-linux-gnu/{crt1.o,Scrt1.o,crti.o,crtn.o} \
+      /opt/aarch64-bk12/usr/lib64/
+```
+
+Debian also ships no `libpthread.so` dev symlink (only `libpthread.so.0` +
+`libpthread.a`), so `-lpthread`/SDL's `HAVE_PTHREADS` check fails at link
+time, and the static `libstdc++.a` is not searched by default. Add both to
+the same default-search directory:
+
+```console
+$ sudo ln -sfv libpthread.so.0 /opt/aarch64-bk12/usr/lib64/libpthread.so
+$ sudo ln -sfv /opt/aarch64-bk12/usr/lib/gcc/aarch64-linux-gnu/12/libstdc++.a \
+      /opt/aarch64-bk12/usr/lib64/libstdc++.a
+```
+
+The toolchain handles the rest of the multiarch layout: the arch-specific
+headers (`/usr/include/aarch64-linux-gnu`, where `bits/wordsize.h` lives)
+are exposed via `-isystem`, the multiarch libdirs are added to the linker
+search and to `CMAKE_REQUIRED_FLAGS` (needed by `check_c_source_compiles`
+probes), and `libgcc`/unwinding is intentionally pulled from the *host*
+cross-compiler rather than the Debian gcc dir to keep `_Unwind_*` symbols.
+
+Build with the toolchain:
+
+```console
+# Debian/Ubuntu (multiarch tree) or Fedora (sysroot)
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+        -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
+        -DCMAKE_SYSROOT=/usr/aarch64-linux-gnu \
+        -DFALLOUT_RETROARCH=ON ..
+# Fedora
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+        -DCMAKE_SYSROOT=/opt/aarch64-rootfs \
+        -DCMAKE_FIND_ROOT_PATH=/opt/aarch64-rootfs \
+        -DCMAKE_PREFIX_PATH=/opt/aarch64-rootfs/usr \
+        -DFALLOUT_RETROARCH=ON ..
+# Debian-based chroot (glibc of the target box)
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/aarch64-linux-gnu.cmake \
+        -DCMAKE_SYSROOT=/opt/aarch64-bk12 \
+        -DCMAKE_FIND_ROOT_PATH=/opt/aarch64-bk12 \
+        -DCMAKE_PREFIX_PATH=/opt/aarch64-bk12/usr \
+        -DFALLOUT_RETROARCH=ON ..
+$ make
+```
+
+The kiosk build (`FALLOUT_RETROARCH=ON`) links statically: SDL2 (compiled
+from `third_party/sdl2`), adecode, fpattern and the C++ runtime
+(`-static-libstdc++ -static-libgcc`) are embedded, so the only runtime
+dependencies are glibc and the system audio/video libraries - SDL's dlopen
+drivers keep working. Pass `-DFALLOUT_STATIC_GLIBC=ON` for a fully static
+binary (maximum portability, but SDL drivers that rely on dlopen will not
+load). SDL X11, pipewire, hidapi and haptic support are off by default in
+this mode (`-DSDL_X11=ON` etc. re-enable) since the kiosk targets headless
+DRM boxes; gamepads are read through SDL's evdev backend.
+
+Verify the binary will run on the box:
+
+```console
+$ readelf -d fallout-ce | grep NEEDED        # expect only libc/libpthread/ld
+$ objdump -T fallout-ce | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -3
+```
+The `GLIBC_*` maximum must be at or below the glibc version on the target
+box - check it with `ldd --version` on the box.
+
+The second command lists the newest `GLIBC_x.y` symbols the binary
+references; the box's glibc must provide at least those versions. See
+[Deploying on the target](#deploying-on-the-target-emuelec--retroarch--emulationstation)
+for getting it onto the box.
+
 ### macOS
 
 > **NOTE**: macOS 10.11 (El Capitan) or higher is required. Runs natively on Intel-based Macs and Apple Silicon.
@@ -134,6 +259,10 @@ inact2=30
 inact3=20
 ;allow exit from game :)
 game_exit=1
+;run under a game frontend (see "Frontend integration"); allows returning to it
+launcher_enabled=0
+launcher_name=esde
+launcher_return_on_exit=1
 ;allow player interact with options menu
 disable_options=0
 ;allow player to save/load game
@@ -253,7 +382,117 @@ Example:
 0=touch /tmp/approach-apocalipse
 ```
 
+When the build is configured with `-DFALLOUT_EXIT_EXEC="<command>"` the file is
+generated on the first run if missing:
+```
+[exec]
+0=<command>
+```
+so the command runs on the way back to the frontend. The option is **empty by
+default**, so nothing is forcibly written into `kiosk_exec.cfg`. The file you
+provide is never overwritten.
+
 Max 8 lines
+
+Frontend integration (RetroArch / Emustation)
+
+The kiosk build can run as an ordinary "game" of a game frontend
+(EmulationStation/ES-DE/Emustation family). The frontend starts the game and
+regains control when the game process exits.
+
+- Build with the compatibility layer: `-DFALLOUT_RETROARCH=ON`.
+- Launch contract: `fallout-ce --launcher=<name>` (e.g. `esde`, `emustation`).
+  It records the frontend name in `launcher_name` and enables the launcher mode.
+- In launcher mode, the "Exit" item of the main menu always returns to the
+  frontend (clean process exit) as long as `launcher_return_on_exit=1`, even if
+  `game_exit=0`. Keep `launcher_enabled=1` in `kiosk.cfg` to run frontend-style
+  without passing the command line flag.
+- With `-DFALLOUT_EXIT_EXEC="<command>"`, a default `kiosk_exec.cfg` with
+  `0=<command>` is written on first run (the write is the only thing controlled
+  by the option; exec on exit itself is part of the kiosk build). Leave it
+  unset to avoid forcing any exec line.
+- With `FALLOUT_RETROARCH`, the commands of `kiosk_exec.cfg` are executed when
+  the player confirms "Exit" in the in-game menu (instead of on character
+  death). Use them to chain the next content or hand control further on the
+  way back to the frontend.
+
+Deploying on the target (EmuELEC / RetroArch / EmulationStation)
+
+The kiosk build is an ordinary native executable, not a libretro core, and
+the frontends start it as an external process:
+
+- Copy the binary and the game assets to the box, for example under
+  `/storage/roms/fallout1/` on EmuELEC: `fallout-ce` plus `master.dat`,
+  `critter.dat`, `data/` (from a Fallout install or
+  [fallout1-kiosk-assets](https://github.com/byfanforfun/fallout1-kiosk-assets))
+  and the config files `fallout.cfg`, `f1_res.ini`, `kiosk.cfg`,
+  `gamepad.cfg`. Run the binary once from a shell so the default config
+  files are generated.
+- With launcher mode (`launcher_enabled=1`, `launcher_name=<frontend>`,
+  `launcher_return_on_exit=1` in `kiosk.cfg`) the process exits cleanly when
+  the player picks "Exit" in the main menu, and control returns to the
+  frontend.
+- EmulationStation / ES-DE / Emustation: register Fallout as a system that
+  launches the binary, e.g. in `es_systems.cfg`:
+  `<command>fallout-ce --launcher=esde</command>`.
+- RetroArch: RetroArch runs libretro cores and fallout-ce is not one, so it
+  cannot be started as a core. RetroArch either sits behind the frontend
+  (EmuELEC's EmulationStation starts the game) or is used as the next-menu
+  the game chains into on exit: give the build
+  `-DFALLOUT_EXIT_EXEC="retroarch --menu"` and the generated `kiosk_exec.cfg`
+  hands control to RetroArch's menu when the game exits.
+- Display: the default build has SDL X11 disabled. If the box runs its
+  frontend under Xorg (typical for EmuELEC/ES-DE), rebuild with
+  `-DSDL_X11=ON` and install the static X11 development libraries into the
+  sysroot, otherwise the game has no usable video driver. Set `WINDOWED=0`
+  in `f1_res.ini` for fullscreen.
+
+Gamepad layout (`gamepad.cfg`)
+
+The gamepad maps buttons and axes to the same game keys the keyboard uses. The
+config file is written with the defaults on first run and can be edited to
+rebind. Keys use the same names as `fallout_keys.cfg` values (`return`, `esc`,
+`i`, `tab`, `home`, `f6`, `f7`, ...) or `mouse` for mouse actions.
+
+```
+[gamepad]
+btn_dpad_up=i        ; Inventory
+btn_dpad_down=tab    ; Automap
+btn_dpad_left=c      ; Character
+btn_dpad_right=p     ; PIP-Boy
+btn_a=return         ; confirm / use in arrow mode
+btn_b=space          ; interact with the current selection
+btn_x=s              ; Skilldex
+btn_y=esc            ; back / options menu (ESC)
+btn_l1=n             ; toggle item mode (hands/use)
+btn_r1=a             ; combat mode
+btn_l3=home          ; center view on the player
+btn_r3=mouse         ; mouse button: click menus / hold = actions menu
+btn_start=f6         ; quick save
+btn_back=f7          ; quick load
+btn_guide=f12        ; screenshot
+btn_l2=b             ; switch active hand
+btn_r2=m             ; toggle 3D mouse mode
+
+; left stick moves the player (arrow keys)
+axis_leftx=left,right
+axis_lefty=up,down
+; right stick moves the mouse pointer
+axis_rightx=mouse
+axis_righty=mouse
+
+mouse_speed=12       ; pointer speed in pixels per frame at full deflection
+invert_leftx=0       ; invert analog axes (0/1)
+invert_lefty=0
+invert_rightx=0
+invert_righty=0
+invert_lefttrigger=0
+invert_righttrigger=0
+```
+
+While the in-game actions (context) menu is open the right stick pointer moves
+5x slower for precise item selection. The game fully owns the gamepad while it
+runs; when you quit back to the frontend, the frontend takes over again.
 
 Key rebind config `fallout_keys.cfg`
 ```

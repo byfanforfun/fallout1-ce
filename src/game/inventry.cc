@@ -18,6 +18,7 @@
 #include "game/game.h"
 #include "game/gdialog.h"
 #include "game/gmouse.h"
+#include "game/gkioskconf.h"
 #include "game/gsound.h"
 #include "game/intface.h"
 #include "game/item.h"
@@ -35,6 +36,7 @@
 #include "game/skill.h"
 #include "game/stat.h"
 #include "game/tile.h"
+#include "game/vkb.h"
 #include "int/dialog.h"
 #include "platform_compat.h"
 #include "plib/color/color.h"
@@ -178,6 +180,9 @@ namespace fallout {
 #define INVENTORY_NORMAL_WINDOW_PC_ROTATION_DELAY (1000U / ROTATION_COUNT)
 
 #define INVENTORY_MAX_MOVE_ITEMS (9999)
+
+// Virtual keyboard shown at the bottom of the move items / set timer modal
+// window when kiosk.cfg show_virt_kb enables it, see src/game/vkb.cc.
 
 typedef void(InventoryPrintItemDescriptionHandler)(char* string);
 
@@ -5232,7 +5237,7 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
             }
         }
 
-        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
+        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS || inventoryWindowType == INVENTORY_WINDOW_TYPE_SET_TIMER) {
             if (keyCode >= KEY_0 && keyCode <= KEY_9) {
                 int number = keyCode - KEY_0;
                 if (!numbersEntered) {
@@ -5245,10 +5250,8 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
                 draw_amount(value, inventoryWindowType);
                 continue;
             } else if (keyCode == KEY_BACKSPACE) {
-                if (!numbersEntered) {
-                    value = 0;
-                }
-
+                // Erase exactly one digit from the current counter, no matter
+                // whether the value was typed in or set with the +/-/All keys.
                 value /= 10;
                 numbersEntered = true;
 
@@ -5287,7 +5290,15 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
     int quantityWindowY = screenGetHeight() != 480
         ? (screenGetHeight() - windowDescription->height) / 2
         : windowDescription->y;
-    mt_wid = win_add(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+
+    // The virtual keyboard lives in the same modal window, stretched below the
+    // modal content, so its buttons are reachable while the modal is on top.
+    int windowHeight = windowDescription->height;
+    if (gconfig_show_virtual_keyboard != 0) {
+        windowHeight += VKB_NUMERIC_FRM_HEIGHT;
+    }
+
+    mt_wid = win_add(quantityWindowX, quantityWindowY, windowDescription->width, windowHeight, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     unsigned char* windowBuffer = win_get_buf(mt_wid);
 
     CacheEntry* backgroundHandle;
@@ -5413,6 +5424,11 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
                 }
             }
         }
+    }
+
+    if (gconfig_show_virtual_keyboard != 0) {
+        vkb_numeric_draw(mt_wid, windowDescription->height);
+        vkb_numeric_register(mt_wid, windowDescription->height);
     }
 
     win_draw(mt_wid);

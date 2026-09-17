@@ -59,8 +59,13 @@ int char_dir_create()
 
 int char_dump()
 {
+    // In the RetroArch/Emustation variant the kiosk_exec.cfg commands are fired
+    // on an explicit exit from the in-game menu (game_quit_with_confirm), not
+    // on death or story endings.
+#ifndef FALLOUT_RETROARCH
     int l[2] = { 0, 1 };
     system_exec(l);
+#endif
 
     static MessageListItem mesg;
     int exp = stat_pc_get(PC_STAT_EXPERIENCE);

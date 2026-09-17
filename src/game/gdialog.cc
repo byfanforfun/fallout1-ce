@@ -30,6 +30,7 @@
 #include "game/stat.h"
 #include "game/textobj.h"
 #include "game/tile.h"
+#include "game/vkb.h"
 #include "int/dialog.h"
 #include "int/window.h"
 #include "platform_compat.h"
@@ -67,6 +68,9 @@ namespace fallout {
 #define DIALOG_OPTION_ENTRIES_CAPACITY 30
 
 #define DIALOG_TALK_TO_SCROLL_SPEED 33
+
+#define DIALOG_REPLY_SCROLL_UP 1400
+#define DIALOG_REPLY_SCROLL_DOWN 1401
 
 typedef enum GameDialogReviewWindowButton {
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_SCROLL_UP,
@@ -191,6 +195,7 @@ static int about_process_input(int input);
 static void about_update_display(unsigned char should_redraw);
 static void about_clear_display(unsigned char should_redraw);
 static void about_reset_string();
+static void about_rebuild_input_string();
 static void about_process_string();
 static int about_lookup_word(const char* search);
 static int about_lookup_name(const char* search);
@@ -369,6 +374,8 @@ static int curReviewSlot = 0;
 // 0x505198
 static int gdNumOptions = 0;
 
+static int gdSelectedOption = 0;
+
 // 0x50519C
 static int gReplyWin = -1;
 
@@ -467,6 +474,10 @@ static char about_input_cursor = '_';
 // 0x505248
 static Rect about_input_rect = { 22, 32, 265, 45 };
 
+// Split virtual keyboard halves drawn left/right of the about window.
+static int about_kb_left_win = -1;
+static int about_kb_right_win = -1;
+
 // 0x58CD50
 static Rect optionRect;
 
@@ -496,6 +507,11 @@ static int about_win_width;
 
 // 0x58DA9C
 static int about_input_index;
+
+// Real characters of the about input text and their count; the input string
+// itself stores the cursor char at about_input_index (see rebuild helper).
+static char about_text_chars[128];
+static int about_text_len;
 
 // 0x58DAA0
 static int about_old_font;
@@ -1359,14 +1375,17 @@ static int gDialogProcess()
                 }
             }
 
-            if (keyCode == KEY_ARROW_UP) {
+            bool scrollUp = keyCode == DIALOG_REPLY_SCROLL_UP || keyCode == KEY_PAGE_UP || (keyCode == KEY_ARROW_UP && gdNumOptions == 0);
+            bool scrollDown = keyCode == DIALOG_REPLY_SCROLL_DOWN || keyCode == KEY_PAGE_DOWN || (keyCode == KEY_ARROW_DOWN && gdNumOptions == 0);
+
+            if (scrollUp) {
                 if (pageIndex > 0) {
                     pageIndex--;
                     dialogBlock.offset = pageOffsets[pageIndex];
                     v18 = 0;
                     gDialogProcessReply();
                 }
-            } else if (keyCode == KEY_ARROW_DOWN) {
+            } else if (scrollDown) {
                 if (pageIndex < pageCount) {
                     pageIndex++;
                     dialogBlock.offset = pageOffsets[pageIndex];
@@ -1390,6 +1409,37 @@ static int gDialogProcess()
                 gDialogProcessHighlight(keyCode - 1200);
             } else if (keyCode >= 1300 && keyCode <= 1330) {
                 gDialogProcessUnHighlight(keyCode - 1300);
+            } else if (gdNumOptions > 0 && (keyCode == KEY_ARROW_UP || keyCode == KEY_ARROW_DOWN)) {
+                int selected = gdSelectedOption;
+                if (keyCode == KEY_ARROW_UP) {
+                    selected = selected > 0 ? selected - 1 : gdNumOptions - 1;
+                } else {
+                    selected = selected < gdNumOptions - 1 ? selected + 1 : 0;
+                }
+
+                if (selected != gdSelectedOption) {
+                    gDialogProcessUnHighlight(gdSelectedOption);
+                    gdSelectedOption = selected;
+                    gDialogProcessHighlight(gdSelectedOption);
+                }
+            } else if (keyCode == KEY_RETURN && gdNumOptions > 0) {
+                pageCount = 0;
+                pageIndex = 0;
+                pageOffsets[0] = 0;
+                gdReplyTooBig = 0;
+
+                if (gDialogProcessChoice(gdSelectedOption) == -1) {
+                    break;
+                }
+
+                tick = get_time();
+
+                if (dialogBlock.offset) {
+                    v18 = 1;
+                    gdReplyTooBig = 1;
+                } else {
+                    v18 = 0;
+                }
             } else if (gconfig_dialog_exit_0_allowed == 0 && keyCode == 48) {
                 dialog_out(exit_msg_key_0, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
             } else if (keyCode >= 48 && keyCode <= 57) {
@@ -1554,7 +1604,7 @@ static int gDialogProcessInit()
         28,
         -1,
         -1,
-        KEY_ARROW_UP,
+        DIALOG_REPLY_SCROLL_UP,
         -1,
         NULL,
         NULL,
@@ -1573,7 +1623,7 @@ static int gDialogProcessInit()
         28,
         -1,
         -1,
-        KEY_ARROW_DOWN,
+        DIALOG_REPLY_SCROLL_DOWN,
         -1,
         NULL,
         NULL,
@@ -1758,6 +1808,8 @@ static void gDialogProcessReply()
 // 0x43F51C
 static void gDialogProcessUpdate()
 {
+    gdSelectedOption = 0;
+
     replyRect.ulx = 5;
     replyRect.uly = 10;
     replyRect.lrx = 374;
@@ -1889,6 +1941,10 @@ static void gDialogProcessUpdate()
 
     win_draw(gReplyWin);
     win_draw(gOptionWin);
+
+    if (gdNumOptions > 0) {
+        gDialogProcessHighlight(gdSelectedOption);
+    }
 }
 
 // 0x43F8D4
@@ -2778,7 +2834,8 @@ static int talk_to_create_barter_win()
         return -1;
     }
 
-    // TRADE
+    // TRADE. The offer is handled on KEY_RETURN (barter_inventory), matching
+    // the gamepad A = confirm binding; 'm' is the gamepad cursor toggle.
     dialogue_bids[0] = win_register_button(dialogueWindow,
         41,
         163,
@@ -2787,7 +2844,7 @@ static int talk_to_create_barter_win()
         -1,
         -1,
         -1,
-        KEY_LOWERCASE_M,
+        KEY_RETURN,
         normal,
         pressed,
         0,
@@ -3638,6 +3695,81 @@ static void talk_to_blend_table_exit()
     art_ptr_unlock(lower_hi_key);
 }
 
+// Create the two split keyboard halves to the left and right of the about
+// window.  Each half is a normal window on top of the (modal) about window,
+// so its buttons are polled before the modal input stop.  If there is not
+// enough room on a side, that half is skipped.
+static void about_create_split_keyboard()
+{
+    vkb_text_set_split_layout(true);
+    vkb_text_nav_reset();
+
+    Rect aboutRect;
+    if (win_get_rect(about_win, &aboutRect) != 0) {
+        return;
+    }
+
+    int screenW = screenGetWidth();
+    int screenH = screenGetHeight();
+    int halfH = VKB_TEXT_KEYBOARD_HEIGHT;
+
+    int gap = 8;
+    int leftAvail = aboutRect.ulx - gap;
+    int rightAvail = screenW - (aboutRect.lrx + 1) - gap;
+    int avail = leftAvail < rightAvail ? leftAvail : rightAvail;
+
+    int halfW = VKB_TEXT_SPLIT_COLUMNS * 15 + (VKB_TEXT_SPLIT_COLUMNS - 1) * VKB_TEXT_KEYBOARD_GAP + 2 * VKB_TEXT_KEYBOARD_PAD_X;
+    if (avail < halfW) {
+        halfW = avail;
+    }
+    if (halfW < 64) {
+        halfW = 64;
+    }
+
+    int halfY = aboutRect.lry - halfH + 1;
+    if (halfY < 0) {
+        halfY = 0;
+    }
+    if (halfY + halfH > screenH) {
+        halfY = screenH - halfH;
+    }
+
+    int leftX = aboutRect.ulx - gap - halfW;
+    if (leftX >= 0) {
+        about_kb_left_win = win_add(leftX, halfY, halfW, halfH, 256, WINDOW_MOVE_ON_TOP);
+        if (about_kb_left_win != -1) {
+            vkb_text_split_draw(about_kb_left_win, 0, true);
+            vkb_text_split_register(about_kb_left_win, 0, true);
+            win_draw(about_kb_left_win);
+        }
+    }
+
+    int rightX = aboutRect.lrx + 1 + gap;
+    if (rightX + halfW <= screenW) {
+        about_kb_right_win = win_add(rightX, halfY, halfW, halfH, 256, WINDOW_MOVE_ON_TOP);
+        if (about_kb_right_win != -1) {
+            vkb_text_split_draw(about_kb_right_win, 0, false);
+            vkb_text_split_register(about_kb_right_win, 0, false);
+            win_draw(about_kb_right_win);
+        }
+    }
+}
+
+static void about_remove_split_keyboard()
+{
+    vkb_text_set_split_layout(false);
+
+    if (about_kb_left_win != -1) {
+        win_delete(about_kb_left_win);
+        about_kb_left_win = -1;
+    }
+
+    if (about_kb_right_win != -1) {
+        win_delete(about_kb_right_win);
+        about_kb_right_win = -1;
+    }
+}
+
 // 0x442154
 static int about_init()
 {
@@ -3669,10 +3801,15 @@ static int about_init()
                 background_width = art_frame_width(background_frm, 0, 0);
                 background_height = art_frame_length(background_frm, 0, 0);
                 about_win_width = background_width;
+
+                int aboutWindowHeight = background_height;
+
+                int aboutWindowY = (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356;
+
                 about_win = win_add((screenGetWidth() - background_width) / 2,
-                    (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + 356,
+                    aboutWindowY,
                     background_width,
-                    background_height,
+                    aboutWindowHeight,
                     colorTable[0],
                     WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                 if (about_win != -1) {
@@ -3770,10 +3907,14 @@ static int about_init()
                                                                         about_last_time = get_time();
                                                                         about_update_display(0);
 
-                                                                        art_ptr_unlock(background_key);
+art_ptr_unlock(background_key);
 
-                                                                        win_draw(about_win);
-                                                                        return 0;
+                                        if (gconfig_show_virtual_keyboard != 0) {
+                                            about_create_split_keyboard();
+                                        }
+
+                                        win_draw(about_win);
+                                        return 0;
                                                                     }
                                                                 }
                                                             }
@@ -3823,6 +3964,8 @@ static void about_exit()
             about_button_down_key = NULL;
         }
 
+        about_remove_split_keyboard();
+
         win_delete(about_win);
         about_win = -1;
 
@@ -3839,10 +3982,84 @@ static void about_loop()
 
     beginTextInput();
 
+    renderPresent();
+
     while (1) {
         sharedFpsLimiter.mark();
 
-        if (about_process_input(get_input()) == -1) {
+        int keyCode = get_input();
+        keyCode = vkb_text_handle_key(keyCode);
+        if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+            if (gconfig_show_virtual_keyboard != 0) {
+                vkb_text_nav_anchor();
+            }
+            if (about_kb_left_win != -1) {
+                vkb_text_split_draw(about_kb_left_win, 0, true);
+                win_draw(about_kb_left_win);
+            }
+            if (about_kb_right_win != -1) {
+                vkb_text_split_draw(about_kb_right_win, 0, false);
+                win_draw(about_kb_right_win);
+            }
+            renderPresent();
+            continue;
+        } else if (keyCode == VKB_TEXT_KEY_INACTIVE) {
+            continue;
+        }
+
+        if (gconfig_show_virtual_keyboard != 0) {
+            if (keyCode == KEY_LEFT || keyCode == KEY_RIGHT || keyCode == KEY_UP || keyCode == KEY_DOWN) {
+                vkb_text_navigate(keyCode);
+                if (about_kb_left_win != -1) {
+                    vkb_text_split_draw(about_kb_left_win, 0, true);
+                    win_draw(about_kb_left_win);
+                }
+                if (about_kb_right_win != -1) {
+                    vkb_text_split_draw(about_kb_right_win, 0, false);
+                    win_draw(about_kb_right_win);
+                }
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_SPACE || keyCode == KEY_LOWERCASE_S || keyCode == KEY_UPPERCASE_S) {
+                keyCode = vkb_text_focus_key();
+                if (keyCode == VKB_TEXT_KEY_CASE || keyCode == VKB_TEXT_KEY_LANG) {
+                    keyCode = vkb_text_handle_key(keyCode);
+                    if (keyCode == VKB_TEXT_KEY_CONSUMED) {
+                        vkb_text_nav_anchor();
+                        if (about_kb_left_win != -1) {
+                            vkb_text_split_draw(about_kb_left_win, 0, true);
+                            win_draw(about_kb_left_win);
+                        }
+                        if (about_kb_right_win != -1) {
+                            vkb_text_split_draw(about_kb_right_win, 0, false);
+                            win_draw(about_kb_right_win);
+                        }
+                        renderPresent();
+                    }
+                    continue;
+                }
+            } else if (keyCode == KEY_LOWERCASE_I || keyCode == KEY_UPPERCASE_I) {
+                keyCode = KEY_SPACE;
+            } else if (keyCode == KEY_LOWERCASE_C || keyCode == KEY_UPPERCASE_C) {
+                if (about_input_index > 0) {
+                    about_input_index--;
+                    about_rebuild_input_string();
+                    about_update_display(1);
+                }
+                renderPresent();
+                continue;
+            } else if (keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_P) {
+                if (about_input_index < about_text_len) {
+                    about_input_index++;
+                    about_rebuild_input_string();
+                    about_update_display(1);
+                }
+                renderPresent();
+                continue;
+            }
+        }
+
+        if (about_process_input(keyCode) == -1) {
             break;
         }
 
@@ -3870,9 +4087,12 @@ static int about_process_input(int input)
     switch (input) {
     case KEY_BACKSPACE:
         if (about_input_index > 0) {
+            for (int i = about_input_index - 1; i < about_text_len - 1; i++) {
+                about_text_chars[i] = about_text_chars[i + 1];
+            }
+            about_text_len--;
             about_input_index--;
-            about_input_string[about_input_index] = about_input_cursor;
-            about_input_string[about_input_index + 1] = '\0';
+            about_rebuild_input_string();
             about_update_display(1);
         }
         break;
@@ -3887,19 +4107,19 @@ static int about_process_input(int input)
         }
         return -1;
     default:
-        if (input >= 0 && about_input_index < 126) {
-            text_font(101);
-            about_input_string[about_input_index] = '_';
-
+        text_font(101);
+        if (input >= KEY_SPACE && input < 256 && text_is_glyph(input) && about_text_len < 126) {
+            about_rebuild_input_string();
             if (text_width(about_input_string) + text_char_width(input) < 244) {
-                about_input_string[about_input_index] = input;
-                about_input_string[about_input_index + 1] = about_input_cursor;
-                about_input_string[about_input_index + 2] = '\0';
+                for (int i = about_text_len; i > about_input_index; i--) {
+                    about_text_chars[i] = about_text_chars[i - 1];
+                }
+                about_text_chars[about_input_index] = input;
                 about_input_index++;
+                about_text_len++;
+                about_rebuild_input_string();
                 about_update_display(1);
             }
-
-            about_input_string[about_input_index] = about_input_cursor;
         }
         break;
     }
@@ -3960,9 +4180,20 @@ static void about_clear_display(unsigned char should_redraw)
 // 0x442910
 static void about_reset_string()
 {
+    about_text_len = 0;
     about_input_index = 0;
     about_input_string[0] = about_input_cursor;
     about_input_string[1] = '\0';
+}
+
+// Rebuild the display buffer from the real characters and the cursor index:
+// chars-before + cursor + chars-after + '\0'.
+static void about_rebuild_input_string()
+{
+    memcpy(about_input_string, about_text_chars, about_input_index);
+    about_input_string[about_input_index] = about_input_cursor;
+    memcpy(about_input_string + about_input_index + 1, about_text_chars + about_input_index, about_text_len - about_input_index);
+    about_input_string[about_text_len + 1] = '\0';
 }
 
 // 0x44292C
@@ -3977,7 +4208,8 @@ static void about_process_string()
     char* str;
     int random_msg_num;
 
-    about_input_string[about_input_index] = '\0';
+    memcpy(about_input_string, about_text_chars, about_text_len);
+    about_input_string[about_text_len] = '\0';
 
     if (about_input_string[0] != '\0') {
         tok = strtok(about_input_string, delimeters);

@@ -64,6 +64,7 @@
 #include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
+#include "plib/gnw/system_exec.h"
 #include "plib/gnw/text.h"
 #include "plib/gnw/timer.h"
 
@@ -1170,6 +1171,16 @@ int game_quit_with_confirm()
             static MessageListItem mesg;
             death_cause = getmsg(&kiosk_msgfile, &mesg, 1223);
             char_dump_kiosk(false);
+
+            // In the RetroArch/Emustation variant the exit button in the in-game
+            // menu is where the kiosk_exec.cfg commands (e.g. launching the next
+            // content) are fired, so the return to the frontend is controlled
+            // from here rather than from character death.
+#ifdef FALLOUT_RETROARCH
+            int l[2] = { 0, 1 };
+            system_exec(l);
+#endif
+
             kiosk_continues_autosave();
             game_user_wants_to_quit = 2;
         }
