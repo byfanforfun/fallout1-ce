@@ -251,7 +251,7 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt update
-          sudo apt install -y crossbuild-essential-arm64 debootstrap qemu-user-static
+          sudo apt install -y g++-12-aarch64-linux-gnu debootstrap qemu-user-static
 
       - name: Cache bookworm sysroot
         id: sysroot-cache
@@ -277,7 +277,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: linux-aarch64-r36-cmake-v1
+          key: linux-aarch64-r36-cmake-v2
 
       - name: Configure
         run: |
@@ -288,6 +288,8 @@ jobs:
             -D CMAKE_SYSROOT=/home/runner/aarch64-bk12 \
             -D CMAKE_FIND_ROOT_PATH=/home/runner/aarch64-bk12 \
             -D CMAKE_PREFIX_PATH=/home/runner/aarch64-bk12/usr \
+            -D CMAKE_C_COMPILER=/usr/bin/aarch64-linux-gnu-gcc-12 \
+            -D CMAKE_CXX_COMPILER=/usr/bin/aarch64-linux-gnu-g++-12 \
             -D FALLOUT_RETROARCH=ON \
             # EOL
 
