@@ -120,6 +120,20 @@ foreach(_candidate_sysroot IN LISTS _sysroot_link_dirs)
     endif()
 endforeach()
 
+# Anchor every compile/link on the sysroot regardless of the host driver's
+# defaults: some distributions' cross gcc (e.g. Ubuntu's multiarch
+# aarch64-linux-gnu-gcc) keep resolving glibc headers like features.h or
+# stdio.h from the HOST /usr/aarch64-linux-gnu/include even when CMAKE_SYSROOT
+# is set, which mixed with the rootfs' own glibc (a bookworm chroot vs. the
+# Ubuntu cross libc) breaks the headers. The explicit --sysroot is duplicated
+# in CMAKE_REQUIRED_FLAGS so configure-time check_* probe compiles use it too.
+if(CMAKE_SYSROOT)
+    string(APPEND CMAKE_C_FLAGS " --sysroot=${CMAKE_SYSROOT}")
+    string(APPEND CMAKE_CXX_FLAGS " --sysroot=${CMAKE_SYSROOT}")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " --sysroot=${CMAKE_SYSROOT}")
+    string(APPEND CMAKE_REQUIRED_FLAGS " --sysroot=${CMAKE_SYSROOT}")
+endif()
+
 # Debian/Ubuntu multiarch keeps the arch-specific glibc headers (bits/
 # wordsize.h, asm/...) in /usr/include/<tuple>. The Fedora cross driver does
 # not add that directory, so expose it (harmless where it does not exist).
@@ -132,6 +146,22 @@ foreach(_arch_inc IN ITEMS
         string(APPEND CMAKE_REQUIRED_FLAGS " -isystem ${CMAKE_SYSROOT}/${_arch_inc}")
     endif()
 endforeach()
+
+# glibc's top-level headers (stdio.h, features.h, stdlib.h, ...) live in
+# usr/include of a full rootfs sysroot. A host/host-cross driver that ignores
+# --sysroot would otherwise resolve those from its own /usr/include, which is
+# a different glibc generation than the rootfs and breaks system headers when
+# mixed with the rootfs' bits/ headers. Expose usr/include as -isystem; it is
+# searched before the compiler's implicit system dirs, so the rootfs wins, and
+# mirrors the standard Debian layout. Guarded by EXISTS so a multiarch
+# sysroot (which shares the host /usr/include) stays untouched. The CXX append
+# happens last on purpose: libstdc++'s cstdlib does #include_next <stdlib.h>
+# and the search must find the sysroot copy right after the C++ include dirs,
+# not a host one.
+if(EXISTS "${CMAKE_SYSROOT}/usr/include")
+    string(APPEND CMAKE_C_FLAGS " -isystem ${CMAKE_SYSROOT}/usr/include")
+    string(APPEND CMAKE_REQUIRED_FLAGS " -isystem ${CMAKE_SYSROOT}/usr/include")
+endif()
 
 # -static-libgcc makes the driver resolve -lgcc inside the sysroot, i.e. the
 # root's own gcc <version> directory, whose libgcc.a carries no exception
@@ -189,4 +219,12 @@ if(EXISTS "${CMAKE_SYSROOT}/usr/include/c++")
             endif()
         endforeach()
     endforeach()
+endif()
+
+# libstdc++'s cstdlib uses #include_next <stdlib.h>, which only continues past
+# the include directories that precede usr/include, so the sysroot's top-level
+# glibc headers must be appended after the C++ search dirs above (see the
+# usr/include -isystem block earlier for why they stay in the sysroot).
+if(EXISTS "${CMAKE_SYSROOT}/usr/include")
+    string(APPEND CMAKE_CXX_FLAGS " -isystem ${CMAKE_SYSROOT}/usr/include")
 endif()
