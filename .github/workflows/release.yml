@@ -179,15 +179,24 @@ jobs:
 
     runs-on: macos-14
 
+    env:
+      AC_USERNAME: ${{ secrets.APPLE_DEVELOPER_AC_USERNAME }}
+      AC_PASSWORD: ${{ secrets.APPLE_DEVELOPER_AC_PASSWORD }}
+      SIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_IDENTITY || secrets.SELF_SIGNED_CERTIFICATE_IDENTITY }}
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
 
+      - name: Trust self-signed certificate
+        if: env.SIGN_IDENTITY == 'Fallout CE Self-Signed'
+        run: sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain certs/fallout-ce-self-signed.pem
+
       - name: Import code signing certificates
         uses: apple-actions/import-codesign-certs@v2
         with:
-          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_FILE_BASE64 }}
-          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_PASSWORD }}
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_FILE_BASE64 || secrets.SELF_SIGNED_CERTIFICATE_P12_FILE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_PASSWORD || secrets.SELF_SIGNED_CERTIFICATE_P12_PASSWORD }}
 
       - name: Cache cmake build
         uses: actions/cache@v4
@@ -200,9 +209,9 @@ jobs:
           cmake \
             -B build \
             -G Xcode \
-            -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="${{ secrets.APPLE_DEVELOPER_CERTIFICATE_IDENTITY }}" \
+            -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="${{ env.SIGN_IDENTITY }}" \
             -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_INJECT_BASE_ENTITLEMENTS="NO" \
-            -D CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS="--options=runtime --timestamp" \
+            -D CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS="${{ env.AC_USERNAME != '' && '--options=runtime --timestamp' || '--options=runtime' }}" \
             # EOL
 
       - name: Build
@@ -219,6 +228,7 @@ jobs:
           cpack -C RelWithDebInfo
 
       - name: Notarize
+        if: env.AC_USERNAME != ''
         run: |
           brew install mitchellh/gon/gon
           cat << EOF > config.json
@@ -232,9 +242,6 @@ jobs:
           EOF
           gon config.json
           rm config.json
-        env:
-          AC_USERNAME: ${{ secrets.APPLE_DEVELOPER_AC_USERNAME }}
-          AC_PASSWORD: ${{ secrets.APPLE_DEVELOPER_AC_PASSWORD }}
 
       - name: Upload
         run: |
