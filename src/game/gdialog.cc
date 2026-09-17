@@ -69,6 +69,9 @@ namespace fallout {
 
 #define DIALOG_TALK_TO_SCROLL_SPEED 33
 
+#define DIALOG_REPLY_SCROLL_UP 1400
+#define DIALOG_REPLY_SCROLL_DOWN 1401
+
 typedef enum GameDialogReviewWindowButton {
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_SCROLL_UP,
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_SCROLL_DOWN,
@@ -370,6 +373,8 @@ static int curReviewSlot = 0;
 
 // 0x505198
 static int gdNumOptions = 0;
+
+static int gdSelectedOption = 0;
 
 // 0x50519C
 static int gReplyWin = -1;
@@ -1370,14 +1375,17 @@ static int gDialogProcess()
                 }
             }
 
-            if (keyCode == KEY_ARROW_UP) {
+            bool scrollUp = keyCode == DIALOG_REPLY_SCROLL_UP || (keyCode == KEY_ARROW_UP && gdNumOptions == 0);
+            bool scrollDown = keyCode == DIALOG_REPLY_SCROLL_DOWN || (keyCode == KEY_ARROW_DOWN && gdNumOptions == 0);
+
+            if (scrollUp) {
                 if (pageIndex > 0) {
                     pageIndex--;
                     dialogBlock.offset = pageOffsets[pageIndex];
                     v18 = 0;
                     gDialogProcessReply();
                 }
-            } else if (keyCode == KEY_ARROW_DOWN) {
+            } else if (scrollDown) {
                 if (pageIndex < pageCount) {
                     pageIndex++;
                     dialogBlock.offset = pageOffsets[pageIndex];
@@ -1401,6 +1409,37 @@ static int gDialogProcess()
                 gDialogProcessHighlight(keyCode - 1200);
             } else if (keyCode >= 1300 && keyCode <= 1330) {
                 gDialogProcessUnHighlight(keyCode - 1300);
+            } else if (gdNumOptions > 0 && (keyCode == KEY_ARROW_UP || keyCode == KEY_ARROW_DOWN)) {
+                int selected = gdSelectedOption;
+                if (keyCode == KEY_ARROW_UP) {
+                    selected = selected > 0 ? selected - 1 : gdNumOptions - 1;
+                } else {
+                    selected = selected < gdNumOptions - 1 ? selected + 1 : 0;
+                }
+
+                if (selected != gdSelectedOption) {
+                    gDialogProcessUnHighlight(gdSelectedOption);
+                    gdSelectedOption = selected;
+                    gDialogProcessHighlight(gdSelectedOption);
+                }
+            } else if (keyCode == KEY_RETURN && gdNumOptions > 0) {
+                pageCount = 0;
+                pageIndex = 0;
+                pageOffsets[0] = 0;
+                gdReplyTooBig = 0;
+
+                if (gDialogProcessChoice(gdSelectedOption) == -1) {
+                    break;
+                }
+
+                tick = get_time();
+
+                if (dialogBlock.offset) {
+                    v18 = 1;
+                    gdReplyTooBig = 1;
+                } else {
+                    v18 = 0;
+                }
             } else if (gconfig_dialog_exit_0_allowed == 0 && keyCode == 48) {
                 dialog_out(exit_msg_key_0, 0, 0, 169, 117, colorTable[32328], NULL, colorTable[32328], 0);
             } else if (keyCode >= 48 && keyCode <= 57) {
@@ -1565,7 +1604,7 @@ static int gDialogProcessInit()
         28,
         -1,
         -1,
-        KEY_ARROW_UP,
+        DIALOG_REPLY_SCROLL_UP,
         -1,
         NULL,
         NULL,
@@ -1584,7 +1623,7 @@ static int gDialogProcessInit()
         28,
         -1,
         -1,
-        KEY_ARROW_DOWN,
+        DIALOG_REPLY_SCROLL_DOWN,
         -1,
         NULL,
         NULL,
@@ -1769,6 +1808,8 @@ static void gDialogProcessReply()
 // 0x43F51C
 static void gDialogProcessUpdate()
 {
+    gdSelectedOption = 0;
+
     replyRect.ulx = 5;
     replyRect.uly = 10;
     replyRect.lrx = 374;
@@ -1900,6 +1941,10 @@ static void gDialogProcessUpdate()
 
     win_draw(gReplyWin);
     win_draw(gOptionWin);
+
+    if (gdNumOptions > 0) {
+        gDialogProcessHighlight(gdSelectedOption);
+    }
 }
 
 // 0x43F8D4
