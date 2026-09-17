@@ -155,7 +155,7 @@ static int vkb_text_next_page()
 
 static int vkb_text_serial_to_byte(int serial)
 {
-    if (serial == VKB_TEXT_SERIAL_Ё) {
+    if (serial == VKB_TEXT_SERIAL_YO) {
         if (vkb_text_active_page == VKB_TEXT_LANGUAGE_RU) {
             return vkb_text_uppercase ? 0xA8 : 0xB8;
         }
@@ -253,7 +253,7 @@ static int vkb_text_cell_key(int row, int col)
             return KEY_0 + digit;
         }
         if (col == 10) {
-            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_Ё);
+            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_YO);
             return (byte > 0 && text_is_glyph(byte)) ? byte : -1;
         }
         return KEY_BACKSPACE;
@@ -592,7 +592,7 @@ void vkb_text_draw(int win, int kbY)
             continue;
         }
         if (col == 10) {
-            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_Ё);
+            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_YO);
             if (byte > 0 && text_is_glyph(byte)) {
                 label[0] = (char)byte;
                 label[1] = '\0';
@@ -673,7 +673,7 @@ void vkb_text_register(int win, int kbY)
             int digit = (col + 1) % 10;
             keyCode = KEY_0 + digit;
         } else if (col == 10) {
-            keyCode = VKB_TEXT_KEY_SERIAL_BASE + VKB_TEXT_SERIAL_Ё;
+            keyCode = VKB_TEXT_KEY_SERIAL_BASE + VKB_TEXT_SERIAL_YO;
         } else {
             keyCode = KEY_BACKSPACE;
         }
@@ -783,7 +783,7 @@ void vkb_text_split_draw(int win, int kbY, bool isLeft)
             continue;
         }
         if (globalCol == 10) {
-            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_Ё);
+            int byte = vkb_text_serial_to_byte(VKB_TEXT_SERIAL_YO);
             if (byte > 0 && text_is_glyph(byte)) {
                 label[0] = (char)byte;
                 label[1] = '\0';
@@ -862,7 +862,7 @@ void vkb_text_split_register(int win, int kbY, bool isLeft)
             int digit = (globalCol + 1) % 10;
             keyCode = KEY_0 + digit;
         } else if (globalCol == 10) {
-            keyCode = VKB_TEXT_KEY_SERIAL_BASE + VKB_TEXT_SERIAL_Ё;
+            keyCode = VKB_TEXT_KEY_SERIAL_BASE + VKB_TEXT_SERIAL_YO;
         } else {
             keyCode = KEY_BACKSPACE;
         }

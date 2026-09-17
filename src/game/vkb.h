@@ -71,7 +71,7 @@ void vkb_numeric_register(int win, int kbY);
 // Stable serial codes for the letter grid (0..37) and for the toggle keys.
 // These are NOT real key codes — they are translated to the active byte by
 // vkb_text_handle_key before reaching the caller.
-#define VKB_TEXT_SERIAL_Ё 0
+#define VKB_TEXT_SERIAL_YO 0
 #define VKB_TEXT_SERIAL_FIRST_LETTER 1
 #define VKB_TEXT_LETTER_KEY_COUNT 37
 #define VKB_TEXT_KEY_SERIAL_BASE 0x4000
