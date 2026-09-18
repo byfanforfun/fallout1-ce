@@ -446,8 +446,9 @@ static void main_game_loop()
     while (game_user_wants_to_quit == 0) {
         sharedFpsLimiter.mark();
 
-        int keyCode = get_input();
         current_screen = SCREEN_GAME;
+
+        int keyCode = get_input();
         game_handle_input(keyCode, false);
 
         scripts_check_state();

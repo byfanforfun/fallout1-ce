@@ -432,9 +432,15 @@ int game_help()
                     renderPresent();
                     sharedFpsLimiter.throttle();
 
+                    current_screen = SCREEN_HELP;
+
                     int keyCode = get_input();
                     if (keyCode == -1) {
                         continue;
+                    }
+
+                    if (keyCode >= KEY_1 && keyCode <= KEY_4) {
+                        keyCode = 500 + (keyCode - KEY_1 + 1);
                     }
 
                     if (keyCode >= 501 && keyCode <= 504) {

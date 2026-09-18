@@ -377,6 +377,8 @@ int main_menu_loop()
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_MAIN;
+
         int keyCode = get_input();
 
         for (int buttonIndex = 0; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {

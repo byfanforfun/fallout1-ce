@@ -16,6 +16,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -165,6 +166,8 @@ int start_message()
     while (!done) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_START_MESSAGE;
+
         needsRefresh = false;
 
         int keyCode = get_input();
@@ -179,6 +182,18 @@ int start_message()
             break;
         default:
             break;
+        }
+
+        if (keyCode == KEY_ARROW_LEFT || keyCode == KEY_PAGE_UP) {
+            if (sm_current_page > 0) {
+                sm_current_page--;
+                needsRefresh = true;
+            }
+        } else if (keyCode == KEY_ARROW_RIGHT || keyCode == KEY_PAGE_DOWN) {
+            if (sm_current_page < sm_max_page) {
+                sm_current_page++;
+                needsRefresh = true;
+            }
         }
 
         start_message_knob_set(difficulty_knob, &t_difficulty, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y);

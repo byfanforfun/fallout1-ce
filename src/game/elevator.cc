@@ -16,6 +16,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
 
@@ -284,6 +285,8 @@ int elevator_select(int elevator, int* mapPtr, int* elevationPtr, int* tilePtr)
     int keyCode;
     while (!done) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_ELEVATOR;
 
         keyCode = get_input();
         if (keyCode == KEY_ESCAPE) {

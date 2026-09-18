@@ -38,6 +38,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -4363,10 +4364,16 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
     while (true) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_CALLED_SHOT;
+
         eventCode = get_input();
 
         if (eventCode == KEY_ESCAPE) {
             break;
+        }
+
+        if (eventCode >= KEY_1 && eventCode <= KEY_8) {
+            eventCode -= KEY_1;
         }
 
         if (eventCode >= 0 && eventCode < HIT_LOCATION_COUNT) {

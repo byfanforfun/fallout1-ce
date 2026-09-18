@@ -24,6 +24,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -215,6 +216,8 @@ int select_character()
     bool done = false;
     while (!done) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_CHAR_SELECT;
 
         if (game_user_wants_to_quit != 0) {
             break;

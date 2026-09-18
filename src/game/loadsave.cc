@@ -52,6 +52,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -651,6 +652,8 @@ int SaveGame(int mode)
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_LOAD_SAVE;
+
         unsigned int tick = get_time();
         int keyCode = get_input();
         bool selectionChanged = false;
@@ -1164,6 +1167,8 @@ int LoadGame(int mode)
     int doubleClickSlot = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_LOAD_SAVE;
 
         unsigned int time = get_time();
         int keyCode = get_input();
@@ -2437,6 +2442,8 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
     int rc = 1;
     while (rc == 1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_SAVE_COMMENT;
 
         int tick = get_time();
 

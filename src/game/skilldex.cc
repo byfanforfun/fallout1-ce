@@ -20,6 +20,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
@@ -125,7 +126,13 @@ int skilldex_select()
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_SKILLDEX;
+
         int keyCode = get_input();
+
+        if (keyCode >= KEY_1 && keyCode <= KEY_8) {
+            keyCode = 500 + (keyCode - KEY_1 + 1);
+        }
 
         if (keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S || keyCode == 500 || game_user_wants_to_quit != 0) {
             rc = 0;

@@ -31,6 +31,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -394,6 +395,8 @@ int do_options()
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_OPTIONS;
 
         int keyCode = get_input();
         bool showPreferences = false;
@@ -771,6 +774,8 @@ int PauseWindow(bool is_world_map)
     while (!done) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_PAUSE;
+
         int keyCode = get_input();
         switch (keyCode) {
         case KEY_PLUS:
@@ -859,6 +864,8 @@ static int do_prefscreen()
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_PREFERENCES;
 
         int eventCode = get_input();
 

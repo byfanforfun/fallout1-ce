@@ -48,6 +48,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -1431,8 +1432,13 @@ int world_map(WorldMapContext ctx)
                 break;
             }
             time = get_time();
+            current_screen = SCREEN_WORLD_MAP;
             input = get_input();
             mouseGetPositionInWindow(world_win, &mouse_x, &mouse_y);
+
+            if (input >= KEY_1 && input <= KEY_9) {
+                input = 500 + (input - KEY_1);
+            }
 
             mouse_dx = abs(mouse_x - (world_xpos - viewport_x + 22));
             mouse_dy = abs(mouse_y - (world_ypos - viewport_y + 20));
@@ -1475,7 +1481,7 @@ int world_map(WorldMapContext ctx)
                         }
                     }
                 }
-            } else if (input == 512) {
+            } else if (input == 512 || input == KEY_LOWERCASE_T || input == KEY_UPPERCASE_T) {
                 should_redraw = 0;
                 reselect = 0;
                 done = 1;
@@ -3675,7 +3681,12 @@ WorldMapContext town_map(WorldMapContext ctx)
         sharedFpsLimiter.mark();
 
         time = get_time();
+        current_screen = SCREEN_TOWN_MAP;
         input = get_input();
+
+        if (input >= KEY_1 && input <= KEY_9) {
+            input = 500 + (input - KEY_1);
+        }
 
         if (input >= 500 && input < 512) {
             if ((first_visit_flag & (1 << (input - 500))) != 0) {
@@ -3715,6 +3726,9 @@ WorldMapContext town_map(WorldMapContext ctx)
         } else {
             switch (input) {
             case 512:
+            case KEY_ESCAPE:
+            case KEY_LOWERCASE_T:
+            case KEY_UPPERCASE_T:
                 new_ctx.state = 3;
                 break;
             case KEY_CTRL_Q:

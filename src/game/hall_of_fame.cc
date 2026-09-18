@@ -22,6 +22,7 @@
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/hash_fnv-1a.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
@@ -111,6 +112,8 @@ int game_handle_hof()
     int key = 0;
     while (hof_window.window_id != -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_HALL_OF_FAME;
 
         key = get_input();
         if (hof_handle_input(key) != 0)
