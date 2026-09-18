@@ -335,7 +335,7 @@ static const char* gamepad_button_default(SDL_GameControllerButton button)
     case SDL_CONTROLLER_BUTTON_START:
         return "f6";
     case SDL_CONTROLLER_BUTTON_BACK:
-        return "f7";
+        return "lalt";
     case SDL_CONTROLLER_BUTTON_GUIDE:
         return "f12";
     default:
