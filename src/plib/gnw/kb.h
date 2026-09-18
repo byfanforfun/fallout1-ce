@@ -355,6 +355,7 @@ int kb_getch();
 void kb_disable();
 void kb_enable();
 bool kb_is_disabled();
+bool kb_is_alt_held();
 void kb_disable_numpad();
 void kb_enable_numpad();
 bool kb_numpad_is_disabled();

@@ -2189,4 +2189,13 @@ static int kb_buffer_peek(int index, key_data_t** keyboardEventPtr)
     return rc;
 }
 
+// Returns true when either Alt key is currently held down. Unlike key events
+// (which the game sees as -1 for Alt), this reflects the raw keyboard state and
+// also covers keys injected from the gamepad.
+bool kb_is_alt_held()
+{
+    return keys[SDL_SCANCODE_LALT] != KEY_STATE_UP
+        || keys[SDL_SCANCODE_RALT] != KEY_STATE_UP;
+}
+
 } // namespace fallout
