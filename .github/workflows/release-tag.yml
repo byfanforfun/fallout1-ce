@@ -303,7 +303,8 @@ jobs:
       - name: Verify
         run: |
           file build/fallout-ce
-          readelf -A build/fallout-ce | grep Tag_CPU_arch
+          readelf -h build/fallout-ce | grep -E 'Machine:'
+          readelf -A build/fallout-ce | grep Tag_CPU_arch || echo "note: no attribute section (informational)"
           readelf -d build/fallout-ce | grep NEEDED
           objdump -T build/fallout-ce | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -3
 
