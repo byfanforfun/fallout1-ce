@@ -345,6 +345,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/plib/gnw/hash_fnv-1a.h"
     "src/plib/gnw/kb.cc"
     "src/plib/gnw/kb.h"
+    "src/plib/gnw/key_hint.cc"
+    "src/plib/gnw/key_hint.h"
     "src/plib/gnw/memory.cc"
     "src/plib/gnw/memory.h"
     "src/plib/gnw/mouse.cc"

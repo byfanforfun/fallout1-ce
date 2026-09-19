@@ -545,11 +545,31 @@ int pipboy(int intent)
     while (true) {
         sharedFpsLimiter.mark();
 
+        switch (crnt_func) {
+        case 0:
+            current_screen = SCREEN_PIP_STATUS;
+            break;
+        case 1:
+            current_screen = SCREEN_PIP_AUTOMAPS;
+            break;
+        case 2:
+            current_screen = SCREEN_PIP_ARCHIVES;
+            break;
+        default:
+            current_screen = SCREEN_PIP_ALARM;
+            break;
+        }
+
         int keyCode = get_input();
 
         if (intent == PIPBOY_OPEN_INTENT_REST) {
             keyCode = 504;
             intent = PIPBOY_OPEN_INTENT_UNSPECIFIED;
+        }
+
+        if (keyCode >= KEY_1 && keyCode <= KEY_4) {
+            static const int pipPageKeys[4] = { 500, 501, 502, 504 };
+            keyCode = pipPageKeys[keyCode - KEY_1];
         }
 
         mouseGetPositionInWindow(pip_win, &mouse_x, &mouse_y);

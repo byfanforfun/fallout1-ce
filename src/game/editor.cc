@@ -662,6 +662,8 @@ int editor_design(bool isCreationMode)
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_CHAR;
+
         frame_time = get_time();
         int keyCode = get_input();
 
@@ -1500,6 +1502,8 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
     int rc = 1;
     while (rc == 1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_EDITOR_NAME;
 
         frame_time = get_time();
 
@@ -3162,6 +3166,8 @@ static int AgeWindow()
     while (true) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_EDITOR_AGE;
+
         frame_time = get_time();
         change = 0;
         int v32 = 0;
@@ -3219,6 +3225,8 @@ static int AgeWindow()
 
             while (true) {
                 sharedFpsLimiter.mark();
+
+                current_screen = SCREEN_EDITOR_AGE;
 
                 frame_time = get_time();
 
@@ -3389,6 +3397,8 @@ static void SexWindow()
     while (true) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_EDITOR_SEX;
+
         frame_time = get_time();
 
         int eventCode = get_input();
@@ -3404,6 +3414,12 @@ static void SexWindow()
 
         if (eventCode == KEY_ESCAPE || game_user_wants_to_quit != 0) {
             break;
+        }
+
+        if (eventCode == KEY_1 || eventCode == KEY_ARROW_LEFT) {
+            eventCode = 501;
+        } else if (eventCode == KEY_2 || eventCode == KEY_ARROW_RIGHT) {
+            eventCode = 502;
         }
 
         switch (eventCode) {
@@ -3615,6 +3631,8 @@ static int OptionWindow()
         int rc = 0;
         while (rc == 0) {
             sharedFpsLimiter.mark();
+
+            current_screen = SCREEN_EDITOR_OPTIONS;
 
             int keyCode = get_input();
 
@@ -5616,6 +5634,8 @@ static int InputPDLoop(int count, void (*refreshProc)())
     while (rc == 0) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_PERKS;
+
         int keyCode = get_input();
         int v19 = 0;
 
@@ -5690,6 +5710,8 @@ static int InputPDLoop(int count, void (*refreshProc)())
                 do {
                     sharedFpsLimiter.mark();
 
+                    current_screen = SCREEN_PERKS;
+
                     frame_time = get_time();
                     if (v19 <= 14.4) {
                         v19++;
@@ -5736,6 +5758,8 @@ static int InputPDLoop(int count, void (*refreshProc)())
                     do {
                         sharedFpsLimiter.mark();
 
+                        current_screen = SCREEN_PERKS;
+
                         frame_time = get_time();
                         if (v19 <= 14.4) {
                             v19++;
@@ -5776,6 +5800,8 @@ static int InputPDLoop(int count, void (*refreshProc)())
                 } else {
                     do {
                         sharedFpsLimiter.mark();
+
+                        current_screen = SCREEN_PERKS;
 
                         frame_time = get_time();
                         if (v19 <= 14.4) {

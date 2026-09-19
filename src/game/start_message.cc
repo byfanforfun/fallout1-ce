@@ -16,6 +16,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
@@ -145,6 +146,7 @@ int start_message_msg_load();
 int print_display_data();
 int start_message_knob_init(unsigned char** knob, int* button, CacheEntry** key, int kx, int ky, int fy, int default_v, int msg_title, int msg_off, int msg_on);
 int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky);
+static void start_message_knob_redraw(unsigned char* knob, int value, int kx, int ky);
 
 int start_message()
 {
@@ -165,6 +167,8 @@ int start_message()
     while (!done) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_START_MESSAGE;
+
         needsRefresh = false;
 
         int keyCode = get_input();
@@ -179,6 +183,26 @@ int start_message()
             break;
         default:
             break;
+        }
+
+        if (keyCode == 505) {
+            t_difficulty ^= 1;
+            start_message_knob_redraw(difficulty_knob, t_difficulty, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y);
+        } else if (keyCode == 506) {
+            t_lfilter ^= 1;
+            start_message_knob_redraw(language_knob, t_lfilter, SM_KNOB_LFILTER_X, SM_KNOB_LFILTER_Y);
+        }
+
+        if (keyCode == KEY_ARROW_LEFT || keyCode == KEY_PAGE_UP) {
+            if (sm_current_page > 0) {
+                sm_current_page--;
+                needsRefresh = true;
+            }
+        } else if (keyCode == KEY_ARROW_RIGHT || keyCode == KEY_PAGE_DOWN) {
+            if (sm_current_page < sm_max_page) {
+                sm_current_page++;
+                needsRefresh = true;
+            }
         }
 
         start_message_knob_set(difficulty_knob, &t_difficulty, SM_KNOB_DIFFICULTY_X, SM_KNOB_DIFFICULTY_Y);
@@ -425,6 +449,22 @@ int start_message_knob_init(unsigned char** knob, int* button, CacheEntry** key,
     return 0;
 }
 
+static void start_message_knob_redraw(unsigned char* knob, int value, int kx, int ky)
+{
+    if (knob == NULL) {
+        return;
+    }
+
+    buf_to_buf(knob + 640 * 19 + 251, 113, 34, 640, start_message_window_buffer + 640 * 19 + 251, 640);
+    trans_buf_to_buf(knob + (SM_KNOB_WIDTH * SM_KNOB_HEIGHT) * value, SM_KNOB_WIDTH, SM_KNOB_HEIGHT, SM_KNOB_WIDTH, start_message_window_buffer + 640 * ky + kx, 640);
+
+    gsound_play_sfx_file("ib2p1xx1");
+    block_for_tocks(70);
+    gsound_play_sfx_file("ib2lu1x1");
+
+    needsRefresh = true;
+}
+
 int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
 {
     if (knob == NULL)
@@ -464,14 +504,7 @@ int start_message_knob_set(unsigned char* knob, int* status, int kx, int ky)
     }
 
     if (valueChanged) {
-        buf_to_buf(knob + 640 * 19 + 251, 113, 34, 640, start_message_window_buffer + 640 * 19 + 251, 640);
-        trans_buf_to_buf(knob + (22 * 25) * *valuePtr, 22, 25, 22, start_message_window_buffer + 640 * ky + kx, 640);
-
-        gsound_play_sfx_file("ib2p1xx1");
-        block_for_tocks(70);
-        gsound_play_sfx_file("ib2lu1x1");
-
-        needsRefresh = true;
+        start_message_knob_redraw(knob, *valuePtr, kx, ky);
     }
 
     return 0;

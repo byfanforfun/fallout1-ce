@@ -70,7 +70,9 @@ static int button_values[MAIN_MENU_BUTTON_COUNT] = {
     KEY_LOWERCASE_N,
     KEY_LOWERCASE_L,
     KEY_LOWERCASE_C,
-    KEY_LOWERCASE_E,
+    // Exit is handled by KEY_ESCAPE below as well; using ESC as the button's
+    // event code lets the key hint overlay label it with the gamepad "Y" button.
+    KEY_ESCAPE,
 };
 
 // 0x505AB8
@@ -376,6 +378,8 @@ int main_menu_loop()
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_MAIN;
 
         int keyCode = get_input();
 

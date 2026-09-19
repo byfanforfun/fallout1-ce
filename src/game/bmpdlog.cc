@@ -18,6 +18,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
@@ -461,6 +462,8 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_MESSAGE;
+
         int keyCode = get_input();
 
         if (keyCode == 500) {
@@ -688,6 +691,8 @@ int file_dialog(char* title, char** fileList, char* dest, int fileListLength, in
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_FILE_LOAD;
 
         unsigned int tick = get_time();
         int keyCode = get_input();
@@ -1107,6 +1112,8 @@ int save_file_dialog(char* title, char** fileList, char* dest, int fileListLengt
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_FILE_SAVE;
 
         unsigned int tick = get_time();
         int keyCode = get_input();

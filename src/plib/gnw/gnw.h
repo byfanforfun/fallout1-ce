@@ -60,6 +60,8 @@ void win_refresh_all(Rect* rect);
 void win_drag(int win);
 void win_get_mouse_buf(unsigned char* a1);
 Window* GNW_find(int win);
+int win_get_num_windows();
+Window* win_get_window(int index);
 unsigned char* win_get_buf(int win);
 int win_get_top_win(int x, int y);
 int win_width(int win);

@@ -1119,6 +1119,20 @@ unsigned char* win_get_buf(int win)
     return w->buffer;
 }
 
+int win_get_num_windows()
+{
+    return num_windows;
+}
+
+Window* win_get_window(int index)
+{
+    if (index < 0 || index >= num_windows) {
+        return NULL;
+    }
+
+    return window[index];
+}
+
 // 0x4C3984
 int win_get_top_win(int x, int y)
 {

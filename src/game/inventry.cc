@@ -524,6 +524,8 @@ void handle_inventory()
     for (;;) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_INV;
+
         int keyCode = get_input();
 
         if (keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_I || keyCode == KEY_LOWERCASE_I) {
@@ -2405,6 +2407,8 @@ void use_inventory_on(Object* a1)
 
         display_body(-1, INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
 
+        current_screen = SCREEN_USE_ITEM;
+
         int keyCode = get_input();
 
         if (keyCode == KEY_ESCAPE) {
@@ -3872,6 +3876,8 @@ int loot_container(Object* a1, Object* a2)
             break;
         }
 
+        current_screen = SCREEN_LOOT;
+
         int keyCode = get_input();
 
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
@@ -4693,6 +4699,8 @@ void barter_inventory(int win, Object* target, Object* peon_table, Object* barte
     for (;;) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_BARTER;
+
         if (keyCode == KEY_ESCAPE || game_user_wants_to_quit != 0) {
             break;
         }
@@ -5191,6 +5199,10 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max, int des
     bool numbersEntered = false;
     for (;;) {
         sharedFpsLimiter.mark();
+
+        current_screen = inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS
+            ? SCREEN_MOVE_ITEMS
+            : SCREEN_SET_TIMER;
 
         int keyCode = get_input();
         if (keyCode == KEY_ESCAPE) {

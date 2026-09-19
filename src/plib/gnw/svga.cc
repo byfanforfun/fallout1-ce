@@ -2,6 +2,7 @@
 
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
+#include "plib/gnw/key_hint.h"
 #include "plib/gnw/mouse.h"
 #include "plib/gnw/timer.h"
 #include "plib/gnw/winmain.h"
@@ -274,6 +275,7 @@ void handleWindowSizeChanged()
 
 void renderPresent()
 {
+    key_hint_update();
     SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
     SDL_RenderClear(gSdlRenderer);
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, NULL, NULL);

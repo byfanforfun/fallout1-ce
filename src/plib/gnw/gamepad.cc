@@ -137,6 +137,10 @@ static void gamepad_parse_bind(const char* value, GamepadButtonBind* out)
         scancode = SDL_SCANCODE_LSHIFT;
     } else if (strcmp(value, "capslock") == 0) {
         scancode = SDL_SCANCODE_CAPSLOCK;
+    } else if (strcmp(value, "alt") == 0 || strcmp(value, "lalt") == 0) {
+        scancode = SDL_SCANCODE_LALT;
+    } else if (strcmp(value, "ralt") == 0) {
+        scancode = SDL_SCANCODE_RALT;
     } else if (strlen(value) == 2 && value[0] == 'f' && value[1] >= '1' && value[1] <= '9') {
         scancode = (SDL_Scancode)(SDL_SCANCODE_F1 + value[1] - '1');
     } else if (strlen(value) == 3 && value[0] == 'f' && value[1] == '1' && value[2] >= '0' && value[2] <= '2') {
@@ -331,7 +335,7 @@ static const char* gamepad_button_default(SDL_GameControllerButton button)
     case SDL_CONTROLLER_BUTTON_START:
         return "f6";
     case SDL_CONTROLLER_BUTTON_BACK:
-        return "f7";
+        return "lalt";
     case SDL_CONTROLLER_BUTTON_GUIDE:
         return "f12";
     default:

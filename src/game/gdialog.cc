@@ -40,6 +40,7 @@
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/input.h"
+#include "plib/gnw/input_rebind.h"
 #include "plib/gnw/memory.h"
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
@@ -1318,6 +1319,8 @@ static int gDialogProcess()
     for (;;) {
         sharedFpsLimiter.mark();
 
+        current_screen = SCREEN_DIALOG;
+
         int keyCode = get_input();
 
         convertMouseWheelToArrowKey(&keyCode);
@@ -1357,6 +1360,8 @@ static int gDialogProcess()
                 talk_to_pressed_barter(-1, -1);
             } else if (keyCode == KEY_LOWERCASE_A) {
                 talk_to_pressed_about(-1, -1);
+            } else if (keyCode == KEY_LOWERCASE_R || keyCode == KEY_UPPERCASE_R) {
+                talk_to_pressed_review(-1, -1);
             }
         }
 
@@ -2331,6 +2336,8 @@ static int gdialog_review()
 
     while (true) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_DIALOG_REVIEW;
 
         int keyCode = get_input();
 
@@ -3986,6 +3993,8 @@ static void about_loop()
 
     while (1) {
         sharedFpsLimiter.mark();
+
+        current_screen = SCREEN_DIALOG_ABOUT;
 
         int keyCode = get_input();
         keyCode = vkb_text_handle_key(keyCode);
