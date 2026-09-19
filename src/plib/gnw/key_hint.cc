@@ -24,6 +24,50 @@ typedef struct GamepadKeyLabel {
     const char* label;
 } GamepadKeyLabel;
 
+// Windows that handle some actions with raw keys instead of registered buttons
+// (list scrolling, pagination, switching stacks). These can't be discovered by
+// scanning the button list, so they are listed explicitly per screen. The badge
+// is drawn as a small legend along the bottom of the active window in the order
+// given here.
+#define KEY_HINT_LEGEND_MAX 8
+#define KEY_HINT_LEGEND_SPACING 38
+#define KEY_HINT_LEGEND_MARGIN_X 24
+#define KEY_HINT_LEGEND_MARGIN_Y 18
+
+typedef struct KeyHintLegend {
+    int screen;
+    int keys[KEY_HINT_LEGEND_MAX];
+} KeyHintLegend;
+
+// Actions that are not backed by any button but still need a hint at a fixed
+// spot (e.g. the two toggle knobs in the kiosk start message). Coordinates are
+// relative to the top-left corner of the active window and denote the center of
+// the badge.
+typedef struct KeyHintExtra {
+    int screen;
+    int key;
+    int x;
+    int y;
+} KeyHintExtra;
+
+static const KeyHintExtra key_hint_extras[] = {
+    // Kiosk start message: difficulty and language filter knobs.
+    { SCREEN_START_MESSAGE, 505, 178, 364 },
+    { SCREEN_START_MESSAGE, 506, 178, 428 },
+};
+
+static const KeyHintLegend key_hint_legends[] = {
+    { SCREEN_INV, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, 0 } },
+    { SCREEN_USE_ITEM, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, 0 } },
+    { SCREEN_LOOT, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_ARROW_LEFT, KEY_ARROW_RIGHT, KEY_PAGE_UP, KEY_PAGE_DOWN, 0 } },
+    { SCREEN_BARTER, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, 0 } },
+    { SCREEN_LOAD_SAVE, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_HOME, KEY_END, 0 } },
+    { SCREEN_FILE_LOAD, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_HOME, KEY_END, 0 } },
+    { SCREEN_FILE_SAVE, { KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_HOME, KEY_END, 0 } },
+    { SCREEN_CHAR_SELECT, { KEY_ARROW_LEFT, KEY_ARROW_RIGHT, 0 } },
+    { SCREEN_START_MESSAGE, { KEY_ARROW_LEFT, KEY_ARROW_RIGHT, KEY_PAGE_UP, KEY_PAGE_DOWN, 0 } },
+};
+
 // Maps game action key codes to the label printed on the corresponding gamepad
 // control, assuming the default bindings from gamepad.cc.
 static const GamepadKeyLabel gamepad_key_labels[] = {
@@ -163,6 +207,48 @@ static void key_hint_draw_badge(int center_x, int center_y, const char* label)
     SDL_BlitSurface(key_hint_surface, &src, gSdlTextureSurface, &dst);
 }
 
+static void key_hint_draw_legends(Window* window)
+{
+    for (size_t legend = 0; legend < sizeof(key_hint_legends) / sizeof(key_hint_legends[0]); legend++) {
+        if (key_hint_legends[legend].screen != current_screen) {
+            continue;
+        }
+
+        int index = 0;
+        for (int slot = 0; slot < KEY_HINT_LEGEND_MAX && key_hint_legends[legend].keys[slot] != 0; slot++) {
+            const char* label = key_hint_label(get_physical_key(current_screen, key_hint_legends[legend].keys[slot]));
+            if (label == NULL) {
+                continue;
+            }
+
+            int center_x = window->rect.ulx + KEY_HINT_LEGEND_MARGIN_X + index * KEY_HINT_LEGEND_SPACING;
+            int center_y = window->rect.lry - KEY_HINT_LEGEND_MARGIN_Y;
+            key_hint_draw_badge(center_x, center_y, label);
+            index++;
+        }
+
+        break;
+    }
+}
+
+static void key_hint_draw_extras(Window* window)
+{
+    for (size_t extra = 0; extra < sizeof(key_hint_extras) / sizeof(key_hint_extras[0]); extra++) {
+        if (key_hint_extras[extra].screen != current_screen) {
+            continue;
+        }
+
+        const char* label = key_hint_label(get_physical_key(current_screen, key_hint_extras[extra].key));
+        if (label == NULL) {
+            continue;
+        }
+
+        key_hint_draw_badge(window->rect.ulx + key_hint_extras[extra].x,
+            window->rect.uly + key_hint_extras[extra].y,
+            label);
+    }
+}
+
 static Window* key_hint_active_window()
 {
     for (int index = win_get_num_windows() - 1; index >= 1; index--) {
@@ -255,6 +341,9 @@ void key_hint_update()
         int center_y = window->rect.uly + (button->rect.uly + button->rect.lry) / 2;
         key_hint_draw_badge(center_x, center_y, label);
     }
+
+    key_hint_draw_legends(window);
+    key_hint_draw_extras(window);
 
     text_font(saved_font);
 }
